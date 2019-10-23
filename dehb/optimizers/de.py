@@ -94,7 +94,7 @@ class DE(DEBase):
                  crossover_prob=None, strategy='rand1_bin', max_budget=None, **kwargs):
         super().__init__(b=b, cs=cs, dimensions=dimensions, pop_size=pop_size, mutation_factor=mutation_factor,
                          crossover_prob=crossover_prob, strategy=strategy, max_budget=max_budget, **kwargs)
-        self.f_evaluation_count = 0
+
         if self.strategy is not None:
             self.mutation_strategy = self.strategy.split('_')[0]
             self.crossover_strategy = self.strategy.split('_')[1]
@@ -105,7 +105,6 @@ class DE(DEBase):
         if self.b is None:
             raise NotImplementedError("The custom objective function needs to be defined here.")
         config = self.vector_to_configspace(x)
-        self.f_evaluation_count += 1
         fitness, cost = self.b.objective_function(config)
         return fitness, cost
 
@@ -141,8 +140,6 @@ class DE(DEBase):
     def run(self, iterations=100, verbose=False):
         traj = []
         runtime = []
-        f_evals = []
-        self.f_evaluation_count = 0
 
         if verbose:
             print("Initializing population...")
@@ -161,7 +158,6 @@ class DE(DEBase):
                 inc_config = config
             traj.append(inc_score)
             runtime.append(cost)
-            f_evals.append(self.f_evaluation_count)
 
         if verbose:
             print("Running evolutionary search...")
@@ -180,9 +176,8 @@ class DE(DEBase):
                         inc_config = self.population[j]
                 traj.append(inc_score)
                 runtime.append(cost)
-                f_evals.append(self.f_evaluation_count)
 
         if verbose:
             print("\nRun complete!")
 
-        return traj, runtime, f_evals
+        return np.array(traj), np.array(runtime)
