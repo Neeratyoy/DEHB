@@ -2,6 +2,7 @@ import sys
 sys.path.append('../')
 
 import os
+import json
 import argparse
 import numpy as np
 
@@ -35,9 +36,10 @@ parser.add_argument('--strategy', default="rand1_bin", type=str, nargs='?', help
 parser.add_argument('--mutation_factor', default=0.5, type=float, nargs='?', help='mutation factor value')
 parser.add_argument('--crossover_prob', default=0.5, type=float, nargs='?', help='probability of crossover')
 parser.add_argument('--max_budget', default=None, type=str, nargs='?', help='maximum wallclock time to run DE for')
-parser.add_argument('--verbose', default=False, choices=[True, False], nargs='?', help='to print progress or not')
+parser.add_argument('--verbose', default='False', choices=['True', 'False'], nargs='?', help='to print progress or not')
 
 args = parser.parse_args()
+args.verbose = True if args.verbose == 'True' else False
 
 if args.benchmark == "nas_cifar10a":
     b = NASCifar10A(data_dir=args.data_dir, multi_fidelity=False)
@@ -81,8 +83,8 @@ if args.runs is None:
     if 'cifar' in args.benchmark:
         traj, runtime = remove_invalid_configs(traj, runtime)
     res = {}
-    res['runtime'] = np.cumsum(runtime)
-    res['regret_validation'] = 1 - traj
+    res['runtime'] = np.cumsum(runtime).tolist()
+    res['regret_validation'] = np.array(1 - traj).tolist()
     fh = open(os.path.join(output_path, 'run_%d.json' % args.run_id), 'w')
     json.dump(res, fh)
     fh.close()
@@ -94,8 +96,8 @@ else:
         if 'cifar' in args.benchmark:
             traj, runtime = remove_invalid_configs(traj, runtime)
         res = {}
-        res['runtime'] = np.cumsum(runtime)
-        res['regret_validation'] = 1 - traj
+        res['runtime'] = np.cumsum(runtime).tolist()
+        res['regret_validation'] = np.array(1 - traj).tolist()
         fh = open(os.path.join(output_path, 'run_%d.json' % run_id), 'w')
         json.dump(res, fh)
         fh.close()
