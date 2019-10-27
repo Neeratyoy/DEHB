@@ -4,19 +4,33 @@ import ConfigSpace
 
 class DEBase():
     def __init__(self, b=None, cs=None, dimensions=None, pop_size=None, mutation_factor=None,
-                 crossover_prob=None, strategy=None, max_budget=None, **kwargs):
+                 crossover_prob=None, strategy=None, budget=None, **kwargs):
+        # Benchmark related variables
         self.b = b
         self.cs = self.b.get_configuration_space() if cs is None and b is not None else cs
         if dimensions is None and self.cs is not None:
             self.dimensions = len(self.cs.get_hyperparameters())
         else:
             self.dimensions = dimensions
+
+        # DE related variables
         self.pop_size = pop_size
         self.mutation_factor = mutation_factor
         self.crossover_prob = crossover_prob
         self.strategy = strategy
-        self.max_budget = max_budget
+        self.budget = budget
+
+        # Miscellaneous
         self.output_path = kwargs['output_path'] if 'output_path' in kwargs else ''
+
+        # Incumbent trackers
+        self.inc_score = np.inf
+        self.inc_config = None
+
+    def reset(self):
+        self.inc_score = np.inf
+        self.inc_config = None
+        self.population = None
 
     def init_population(self, pop_size=10):
         self.population = np.random.uniform(low=0.0, high=1.0, size=(pop_size, self.dimensions))
@@ -91,9 +105,9 @@ class DEBase():
 
 class DE(DEBase):
     def __init__(self, b=None, cs=None, dimensions=None, pop_size=None, mutation_factor=None,
-                 crossover_prob=None, strategy='rand1_bin', max_budget=None, **kwargs):
+                 crossover_prob=None, strategy='rand1_bin', budget=None, **kwargs):
         super().__init__(b=b, cs=cs, dimensions=dimensions, pop_size=pop_size, mutation_factor=mutation_factor,
-                         crossover_prob=crossover_prob, strategy=strategy, max_budget=max_budget, **kwargs)
+                         crossover_prob=crossover_prob, strategy=strategy, budget=budget, **kwargs)
 
         if self.strategy is not None:
             self.mutation_strategy = self.strategy.split('_')[0]
@@ -101,25 +115,53 @@ class DE(DEBase):
         else:
             self.mutation_strategy = self.crossover_strategy = None
 
-    def f_objective(self, x):
+    def f_objective(self, x, budget=None):
         if self.b is None:
             raise NotImplementedError("The custom objective function needs to be defined here.")
         config = self.vector_to_configspace(x)
-        fitness, cost = self.b.objective_function(config)
+        if budget is not None:  # to be used when called by multi-fidelity based optimizers
+            fitness, cost = self.b.objective_function(config, budget=budget)
+        else:
+            fitness, cost = self.b.objective_function(config)
         return fitness, cost
 
+    def init_eval_pop(self):
+        '''Creates new population of 'pop_size' and evaluates individuals.
+        '''
+        self.population = self.init_population(self.pop_size)
+        self.fitness = [np.inf for i in range(self.pop_size)]
+
+        traj = []
+        runtime = []
+        for i in range(self.pop_size):
+            config = self.population[i]
+            self.fitness[i], cost = self.f_objective(config)
+            if self.fitness[i] < self.inc_score:
+                self.inc_score = self.fitness[i]
+                self.inc_config = config
+            traj.append(self.inc_score)
+            runtime.append(cost)
+
+        return traj, runtime
+
     def mutation_rand1(self, r1, r2, r3):
+        '''Performs the 'rand1' type of DE mutation
+        '''
         diff = r2 - r3
         mutant = r1 + self.mutation_factor * diff
         return mutant
 
     def mutation(self):
+        '''Performs DE mutation
+        '''
         if self.mutation_strategy == 'rand1':
             r1, r2, r3 = self.sample_population(size=3)
             mutant = self.mutation_rand1(r1, r2, r3)
         return mutant
 
     def crossover_bin(self, parent, mutant):
+        '''Performs the binomial crossover of DE
+        '''
         cross_points = np.random.rand(self.dimensions) < self.crossover_prob
         if not np.any(cross_points):
             cross_points[np.random.randint(0, self.dimensions)] = True
@@ -127,37 +169,40 @@ class DE(DEBase):
         return offspring
 
     def crossover(self, parent, mutant):
+        '''Performs DE crossover
+        '''
         if self.crossover_strategy == 'bin':
             offspring = self.crossover_bin(parent, mutant)
         return offspring
 
     def evolve(self, current=None, best=None):
+        '''Performs a DE mutation and crossover
+        '''
         mutant = self.mutation()
         offspring = self.crossover(current, mutant)
         offspring = self.boundary_check(offspring)
         return offspring
 
+    def step(self, j, budget=None):
+        '''Performs a single DE evolution for an individual
+        '''
+        offspring = self.evolve(current=self.population[j])
+        fitness, cost = self.f_objective(offspring, budget)
+        if fitness < self.fitness[j]:
+            self.fitness[j] = fitness
+            self.population[j] = offspring
+            if self.fitness[j] < self.inc_score:
+                self.inc_score = self.fitness[j]
+                self.inc_config = self.population[j]
+        return self.inc_score, cost
+
     def run(self, iterations=100, verbose=False):
-        traj = []
-        runtime = []
+        self.traj = []
+        self.runtime = []
 
         if verbose:
-            print("Initializing population...")
-        self.init_population(self.pop_size)
-        self.fitness = [np.inf for i in range(self.pop_size)]
-
-        if verbose:
-            print("Evaluating initial population...")
-        inc_score = np.inf
-        inc_config = None
-        for i in range(self.pop_size):
-            config = self.population[i]
-            self.fitness[i], cost = self.f_objective(config)
-            if self.fitness[i] < inc_score:
-                inc_score = self.fitness[i]
-                inc_config = config
-            traj.append(inc_score)
-            runtime.append(cost)
+            print("Initializing and evaluating new population...")
+        self.traj, self.runtime = self.init_eval_pop()
 
         if verbose:
             print("Running evolutionary search...")
@@ -165,19 +210,13 @@ class DE(DEBase):
             for j in range(self.pop_size):
                 if verbose:
                     print("Iteration {:<2}/{:<2} -- "
-                          "Evaluating individual {:<2}/{:<2}".format(i+1, iterations, j+1, self.pop_size), end='\r')
-                offspring = self.evolve(current=self.population[j])
-                fitness, cost = self.f_objective(offspring)
-                if fitness < self.fitness[j]:
-                    self.fitness[j] = fitness
-                    self.population[j] = offspring
-                    if self.fitness[j] < inc_score:
-                        inc_score = self.fitness[j]
-                        inc_config = self.population[j]
-                traj.append(inc_score)
-                runtime.append(cost)
+                          "Evaluating individual {:<2}/{:<2}".format(i+1, iterations, j+1,
+                                                                     self.pop_size), end='\r')
+                traj, runtime = self.step(j)
+                self.traj.append(traj)
+                self.runtime.append(runtime)
 
         if verbose:
             print("\nRun complete!")
 
-        return np.array(traj), np.array(runtime)
+        return np.array(self.traj), np.array(self.runtime)
