@@ -10,8 +10,6 @@ from tabular_benchmarks import FCNetProteinStructureBenchmark, FCNetSliceLocaliz
     FCNetNavalPropulsionBenchmark, FCNetParkinsonsTelemonitoringBenchmark
 from tabular_benchmarks import NASCifar10A, NASCifar10B, NASCifar10C
 
-from optimizers.dehb import DEHB
-
 
 def remove_invalid_configs(traj, runtime):
     idx = np.where(np.array(runtime)==0)
@@ -22,6 +20,7 @@ def remove_invalid_configs(traj, runtime):
 parser = argparse.ArgumentParser()
 parser.add_argument('--run_id', default=0, type=int, nargs='?', help='unique number to identify this run')
 parser.add_argument('--runs', default=None, type=int, nargs='?', help='number of runs to perform')
+parser.add_argument('--run_start', default=0, type=int, nargs='?', help='run index to start with for multiple runs')
 parser.add_argument('--benchmark', default="protein_structure",
                     choices=["protein_structure", "slice_localization", "naval_propulsion",
                              "parkinsons_telemonitoring", "nas_cifar10a", "nas_cifar10b", "nas_cifar10c"],
@@ -36,11 +35,16 @@ parser.add_argument('--eta', default=3, type=int, nargs='?', help='eta for Succe
 parser.add_argument('--mutation_factor', default=0.5, type=float, nargs='?', help='mutation factor value')
 parser.add_argument('--gens', default=1, type=int, nargs='?', help='number of generations')
 parser.add_argument('--crossover_prob', default=0.5, type=float, nargs='?', help='probability of crossover')
-
 parser.add_argument('--verbose', default='False', choices=['True', 'False'], nargs='?', help='to print progress or not')
+parser.add_argument('--version', default='1', choices=['1', '2'], nargs='?', help='the version of DEHB to run')
 
 args = parser.parse_args()
 args.verbose = True if args.verbose == 'True' else False
+
+if args.version == '1':
+    from optimizers import DEHBV1 as DEHB
+else:
+    from optimizers import DEHBV2 as DEHB
 
 if args.benchmark == "nas_cifar10a":
     min_budget = 4
@@ -105,7 +109,7 @@ if args.runs is None:
     json.dump(res, fh)
     fh.close()
 else:
-    for run_id in range(args.runs):
+    for run_id, _ in enumerate(range(args.runs), start=args.run_start):
         if args.verbose:
             print("\nRun #{:<3}\n{}".format(run_id + 1, '-' * 8))
         traj, runtime = dehb.run(iterations=args.n_iters, verbose=args.verbose)

@@ -10,7 +10,7 @@ from tabular_benchmarks import FCNetProteinStructureBenchmark, FCNetSliceLocaliz
     FCNetNavalPropulsionBenchmark, FCNetParkinsonsTelemonitoringBenchmark
 from tabular_benchmarks import NASCifar10A, NASCifar10B, NASCifar10C
 
-from optimizers.de import DE
+from optimizers import DE
 
 
 def remove_invalid_configs(traj, runtime):
@@ -22,6 +22,7 @@ def remove_invalid_configs(traj, runtime):
 parser = argparse.ArgumentParser()
 parser.add_argument('--run_id', default=0, type=int, nargs='?', help='unique number to identify this run')
 parser.add_argument('--runs', default=None, type=int, nargs='?', help='number of runs to perform')
+parser.add_argument('--run_start', default=0, type=int, nargs='?', help='run index to start with for multiple runs')
 parser.add_argument('--benchmark', default="protein_structure",
                     choices=["protein_structure", "slice_localization", "naval_propulsion",
                              "parkinsons_telemonitoring", "nas_cifar10a", "nas_cifar10b", "nas_cifar10c"],
@@ -89,7 +90,7 @@ if args.runs is None:
     json.dump(res, fh)
     fh.close()
 else:
-    for run_id in range(args.runs):
+    for run_id, _ in enumerate(range(args.runs), start=args.run_start):
         if args.verbose:
             print("\nRun #{:<3}\n{}".format(run_id + 1, '-' * 8))
         traj, runtime = de.run(iterations=args.n_iters, verbose=args.verbose)

@@ -129,7 +129,7 @@ class DE(DEBase):
         '''Creates new population of 'pop_size' and evaluates individuals.
         '''
         self.population = self.init_population(self.pop_size)
-        self.fitness = [np.inf for i in range(self.pop_size)]
+        self.fitness = np.array([np.inf for i in range(self.pop_size)])
 
         traj = []
         runtime = []
