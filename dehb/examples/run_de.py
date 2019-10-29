@@ -76,8 +76,9 @@ dimensions = len(cs.get_hyperparameters())
 output_path = os.path.join(args.output_path, "de")
 os.makedirs(output_path, exist_ok=True)
 
-de = DE(b=b, cs=cs, dimensions=dimensions, pop_size=args.pop_size, mutation_factor=args.mutation_factor,
-            crossover_prob=args.crossover_prob, strategy=args.strategy, max_budget=args.max_budget)
+de = DE(b=b, cs=cs, dimensions=dimensions, pop_size=args.pop_size,
+        mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
+        strategy=args.strategy, max_budget=args.max_budget)
 
 if args.runs is None:
     traj, runtime = de.run(iterations=args.n_iters, verbose=args.verbose)
@@ -85,8 +86,8 @@ if args.runs is None:
         traj, runtime = remove_invalid_configs(traj, runtime)
     res = {}
     res['runtime'] = np.cumsum(runtime).tolist()
-    res['regret_validation'] = np.array(1 - traj).tolist()
-    fh = open(os.path.join(output_path, 'run_%d.json' % args.run_id), 'w')
+    res['regret_validation'] = np.array(traj - y_star_valid).tolist()
+    fh = open(os.path.join(output_path, 'run_{}.json'.format(args.run_id)), 'w')
     json.dump(res, fh)
     fh.close()
 else:
@@ -98,9 +99,10 @@ else:
             traj, runtime = remove_invalid_configs(traj, runtime)
         res = {}
         res['runtime'] = np.cumsum(runtime).tolist()
-        res['regret_validation'] = np.array(1 - traj).tolist()
-        fh = open(os.path.join(output_path, 'run_%d.json' % run_id), 'w')
+        res['regret_validation'] = np.array(traj - y_star_valid).tolist()
+        fh = open(os.path.join(output_path, 'run_{}.json'.format(run_id)), 'w')
         json.dump(res, fh)
         fh.close()
         print("Run saved. Resetting...")
+        de.reset()
         b.reset_tracker()

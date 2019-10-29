@@ -40,7 +40,6 @@ marker=['x', '^', 'D', 'o', 's', 'h', '*', 'v', '<', ">"]
 linestyles = ['-', '--', '-.', ':']
 
 
-
 def fill_trajectory(performance_list, time_list, replace_nan=np.NaN):
     frame_dict = collections.OrderedDict()
     counter = np.arange(0, len(performance_list))
@@ -50,12 +49,15 @@ def fill_trajectory(performance_list, time_list, replace_nan=np.NaN):
                              (c, len(p), len(t)))
         frame_dict[str(c)] = pd.Series(data=p, index=t)
 
+    # creates a dataframe where the rows are indexed based on time
+    # fills with NA for missing values for the respective timesteps
     merged = pd.DataFrame(frame_dict)
+    # ffill() acts like a fillna() wherein a forward fill happens
+    # only remaining NAs for in the beginning until a value is recorded
     merged = merged.ffill()
 
-
-    performance = merged.get_values()
-    time_ = merged.index.values
+    performance = merged.get_values()  # converts to a 2D numpy array
+    time_ = merged.index.values        # retrieves the timestamps
 
     performance[np.isnan(performance)] = replace_nan
 
@@ -74,106 +76,91 @@ parser.add_argument('--path', default='./', type=str, nargs='?', help='path to e
 parser.add_argument('--n_runs', default=10, type=int, nargs='?', help='number of runs to plot data for')
 parser.add_argument('--output_path', default="./", type=str, nargs='?',
                     help='specifies the path where the plot will be saved')
-parser.add_argument('--type', default="test", type=str, choices=["test", "validation"], help='to plot test/validation regret')
+parser.add_argument('--type', default="wallclock", type=str, choices=["wallclock", "fevals"], help='to plot for wallclock times or # function evaluations')
 parser.add_argument('--name', default="comparison", type=str, help='file name for the PNG plot to be saved')
+parser.add_argument('--title', default="benchmark", type=str, help='title name for the plot')
 
 args = parser.parse_args()
-print(args)
-
-# path = "/home/kleinaa/experiments/nas_benchmark/nas_cifar10/comparison_nas_cifar10a/"
-path = args.path # "/home/kleinaa/experiments/nas_benchmark/final_nasbench101/encoding_cs_a/"
-
+path = args.path
 n_runs = args.n_runs
-
-# CIFAR A
-# methods = ["bohb/final", "re/final", "hyperband", "random_search", "tpe", "de_gen1_cifarc", "dehb_evolve_0"]
-# labels = ["BOHB", "RE", "HB", "RS", "TPE", "DE", "DEHB"]
-
-# methods = ["bohb/final", "re/final", "de_gen1_cifarc", "dehb_final_old", "dehb_final_evolve", "dehb_final_dehbde_0.25", "dehb_final_dehbde_0.1"]
-# labels = ["BOHB", "RE", "DE", "DEHB Old", "DEHB Evolve", "DEHB-DE 25\%", "DEHB-DE 10\%"]
-
-# CIFAR C
-# methods = ["bohb/hyperopt/min_bandwidth_0.6/bohb", "regularized_evolution", "hyperband",  "random_search", "tpe", "de_gen1_cifarc", "dehb_evolve_0"]
-# labels = ["BOHB", "RE", "HB", "RS", "TPE", "DE", "DEHB"] #  "DE", "DEHB (dynamic)", "DEHB (fixed)"]
-
-# methods = ["bohb/hyperopt/min_bandwidth_0.6/bohb", "regularized_evolution", "de_gen1_cifarc", "dehb_final_old",
-#            "dehb_final_evolve", "dehb_final_dehbde_0.25", "dehb_final_dehbde_0.1"]
-# labels = ["BOHB", "RE", "DE", "DEHB Old", "DEHB Evolve", "DEHB-DE 25\%", "DEHB-DE 10\%"]
-
-# Protein
-methods = ["bohb", "regularized_evolution", "hyperband", "random_search", "tpe", "de", "dehb_final_old",
-           "dehb_final_evolve", "dehb_final_dehbde_0.25", "dehb_final_dehbde_0.1"]
-labels = ["BOHB", "RE", "HB", "RS", "TPE", "DE", "DEHB Old", "DEHB Evolve", "DEHB-DE 25\%", "DEHB-DE 10\%"]
-
-methods = ["de", "dehb_final_dehbde_0.25", "dehb_final_dehbde_0.1", "dehb_final_dehbde_0"]
-labels = ["DE", "DEHB-DE 25\%", "DEHB-DE 10\%", "DEHB-DE 0\%"]
-
-# Slice
-# methods = ["bohb", "regularized_evolution", "hyperband", "random_search", "tpe", "de_200r_100i", "dehb_final_old",
-#            "dehb_final_evolve", "dehb_final_dehbde_0.25", "dehb_final_dehbde_0.1"]
-# labels = ["BOHB", "RE", "HB", "RS", "TPE", "DE", "DEHB Old", "DEHB Evolve", "DEHB-DE 25\%", "DEHB-DE 10\%"]
-#
-# # Naval
-# methods = ["bohb", "regularized_evolution", "hyperband", "random_search", "tpe", "de", "dehb_final_old",
-#            "dehb_final_evolve", "dehb_final_dehbde_0.25", "dehb_final_dehbde_0.1"]
-# labels = ["BOHB", "RE", "HB", "RS", "TPE", "DE", "DEHB Old", "DEHB Evolve", "DEHB-DE 25\%", "DEHB-DE 10\%"]
-#
-# # Parkinsons
-# methods = ["bohb", "regularized_evolution", "hyperband", "random_search", "tpe", "de", "dehb_final_old",
-#            "dehb_final_dehbde_0.25", "dehb_final_dehbde_0.1"]
-# labels = ["BOHB", "RE", "HB", "RS", "TPE", "DE", "DEHB Old", "DEHB-DE 25\%", "DEHB-DE 10\%"]
-
-colors = ["C%d" % i for i in range(len(methods))]
-plot_type = "regret_test" if args.type == 'test' else "regret_validation"
-plot_y_axis = "test regret" if args.type == 'test' else "validation regret"
+plot_type = args.type
 plot_name = args.name
 
-plt.clf()
-for index, m in enumerate(methods):
+methods = [("bohb", "BOHB"),
+        ("regularized_evolution", "RE"),
+        ("hyperband", "HB"),
+        ("random_search", "RS"),
+        ("tpe", "TPE"),
+        ("de", "DE"),
+        ("dehb_v1", "DEHB V1"),
+        ("dehb_v2", "DEHB V2")]
 
+# plot limits
+max_time = 0
+min_regret = 1
+max_regret = 0
+
+# plot setup
+colors = ["C%d" % i for i in range(len(methods))]
+plt.clf()
+
+# looping and plotting for all methods
+for index, (m, label) in enumerate(methods):
     regret = []
     runtimes = []
     for k, i in enumerate(np.arange(n_runs)):
         try:
             res = json.load(open(os.path.join(path, m, "run_%d.json" % i)))
+            no_runs_found = False
         except Exception as e:
             print(m, i, e)
+            no_runs_found = True
             continue
-        _, idx = np.unique(res[plot_type], return_index=True)
+        _, idx = np.unique(res['regret_validation'], return_index=True)
         idx.sort()
-
-        regret.append(np.array(res[plot_type])[idx])
+        regret.append(np.array(res['regret_validation'])[idx])
         runtimes.append(np.array(res["runtime"])[idx])
 
-    t = np.max([runtimes[i][0] for i in range(len(runtimes))])
-    te, time = fill_trajectory(regret, runtimes, replace_nan=1)
+    if not no_runs_found:
+        # finds the latest time where the first measurement was made across runs
+        t = np.max([runtimes[i][0] for i in range(len(runtimes))])
+        te, time = fill_trajectory(regret, runtimes, replace_nan=1)
 
-    idx = time.tolist().index(t)
-    te = te[idx:, :]
-    time = time[idx:]
+        idx = time.tolist().index(t)
+        te = te[idx:, :]
+        time = time[idx:]
 
-    idx = np.where(time < 1e7)[0]
-    print("{}. Plotting for {}".format(index, m))
-    plt.plot(time[idx], np.mean(te.T, axis=0)[idx], color=colors[index],
-             linewidth=4, label=labels[index], linestyle=linestyles[index % len(linestyles)],
-             marker=marker[index % len(marker)], markevery=(0.1,0.1), markersize=15)
+        # Clips off all measurements after 10^7s
+        idx = np.where(time < 1e7)[0]
+
+        print("{}. Plotting for {}".format(index, m))
+        # The mean plot
+        plt.plot(time[idx], np.mean(te, axis=1)[idx], color=colors[index],
+                 linewidth=4, label=label, linestyle=linestyles[index % len(linestyles)],
+                 marker=marker[index % len(marker)], markevery=(0.1,0.1), markersize=15)
+        # The error band
+        plt.fill_between(time[idx],
+                         np.mean(te, axis=1)[idx] + 2 * stats.sem(te[idx], axis=1),
+                         np.mean(te[idx], axis=1)[idx] - 2 * stats.sem(te[idx], axis=1),
+                         color="C%d" % i, alpha=0.2)
+
+        # Stats to dynamically impose limits on the axes of the plots
+        max_time = max(max_time, time[idx][-1])
+        min_regret = min(min_regret, np.mean(te, axis=1)[idx][-1])
+        max_regret = max(max_regret, np.mean(te, axis=1)[idx][0])
 
 plt.xscale("log")
 plt.yscale("log")
-# plt.tick_params(axis='x', which='minor')
 plt.tick_params(which='both', direction="in")
-# plt.legend(loc=0, fontsize=35, ncol=1)
 plt.legend(loc='upper right', framealpha=1, prop={'size': 15})
-# plt.title("NAS-CIFAR10", fontsize=50)
-# plt.xlabel("estimated wall-clock time (seconds)", fontsize=50)
-# plt.ylabel(plot_y_axis, fontsize=50)
-plt.xlabel("wall clock time $[s]$", fontsize=50)
+plt.title(args.title)
+if plot_type == "wallclock":
+    plt.xlabel("wall clock time $[s]$", fontsize=50)
+elif plot_type == "fevals":
+    plt.xlabel("number of function evaluations", fontsize=50)
 plt.ylabel("regret", fontsize=50)
-# plt.xlim(1e1, 2e7)
-plt.xlim(1e0, 2e7)  # naval, parkinsons
-# plt.ylim(1e-5, 1-1)  # slice
-plt.ylim(1e-6, 1-1)  # naval, parkinsons
-# plt.ylim(1e-3, 1-1)
+plt.xlim(1e0, max_time)
+plt.ylim(min_regret, max_regret)
 plt.grid(which='both', alpha=0.5, linewidth=0.5)
 print(os.path.join(args.output_path, '{}.png'.format(plot_name)))
 plt.savefig(os.path.join(args.output_path, '{}.png'.format(plot_name)), bbox_inches='tight', dpi=300)

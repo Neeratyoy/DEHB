@@ -48,6 +48,11 @@ class DEHBBase():
         self.inc_score = np.inf
         self.inc_config = None
 
+    def reset(self):
+        self.inc_score = np.inf
+        self.inc_config = None
+        self.population = None
+
     def init_population(self, pop_size=10):
         population = np.random.uniform(low=0.0, high=1.0, size=(pop_size, self.dimensions))
         return population
@@ -173,11 +178,12 @@ class DEHBV2(DEHBBase):
     '''Version 2 of DEHB
 
     Only the first DEHB iteration is initialized with a new random population.
-
     In each of the DEHB iteration, Successive Halving (SH) takes place where
         the number of SH iterations, budget spacing, number of configurations,
         are determined dynamically based on the iteration number.
         The top performing individuals are carried forward to the next higher budget.
+    Each SH iteration in each DEHB iteration is evolved for only one generation,
+        using the best individuals from the evolved population from iteration 1.
     '''
     def __init__(self, b=None, cs=None, dimensions=None, mutation_factor=None,
                  crossover_prob=None, strategy=None, min_budget=None, max_budget=None,
@@ -239,7 +245,7 @@ class DEHBV2(DEHBBase):
 
             # Successive Halving iterations carrying out DE
             for i_sh in range(num_SH_iters):
-                print(pop_size, budget)
+                #print(pop_size, budget)
                 # Repeating DE over entire population to create generations
                 for gen in range(self.generations):
                     # DE sweep : Evolving the population for a single generation

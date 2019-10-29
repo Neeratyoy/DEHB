@@ -37,6 +37,7 @@ parser.add_argument('--gens', default=1, type=int, nargs='?', help='number of ge
 parser.add_argument('--crossover_prob', default=0.5, type=float, nargs='?', help='probability of crossover')
 parser.add_argument('--verbose', default='False', choices=['True', 'False'], nargs='?', help='to print progress or not')
 parser.add_argument('--version', default='1', choices=['1', '2'], nargs='?', help='the version of DEHB to run')
+parser.add_argument('--folder', default='dehb', type=str, nargs='?', help='name of folder where files will be dumped')
 
 args = parser.parse_args()
 args.verbose = True if args.verbose == 'True' else False
@@ -49,19 +50,19 @@ else:
 if args.benchmark == "nas_cifar10a":
     min_budget = 4
     max_budget = 108
-    b = NASCifar10A(data_dir=args.data_dir, multi_fidelity=False)
+    b = NASCifar10A(data_dir=args.data_dir, multi_fidelity=True)
     y_star_valid = b.y_star_valid
 
 elif args.benchmark == "nas_cifar10b":
     min_budget = 4
     max_budget = 108
-    b = NASCifar10B(data_dir=args.data_dir, multi_fidelity=False)
+    b = NASCifar10B(data_dir=args.data_dir, multi_fidelity=True)
     y_star_valid = b.y_star_valid
 
 elif args.benchmark == "nas_cifar10c":
     min_budget = 4
     max_budget = 108
-    b = NASCifar10C(data_dir=args.data_dir, multi_fidelity=False)
+    b = NASCifar10C(data_dir=args.data_dir, multi_fidelity=True)
     y_star_valid = b.y_star_valid
 
 elif args.benchmark == "protein_structure":
@@ -91,7 +92,7 @@ elif args.benchmark == "parkinsons_telemonitoring":
 cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
 
-output_path = os.path.join(args.output_path, "dehb")
+output_path = os.path.join(args.output_path, args.folder)
 os.makedirs(output_path, exist_ok=True)
 
 dehb = DEHB(b=b, cs=cs, dimensions=dimensions, mutation_factor=args.mutation_factor,
@@ -104,8 +105,8 @@ if args.runs is None:
         traj, runtime = remove_invalid_configs(traj, runtime)
     res = {}
     res['runtime'] = np.cumsum(runtime).tolist()
-    res['regret_validation'] = np.array(1 - traj).tolist()
-    fh = open(os.path.join(output_path, 'run_%d.json' % args.run_id), 'w')
+    res['regret_validation'] = np.array(traj - y_star_valid).tolist()
+    fh = open(os.path.join(output_path, 'run_{}.json'.format(args.run_id)), 'w')
     json.dump(res, fh)
     fh.close()
 else:
@@ -117,9 +118,10 @@ else:
             traj, runtime = remove_invalid_configs(traj, runtime)
         res = {}
         res['runtime'] = np.cumsum(runtime).tolist()
-        res['regret_validation'] = np.array(1 - traj).tolist()
-        fh = open(os.path.join(output_path, 'run_%d.json' % run_id), 'w')
+        res['regret_validation'] = np.array(traj - y_star_valid).tolist()
+        fh = open(os.path.join(output_path, 'run_{}.json'.format(run_id)), 'w')
         json.dump(res, fh)
         fh.close()
         print("Run saved. Resetting...")
+        dehb.reset()
         b.reset_tracker()
