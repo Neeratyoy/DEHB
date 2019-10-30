@@ -136,7 +136,7 @@ class DEHBV1(DEHBBase):
             de.inc_score = self.inc_score
             de.inc_config = self.inc_config
             # creating new population for DEHB iteration to be used for the next SH steps
-            de_traj, de_runtime = de.init_eval_pop()
+            de_traj, de_runtime = de.init_eval_pop(budget)
             # update global incumbent with new population scores
             self.inc_score = de.inc_score
             self.inc_config = de.inc_config
@@ -219,7 +219,7 @@ class DEHBV2(DEHBBase):
             # The only time when a random population is initialized
             if iteration == 0:
                 # creating new population for DEHB iteration to be used for the next SH steps
-                de_traj, de_runtime = de.init_eval_pop()
+                de_traj, de_runtime = de.init_eval_pop(budget)
                 # maintaining global copy of random population created
                 self.population = de.population
                 self.fitness = de.fitness

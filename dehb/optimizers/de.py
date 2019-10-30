@@ -125,7 +125,7 @@ class DE(DEBase):
             fitness, cost = self.b.objective_function(config)
         return fitness, cost
 
-    def init_eval_pop(self):
+    def init_eval_pop(self, budget=None):
         '''Creates new population of 'pop_size' and evaluates individuals.
         '''
         self.population = self.init_population(self.pop_size)
@@ -135,7 +135,7 @@ class DE(DEBase):
         runtime = []
         for i in range(self.pop_size):
             config = self.population[i]
-            self.fitness[i], cost = self.f_objective(config)
+            self.fitness[i], cost = self.f_objective(config, budget)
             if self.fitness[i] < self.inc_score:
                 self.inc_score = self.fitness[i]
                 self.inc_config = config
