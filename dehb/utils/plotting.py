@@ -87,7 +87,7 @@ plot_type = args.type
 plot_name = args.name
 
 methods = [("bohb", "BOHB"),
-        ("regularized_evolution", "RE"),
+        ("re", "RE"),
         ("hyperband", "HB"),
         ("random_search", "RS"),
         ("tpe", "TPE"),
