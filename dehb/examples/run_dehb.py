@@ -17,6 +17,15 @@ def remove_invalid_configs(traj, runtime):
     traj = np.delete(np.array(traj), idx)
     return traj, runtime
 
+def save(trajectory, runtime, path, run_id, filename="run"):
+    global y_star_valid
+    res = {}
+    res['runtime'] = np.cumsum(runtime).tolist()
+    res['regret_validation'] = np.array(traj - y_star_valid).tolist()
+    fh = open(os.path.join(output_path, '{}_{}.json'.format(filename, run_id)), 'w')
+    json.dump(res, fh)
+    fh.close()
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--run_id', default=0, type=int, nargs='?', help='unique number to identify this run')
 parser.add_argument('--runs', default=None, type=int, nargs='?', help='number of runs to perform')
@@ -101,27 +110,19 @@ dehb = DEHB(b=b, cs=cs, dimensions=dimensions, mutation_factor=args.mutation_fac
 
 if args.runs is None:
     traj, runtime = dehb.run(iterations=args.n_iters, verbose=args.verbose)
+    save(traj, runtime, output_path, args.run_id, filename="raw_run")
     if 'cifar' in args.benchmark:
         traj, runtime = remove_invalid_configs(traj, runtime)
-    res = {}
-    res['runtime'] = np.cumsum(runtime).tolist()
-    res['regret_validation'] = np.array(traj - y_star_valid).tolist()
-    fh = open(os.path.join(output_path, 'run_{}.json'.format(args.run_id)), 'w')
-    json.dump(res, fh)
-    fh.close()
+    save(traj, runtime, output_path, args.run_id)
 else:
     for run_id, _ in enumerate(range(args.runs), start=args.run_start):
         if args.verbose:
             print("\nRun #{:<3}\n{}".format(run_id + 1, '-' * 8))
         traj, runtime = dehb.run(iterations=args.n_iters, verbose=args.verbose)
+        save(traj, runtime, output_path, run_id, filename="raw_run")
         if 'cifar' in args.benchmark:
             traj, runtime = remove_invalid_configs(traj, runtime)
-        res = {}
-        res['runtime'] = np.cumsum(runtime).tolist()
-        res['regret_validation'] = np.array(traj - y_star_valid).tolist()
-        fh = open(os.path.join(output_path, 'run_{}.json'.format(run_id)), 'w')
-        json.dump(res, fh)
-        fh.close()
+        save(traj, runtime, output_path, run_id)
         print("Run saved. Resetting...")
         dehb.reset()
         b.reset_tracker()
