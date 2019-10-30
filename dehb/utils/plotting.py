@@ -142,7 +142,7 @@ for index, (m, label) in enumerate(methods):
         plt.fill_between(time[idx],
                          np.mean(te, axis=1)[idx] + 2 * stats.sem(te[idx], axis=1),
                          np.mean(te[idx], axis=1)[idx] - 2 * stats.sem(te[idx], axis=1),
-                         color="C%d" % i, alpha=0.2)
+                         color="C%d" % index, alpha=0.2)
 
         # Stats to dynamically impose limits on the axes of the plots
         max_time = max(max_time, time[idx][-1])
