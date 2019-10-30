@@ -96,6 +96,7 @@ methods = [("bohb", "BOHB"),
         ("dehb_v2", "DEHB V2")]
 
 # plot limits
+min_time = np.inf
 max_time = 0
 min_regret = 1
 max_regret = 0
@@ -124,6 +125,7 @@ for index, (m, label) in enumerate(methods):
     if not no_runs_found:
         # finds the latest time where the first measurement was made across runs
         t = np.max([runtimes[i][0] for i in range(len(runtimes))])
+        min_time = min(min_time, t)
         te, time = fill_trajectory(regret, runtimes, replace_nan=1)
 
         idx = time.tolist().index(t)
@@ -159,7 +161,7 @@ if plot_type == "wallclock":
 elif plot_type == "fevals":
     plt.xlabel("number of function evaluations", fontsize=50)
 plt.ylabel("regret", fontsize=50)
-plt.xlim(1e0, max_time)
+plt.xlim(max(min_time/10, 1e0), min(max_time*10, 1e7))
 plt.ylim(min_regret, max_regret)
 plt.grid(which='both', alpha=0.5, linewidth=0.5)
 print(os.path.join(args.output_path, '{}.png'.format(plot_name)))
