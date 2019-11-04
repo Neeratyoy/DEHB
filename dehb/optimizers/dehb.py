@@ -250,7 +250,7 @@ class DEHBV2(DEHBBase):
                 num_replace = np.ceil(self.randomize * pop_size).astype(int)
                 # fetching the worst performing individuals
                 idxs = np.sort(np.argsort(-self.fitness)[:num_replace])
-                print("Replacing {}/{} -- {}".format(num_replace, pop_size, idxs))
+                # print("Replacing {}/{} -- {}".format(num_replace, pop_size, idxs))
                 new_pop = self.init_population(pop_size=num_replace)
                 self.population[idxs] = new_pop
                 # evaluating new individuals
@@ -272,7 +272,7 @@ class DEHBV2(DEHBBase):
 
             # Successive Halving iterations carrying out DE
             for i_sh in range(num_SH_iters):
-                print(i_sh, self.rank)
+                # print(i_sh, self.rank)
                 # Repeating DE over entire population 'generations' times
                 for gen in range(self.generations):
                     # DE sweep : Evolving the population for a single generation
