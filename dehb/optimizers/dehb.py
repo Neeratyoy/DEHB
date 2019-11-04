@@ -135,13 +135,24 @@ class DEHBV1(DEHBBase):
             # warmstarting DE incumbent to be the global incumbent
             de.inc_score = self.inc_score
             de.inc_config = self.inc_config
-            # creating new population for DEHB iteration to be used for the next SH steps
+            # creating new population for current DEHB iteration
             de_traj, de_runtime = de.init_eval_pop(budget)
-            # update global incumbent with new population scores
-            self.inc_score = de.inc_score
-            self.inc_config = de.inc_config
             traj.extend(de_traj)
             runtime.extend(de_runtime)
+
+            if all(de.inc_config == self.inc_config):
+                # if new population has no better individual, randomly
+                # replace an individual with the incumbent so far
+                idx = np.random.choice(np.arange(len(de.population)))
+                # print(de.fitness[idx])
+                de.population[idx] = self.inc_config
+                de.fitness[idx] = self.inc_score
+                # print(de.fitness[idx])
+            else:
+                # if new population has a better individual, replace
+                # global incumbent and fitness
+                self.inc_score = de.inc_score
+                self.inc_config = de.inc_config
 
             # Successive Halving iterations
             for i_sh in range(num_SH_iters):
@@ -157,15 +168,16 @@ class DEHBV1(DEHBBase):
                         runtime.append(cost)
 
                 # Ranking evolved population
-                de.population = de.population[np.argsort(de.fitness)]
-                de.fitness = np.sort(de.fitness)
+                # de.population = de.population[np.argsort(de.fitness)]
+                # de.fitness = np.sort(de.fitness)
 
                 if i_sh < num_SH_iters-1:  # when not final SH iteration
                     pop_size = num_configs[i_sh+1]
                     budget = budgets[i_sh+1]
                     # Selecting top individuals to fit pop_size of next SH iteration
-                    de.population = de.population[:pop_size]
-                    de.fitness = de.fitness[:pop_size]
+                    self.rank = np.argsort(de.fitness)[:pop_size]
+                    de.population = de.population[self.rank]
+                    de.fitness = de.fitness[self.rank]
                     de.pop_size = pop_size
 
         if verbose:
@@ -229,23 +241,25 @@ class DEHBV2(DEHBBase):
                 traj.extend(de_traj)
                 runtime.extend(de_runtime)
 
-            # When iteration index matches the highest number of configurations SH selects
-            # signifies repeat of the smallest budget, max configuration, SH iteration
-            if pop_size == len(self.population):
-                de.population = self.population
-                de.fitness = self.fitness
-            else:
-                # Ranking current population
-                rank = np.argsort(self.fitness)
-                # Passing to DE the best pop_size individuals from global population
-                de.population = self.population[rank[:pop_size]]
-                de.fitness = np.array(self.fitness)[rank[:pop_size]]
+            # Ranking current population
+            self.rank = np.argsort(self.fitness)[:pop_size]
+            de.population = self.population[self.rank]
+            de.fitness = np.array(self.fitness)[self.rank]
+
+            # # When iteration index matches the highest number of configurations SH selects
+            # # signifies repeat of the smallest budget, max configuration, SH iteration
+            # if pop_size == len(self.population):
+            #     de.population = self.population
+            #     de.fitness = self.fitness
+            # else:
+            #     # Passing to DE the best pop_size individuals from global population
+            #     de.population = self.population[rank[:pop_size]]
+            #     de.fitness = np.array(self.fitness)[rank[:pop_size]]
 
             num_SH_iters = len(budgets)  # number of SH iterations in this DEHB iteration
 
             # Successive Halving iterations carrying out DE
             for i_sh in range(num_SH_iters):
-                #print(pop_size, budget)
                 # Repeating DE over entire population to create generations
                 for gen in range(self.generations):
                     # DE sweep : Evolving the population for a single generation
@@ -257,20 +271,24 @@ class DEHBV2(DEHBBase):
                         traj.append(self.inc_score)
                         runtime.append(cost)
 
-                # maintaining global copy of population and fitness
-                if pop_size == len(self.population) and i_sh == 0:
-                    self.population = de.population
-                    self.fitness = de.fitness
+                # Updating global population with evolved individuals
+                self.population[self.rank] = de.population
+                self.fitness[self.rank] = de.fitness
 
-                # Ranking evolved population
-                rank = np.argsort(de.fitness)
+                print(self.population.shape, self.fitness.shape, len(self.rank))
+
+                # # maintaining global copy of population and fitness
+                # if pop_size == len(self.population) and i_sh == 0:
+                #     self.population = de.population
+                #     self.fitness = de.fitness
 
                 if i_sh < num_SH_iters-1:  # when not final SH iteration
                     pop_size = num_configs[i_sh+1]
                     budget = budgets[i_sh+1]
                     # Selecting top individuals to fit pop_size of next SH iteration
-                    de.population = de.population[rank[:pop_size]]
-                    de.fitness = np.array(de.fitness)[rank[:pop_size]]
+                    self.rank = np.argsort(de.fitness)[:pop_size]
+                    de.population = de.population[self.rank]
+                    de.fitness = np.array(de.fitness)[self.rank]
                     de.pop_size = pop_size
 
         if verbose:
