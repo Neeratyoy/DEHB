@@ -41,6 +41,7 @@ parser.add_argument('--data_dir', default="../tabular_benchmarks", type=str, nar
                     help='specifies the path to the tabular data')
 parser.add_argument('--strategy', default="rand1_bin", type=str, nargs='?', help='type of mutation & crossover scheme')
 parser.add_argument('--eta', default=3, type=int, nargs='?', help='eta for Successive Halving')
+parser.add_argument('--clip', default=3, type=int, nargs='?', help='minimum number of configurations')
 parser.add_argument('--mutation_factor', default=0.5, type=float, nargs='?', help='mutation factor value')
 parser.add_argument('--gens', default=1, type=int, nargs='?', help='number of generations')
 parser.add_argument('--crossover_prob', default=0.5, type=float, nargs='?', help='probability of crossover')

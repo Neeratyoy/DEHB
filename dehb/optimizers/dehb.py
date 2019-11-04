@@ -9,7 +9,7 @@ from optimizers.de import DE
 class DEHBBase():
     def __init__(self, b=None, cs=None, dimensions=None, mutation_factor=None,
                  crossover_prob=None, strategy='rand1_bin', generations=None, min_budget=None,
-                 max_budget=None, eta=None, **kwargs):
+                 max_budget=None, eta=None, clip=3, **kwargs):
         # Benchmark related variables
         self.b = b
         self.cs = self.b.get_configuration_space() if cs is None and b is not None else cs
@@ -28,6 +28,7 @@ class DEHBBase():
         self.min_budget = min_budget
         self.max_budget = max_budget
         self.eta = eta
+        self.clip = clip
 
         # Precomputing budget spacing and number of configurations for HB iterations
         self.max_SH_iter = None
@@ -106,10 +107,10 @@ class DEHBV1(DEHBBase):
     '''
     def __init__(self, b=None, cs=None, dimensions=None, mutation_factor=None,
                  crossover_prob=None, strategy=None, min_budget=None, max_budget=None,
-                 eta=None, generations=None, **kwargs):
+                 eta=None, generations=None, clip=3, **kwargs):
         super().__init__(b=b, cs=cs, dimensions=dimensions, mutation_factor=mutation_factor,
                          crossover_prob=crossover_prob, strategy=strategy, min_budget=min_budget,
-                         max_budget=max_budget, eta=eta, generations=generations)
+                         max_budget=max_budget, eta=eta, generations=generations, clip=clip)
 
     def run(self, iterations=100, verbose=True):
         # Book-keeping variables
@@ -118,7 +119,7 @@ class DEHBV1(DEHBBase):
         # Performs DEHB iterations
         for iteration in range(iterations):
             # Retrieves SH budgets and number of configurations
-            num_configs, budgets = self.get_next_iteration(iteration=iteration, clip=3)
+            num_configs, budgets = self.get_next_iteration(iteration=iteration, clip=self.clip)
             if verbose:
                 print('Iteration #{:>3}\n{}'.format(iteration, '-' * 15))
                 print(num_configs, budgets, self.inc_score)
@@ -126,37 +127,37 @@ class DEHBV1(DEHBBase):
             # Sets budget and population size for first SH iteration
             pop_size = num_configs[0]
             budget = budgets[0]
-
-            num_SH_iters = len(budgets)  # number of SH iterations in this DEHB iteration
-
+            # Number of SH iterations in this DEHB iteration
+            num_SH_iters = len(budgets)
+            # Initializing DE object that will be used across this DEHB iteration
+            # The DE object is initialized with the current pop_size and budget
             de = DE(b=self.b, cs=self.cs, dimensions=self.dimensions, pop_size=pop_size,
                     mutation_factor=self.mutation_factor, crossover_prob=self.crossover_prob,
                     strategy=self.strategy, budget=budget)
-            # warmstarting DE incumbent to be the global incumbent
+            # Warmstarting DE incumbent to be the global incumbent
             de.inc_score = self.inc_score
             de.inc_config = self.inc_config
-            # creating new population for current DEHB iteration
+            # Creating new population for current DEHB iteration
             de_traj, de_runtime = de.init_eval_pop(budget)
             traj.extend(de_traj)
             runtime.extend(de_runtime)
 
+            # Incorporating global incumbent into the DE population
             if all(de.inc_config == self.inc_config):
                 # if new population has no better individual, randomly
                 # replace an individual with the incumbent so far
                 idx = np.random.choice(np.arange(len(de.population)))
-                # print(de.fitness[idx])
                 de.population[idx] = self.inc_config
                 de.fitness[idx] = self.inc_score
-                # print(de.fitness[idx])
             else:
-                # if new population has a better individual, replace
-                # global incumbent and fitness
+                # if new population has a better individual, update
+                # the global incumbent and fitness
                 self.inc_score = de.inc_score
                 self.inc_config = de.inc_config
 
             # Successive Halving iterations
             for i_sh in range(num_SH_iters):
-                # Repeating DE over entire population to create generations
+                # Repeating DE over entire population 'generations' times
                 for gen in range(self.generations):
                     # DE sweep : Evolving the population for a single generation
                     for j in range(pop_size):
@@ -167,13 +168,10 @@ class DEHBV1(DEHBBase):
                         traj.append(self.inc_score)
                         runtime.append(cost)
 
-                # Ranking evolved population
-                # de.population = de.population[np.argsort(de.fitness)]
-                # de.fitness = np.sort(de.fitness)
-
-                if i_sh < num_SH_iters-1:  # when not final SH iteration
-                    pop_size = num_configs[i_sh+1]
-                    budget = budgets[i_sh+1]
+                # Retrieving budget, pop_size, population for the next SH iteration
+                if i_sh < num_SH_iters - 1:  # when not final SH iteration
+                    pop_size = num_configs[i_sh + 1]
+                    budget = budgets[i_sh + 1]
                     # Selecting top individuals to fit pop_size of next SH iteration
                     self.rank = np.argsort(de.fitness)[:pop_size]
                     de.population = de.population[self.rank]
@@ -195,14 +193,15 @@ class DEHBV2(DEHBBase):
         are determined dynamically based on the iteration number.
         The top performing individuals are carried forward to the next higher budget.
     Each SH iteration in each DEHB iteration is evolved for only one generation,
-        using the best individuals from the evolved population from iteration 1.
+        using the best individuals from the evolved population from previous iteration.
     '''
     def __init__(self, b=None, cs=None, dimensions=None, mutation_factor=None,
                  crossover_prob=None, strategy=None, min_budget=None, max_budget=None,
-                 eta=None, generations=None, **kwargs):
+                 eta=None, generations=None, clip=3, **kwargs):
         super().__init__(b=b, cs=cs, dimensions=dimensions, mutation_factor=mutation_factor,
                          crossover_prob=crossover_prob, strategy=strategy, min_budget=min_budget,
-                         max_budget=max_budget, eta=eta, generations=generations)
+                         max_budget=max_budget, eta=eta, generations=generations, clip=clip)
+        # Fixing to 1 -- specific attribute of version 2 of DEHB
         self.generations = 1
 
     def run(self, iterations=100, verbose=True):
@@ -210,7 +209,8 @@ class DEHBV2(DEHBBase):
         traj = []
         runtime = []
 
-        num_configs, budgets = self.get_next_iteration(iteration=0, clip=3)
+        # To retrieve the maximal pop_size and initialize a single DE object for all DEHB runs
+        num_configs, budgets = self.get_next_iteration(iteration=0, clip=self.clip)
         de = DE(b=self.b, cs=self.cs, dimensions=self.dimensions, pop_size=num_configs[0],
                 mutation_factor=self.mutation_factor, crossover_prob=self.crossover_prob,
                 strategy=self.strategy, budget=budgets[0])
@@ -218,7 +218,7 @@ class DEHBV2(DEHBBase):
         # Performs DEHB iterations
         for iteration in range(iterations):
             # Retrieves SH budgets and number of configurations
-            num_configs, budgets = self.get_next_iteration(iteration=iteration, clip=3)
+            num_configs, budgets = self.get_next_iteration(iteration=iteration, clip=self.clip)
             if verbose:
                 print('Iteration #{:>3}\n{}'.format(iteration, '-' * 15))
                 print(num_configs, budgets, self.inc_score)
@@ -226,9 +226,10 @@ class DEHBV2(DEHBBase):
             # Sets budget and population size for first SH iteration
             pop_size = num_configs[0]
             budget = budgets[0]
+            # Number of SH iterations in this DEHB iteration
+            num_SH_iters = len(budgets)
 
-            # The very first DEHB iteration
-            # The only time when a random population is initialized
+            # The first DEHB iteration - only time when a random population is initialized
             if iteration == 0:
                 # creating new population for DEHB iteration to be used for the next SH steps
                 de_traj, de_runtime = de.init_eval_pop(budget)
@@ -242,25 +243,15 @@ class DEHBV2(DEHBBase):
                 runtime.extend(de_runtime)
 
             # Ranking current population
-            self.rank = np.argsort(self.fitness)[:pop_size]
+            self.rank = np.sort(np.argsort(self.fitness)[:pop_size])
+            # Passing onto DE-SH steps a subset of top individuals from global population
             de.population = self.population[self.rank]
             de.fitness = np.array(self.fitness)[self.rank]
 
-            # # When iteration index matches the highest number of configurations SH selects
-            # # signifies repeat of the smallest budget, max configuration, SH iteration
-            # if pop_size == len(self.population):
-            #     de.population = self.population
-            #     de.fitness = self.fitness
-            # else:
-            #     # Passing to DE the best pop_size individuals from global population
-            #     de.population = self.population[rank[:pop_size]]
-            #     de.fitness = np.array(self.fitness)[rank[:pop_size]]
-
-            num_SH_iters = len(budgets)  # number of SH iterations in this DEHB iteration
-
             # Successive Halving iterations carrying out DE
             for i_sh in range(num_SH_iters):
-                # Repeating DE over entire population to create generations
+                print(i_sh, self.rank)
+                # Repeating DE over entire population 'generations' times
                 for gen in range(self.generations):
                     # DE sweep : Evolving the population for a single generation
                     for j in range(pop_size):
@@ -275,20 +266,15 @@ class DEHBV2(DEHBBase):
                 self.population[self.rank] = de.population
                 self.fitness[self.rank] = de.fitness
 
-                print(self.population.shape, self.fitness.shape, len(self.rank))
-
-                # # maintaining global copy of population and fitness
-                # if pop_size == len(self.population) and i_sh == 0:
-                #     self.population = de.population
-                #     self.fitness = de.fitness
-
+                # Retrieving budget, pop_size, population for the next SH iteration
                 if i_sh < num_SH_iters-1:  # when not final SH iteration
                     pop_size = num_configs[i_sh+1]
                     budget = budgets[i_sh+1]
                     # Selecting top individuals to fit pop_size of next SH iteration
-                    self.rank = np.argsort(de.fitness)[:pop_size]
-                    de.population = de.population[self.rank]
-                    de.fitness = np.array(de.fitness)[self.rank]
+                    self.de_rank = np.sort(np.argsort(de.fitness)[:pop_size])
+                    self.rank = self.rank[self.de_rank]
+                    de.population = de.population[self.de_rank]
+                    de.fitness = np.array(de.fitness)[self.de_rank]
                     de.pop_size = pop_size
 
         if verbose:
