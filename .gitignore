@@ -4,3 +4,5 @@ dehb/examples/results/
 
 dehb/optimizers/__pycache__/
 
+dehb/examples/slurm*.out
+
