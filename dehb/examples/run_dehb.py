@@ -17,11 +17,13 @@ def remove_invalid_configs(traj, runtime):
     traj = np.delete(np.array(traj), idx)
     return traj, runtime
 
-def save(trajectory, runtime, path, run_id, filename="run"):
+def save(trajectory, runtime, path, run_id, filename="run", logger=None):
     global y_star_valid
     res = {}
     res['runtime'] = np.cumsum(runtime).tolist()
     res['regret_validation'] = np.array(traj - y_star_valid).tolist()
+    if logger is not None:
+        res['logger'] = logger
     fh = open(os.path.join(output_path, '{}_{}.json'.format(filename, run_id)), 'w')
     json.dump(res, fh)
     fh.close()
@@ -111,7 +113,7 @@ dehb = DEHB(b=b, cs=cs, dimensions=dimensions, mutation_factor=args.mutation_fac
 
 if args.runs is None:
     traj, runtime = dehb.run(iterations=args.n_iters, verbose=args.verbose)
-    save(traj, runtime, output_path, args.run_id, filename="raw_run")
+    save(traj, runtime, output_path, args.run_id, filename="raw_run", logger=self.logger)
     if 'cifar' in args.benchmark:
         traj, runtime = remove_invalid_configs(traj, runtime)
     save(traj, runtime, output_path, args.run_id)
@@ -120,7 +122,7 @@ else:
         if args.verbose:
             print("\nRun #{:<3}\n{}".format(run_id + 1, '-' * 8))
         traj, runtime = dehb.run(iterations=args.n_iters, verbose=args.verbose)
-        save(traj, runtime, output_path, run_id, filename="raw_run")
+        save(traj, runtime, output_path, run_id, filename="raw_run", logger=self.logger)
         if 'cifar' in args.benchmark:
             traj, runtime = remove_invalid_configs(traj, runtime)
         save(traj, runtime, output_path, run_id)

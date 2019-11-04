@@ -111,6 +111,7 @@ class DEHBV1(DEHBBase):
         super().__init__(b=b, cs=cs, dimensions=dimensions, mutation_factor=mutation_factor,
                          crossover_prob=crossover_prob, strategy=strategy, min_budget=min_budget,
                          max_budget=max_budget, eta=eta, generations=generations, clip=clip)
+        self.logger = []
 
     def run(self, iterations=100, verbose=True):
         # Book-keeping variables
@@ -165,6 +166,7 @@ class DEHBV1(DEHBBase):
                         if fitness < self.inc_score:
                             self.inc_score = fitness
                             self.inc_config = de.inc_config
+                            self.logger.append((iteration, self.inc_score, budget))
                         traj.append(self.inc_score)
                         runtime.append(cost)
 
@@ -173,7 +175,7 @@ class DEHBV1(DEHBBase):
                     pop_size = num_configs[i_sh + 1]
                     budget = budgets[i_sh + 1]
                     # Selecting top individuals to fit pop_size of next SH iteration
-                    self.rank = np.argsort(de.fitness)[:pop_size]
+                    self.rank = np.sort(np.argsort(de.fitness)[:pop_size])
                     de.population = de.population[self.rank]
                     de.fitness = de.fitness[self.rank]
                     de.pop_size = pop_size
@@ -197,10 +199,12 @@ class DEHBV2(DEHBBase):
     '''
     def __init__(self, b=None, cs=None, dimensions=None, mutation_factor=None,
                  crossover_prob=None, strategy=None, min_budget=None, max_budget=None,
-                 eta=None, generations=None, clip=3, **kwargs):
+                 eta=None, generations=None, clip=3, randomize=None, **kwargs):
         super().__init__(b=b, cs=cs, dimensions=dimensions, mutation_factor=mutation_factor,
                          crossover_prob=crossover_prob, strategy=strategy, min_budget=min_budget,
                          max_budget=max_budget, eta=eta, generations=generations, clip=clip)
+        self.randomize = randomize
+        self.logger = []
         # Fixing to 1 -- specific attribute of version 2 of DEHB
         self.generations = 1
 
@@ -241,6 +245,24 @@ class DEHBV2(DEHBBase):
                 self.inc_config = de.inc_config
                 traj.extend(de_traj)
                 runtime.extend(de_runtime)
+                self.logger.append((0, self.inc_score, budget))
+            elif self.randomize is not None and self.randomize != 0:
+                num_replace = np.ceil(self.randomize * pop_size).astype(int)
+                # fetching the worst performing individuals
+                idxs = np.sort(np.argsort(-self.fitness)[:num_replace])
+                print("Replacing {}/{} -- {}".format(num_replace, pop_size, idxs))
+                new_pop = self.init_population(pop_size=num_replace)
+                self.population[idxs] = new_pop
+                # evaluating new individuals
+                for i in idxs:
+                    fitness, cost = de.f_objective(self.population[i], budget)
+                    self.fitness[i] = fitness
+                    if self.fitness[i] < self.inc_score:
+                        self.inc_score = self.fitness[i]
+                        self.inc_config = self.population[i]
+                        self.logger.append((iteration, self.inc_score, budget))
+                    traj.append(self.inc_score)
+                    runtime.append(cost)
 
             # Ranking current population
             self.rank = np.sort(np.argsort(self.fitness)[:pop_size])
@@ -259,6 +281,7 @@ class DEHBV2(DEHBBase):
                         if fitness < self.inc_score:
                             self.inc_score = fitness
                             self.inc_config = de.inc_config
+                            self.logger.append((iteration, self.inc_score, budget))
                         traj.append(self.inc_score)
                         runtime.append(cost)
 
@@ -272,6 +295,7 @@ class DEHBV2(DEHBBase):
                     budget = budgets[i_sh+1]
                     # Selecting top individuals to fit pop_size of next SH iteration
                     self.de_rank = np.sort(np.argsort(de.fitness)[:pop_size])
+                    # Saving index of new DE population from the global population
                     self.rank = self.rank[self.de_rank]
                     de.population = de.population[self.de_rank]
                     de.fitness = np.array(de.fitness)[self.de_rank]
