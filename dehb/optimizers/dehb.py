@@ -166,7 +166,7 @@ class DEHBV1(DEHBBase):
                         if fitness < self.inc_score:
                             self.inc_score = fitness
                             self.inc_config = de.inc_config
-                            self.logger.append((iteration, self.inc_score, budget))
+                            self.logger.append((iteration, i_sh, gen, self.inc_score, int(budget)))
                         traj.append(self.inc_score)
                         runtime.append(cost)
 
@@ -245,7 +245,7 @@ class DEHBV2(DEHBBase):
                 self.inc_config = de.inc_config
                 traj.extend(de_traj)
                 runtime.extend(de_runtime)
-                self.logger.append((0, self.inc_score, budget))
+                self.logger.append((0, 0, 0, self.inc_score, int(budget)))
             elif self.randomize is not None and self.randomize != 0:
                 num_replace = np.ceil(self.randomize * pop_size).astype(int)
                 # fetching the worst performing individuals
@@ -260,7 +260,7 @@ class DEHBV2(DEHBBase):
                     if self.fitness[i] < self.inc_score:
                         self.inc_score = self.fitness[i]
                         self.inc_config = self.population[i]
-                        self.logger.append((iteration, self.inc_score, budget))
+                        self.logger.append((iteration, i_sh, gen, self.inc_score, int(budget)))
                     traj.append(self.inc_score)
                     runtime.append(cost)
 
@@ -281,7 +281,7 @@ class DEHBV2(DEHBBase):
                         if fitness < self.inc_score:
                             self.inc_score = fitness
                             self.inc_config = de.inc_config
-                            self.logger.append((iteration, self.inc_score, budget))
+                            self.logger.append((iteration, i_sh, gen, self.inc_score, int(budget)))
                         traj.append(self.inc_score)
                         runtime.append(cost)
 
