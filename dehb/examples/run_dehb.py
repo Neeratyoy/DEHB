@@ -113,7 +113,7 @@ dehb = DEHB(b=b, cs=cs, dimensions=dimensions, mutation_factor=args.mutation_fac
 
 if args.runs is None:
     traj, runtime = dehb.run(iterations=args.n_iters, verbose=args.verbose)
-    save(traj, runtime, output_path, args.run_id, filename="raw_run", logger=self.logger)
+    save(traj, runtime, output_path, args.run_id, filename="raw_run", logger=dehb.logger)
     if 'cifar' in args.benchmark:
         traj, runtime = remove_invalid_configs(traj, runtime)
     save(traj, runtime, output_path, args.run_id)
@@ -122,7 +122,7 @@ else:
         if args.verbose:
             print("\nRun #{:<3}\n{}".format(run_id + 1, '-' * 8))
         traj, runtime = dehb.run(iterations=args.n_iters, verbose=args.verbose)
-        save(traj, runtime, output_path, run_id, filename="raw_run", logger=self.logger)
+        save(traj, runtime, output_path, run_id, filename="raw_run", logger=dehb.logger)
         if 'cifar' in args.benchmark:
             traj, runtime = remove_invalid_configs(traj, runtime)
         save(traj, runtime, output_path, run_id)
