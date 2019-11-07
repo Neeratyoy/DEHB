@@ -113,6 +113,10 @@ class DEHBV1(DEHBBase):
                          max_budget=max_budget, eta=eta, generations=generations, clip=clip)
         self.logger = []
 
+    def reset(self):
+        super().reset()
+        self.logger = []
+
     def run(self, iterations=100, verbose=True):
         # Book-keeping variables
         traj = []
@@ -179,7 +183,7 @@ class DEHBV1(DEHBBase):
                     de.population = de.population[self.rank]
                     de.fitness = de.fitness[self.rank]
                     de.pop_size = pop_size
-
+        
         if verbose:
             print("\nRun complete!")
 
@@ -207,6 +211,10 @@ class DEHBV2(DEHBBase):
         self.logger = []
         # Fixing to 1 -- specific attribute of version 2 of DEHB
         self.generations = 1
+
+    def reset(self):
+        super().reset()
+        self.logger = []
 
     def run(self, iterations=100, verbose=True):
         # Book-keeping variables
@@ -246,11 +254,12 @@ class DEHBV2(DEHBBase):
                 traj.extend(de_traj)
                 runtime.extend(de_runtime)
                 self.logger.append((0, 0, 0, self.inc_score, int(budget)))
-            elif self.randomize is not None and self.randomize != 0:
+            elif pop_size == len(self.population) and \
+                 self.randomize is not None and self.randomize > 0:
                 num_replace = np.ceil(self.randomize * pop_size).astype(int)
                 # fetching the worst performing individuals
                 idxs = np.sort(np.argsort(-self.fitness)[:num_replace])
-                # print("Replacing {}/{} -- {}".format(num_replace, pop_size, idxs))
+                print("Replacing {}/{} -- {}".format(num_replace, pop_size, idxs))
                 new_pop = self.init_population(pop_size=num_replace)
                 self.population[idxs] = new_pop
                 # evaluating new individuals
@@ -272,7 +281,7 @@ class DEHBV2(DEHBBase):
 
             # Successive Halving iterations carrying out DE
             for i_sh in range(num_SH_iters):
-                # print(i_sh, self.rank)
+                print(i_sh, self.rank)
                 # Repeating DE over entire population 'generations' times
                 for gen in range(self.generations):
                     # DE sweep : Evolving the population for a single generation
