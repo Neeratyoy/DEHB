@@ -36,7 +36,7 @@ parser.add_argument('--benchmark', default="protein_structure",
                     choices=["protein_structure", "slice_localization", "naval_propulsion",
                              "parkinsons_telemonitoring", "nas_cifar10a", "nas_cifar10b", "nas_cifar10c"],
                     type=str, nargs='?', help='specifies the benchmark')
-parser.add_argument('--n_iters', default=100, type=int, nargs='?', help='number of iterations for optimization method')
+parser.add_argument('--gens', default=100, type=int, nargs='?', help='number of generations for DE to evolve')
 parser.add_argument('--output_path', default="./", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
 parser.add_argument('--data_dir', default="../tabular_benchmarks", type=str, nargs='?',
@@ -90,7 +90,7 @@ de = DE(b=b, cs=cs, dimensions=dimensions, pop_size=args.pop_size,
         strategy=args.strategy, max_budget=args.max_budget)
 
 if args.runs is None:
-    traj, runtime = de.run(iterations=args.n_iters, verbose=args.verbose)
+    traj, runtime = de.run(generations=args.gens, verbose=args.verbose)
     save(traj, runtime, output_path, args.run_id, filename="raw_run")
     if 'cifar' in args.benchmark:
         traj, runtime = remove_invalid_configs(traj, runtime)
@@ -99,7 +99,7 @@ else:
     for run_id, _ in enumerate(range(args.runs), start=args.run_start):
         if args.verbose:
             print("\nRun #{:<3}\n{}".format(run_id + 1, '-' * 8))
-        traj, runtime = de.run(iterations=args.n_iters, verbose=args.verbose)
+        traj, runtime = de.run(generations=args.gens, verbose=args.verbose)
         save(traj, runtime, output_path, run_id, filename="raw_run")
         if 'cifar' in args.benchmark:
             traj, runtime = remove_invalid_configs(traj, runtime)
