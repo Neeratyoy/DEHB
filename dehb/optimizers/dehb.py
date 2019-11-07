@@ -147,7 +147,7 @@ class DEHBV1(DEHBBase):
             traj.extend(de_traj)
             runtime.extend(de_runtime)
 
-            # Incorporating global incumbent into the DE population
+            # Incorporating global incumbent into the new DE population
             if all(de.inc_config == self.inc_config):
                 # if new population has no better individual, randomly
                 # replace an individual with the incumbent so far
@@ -164,15 +164,13 @@ class DEHBV1(DEHBBase):
             for i_sh in range(num_SH_iters):
                 # Repeating DE over entire population 'generations' times
                 for gen in range(self.generations):
-                    # DE sweep : Evolving the population for a single generation
-                    for j in range(pop_size):
-                        fitness, cost = de.step(j, budget=budget)
-                        if fitness < self.inc_score:
-                            self.inc_score = fitness
-                            self.inc_config = de.inc_config
-                            self.logger.append((iteration, i_sh, gen, self.inc_score, int(budget)))
-                        traj.append(self.inc_score)
-                        runtime.append(cost)
+                    de_traj, de_runtime = de.evolve_generation(budget)
+                    traj.extend(de_traj)
+                    runtime.extend(de_runtime)
+                
+                # Updating global incumbent after each DE step
+                self.inc_score = de.inc_score
+                self.inc_config = de.inc_config
 
                 # Retrieving budget, pop_size, population for the next SH iteration
                 if i_sh < num_SH_iters - 1:  # when not final SH iteration
@@ -183,7 +181,7 @@ class DEHBV1(DEHBBase):
                     de.population = de.population[self.rank]
                     de.fitness = de.fitness[self.rank]
                     de.pop_size = pop_size
-        
+
         if verbose:
             print("\nRun complete!")
 
@@ -229,6 +227,7 @@ class DEHBV2(DEHBBase):
 
         # Performs DEHB iterations
         for iteration in range(iterations):
+            print(de.inc_score, self.inc_score)
             # Retrieves SH budgets and number of configurations
             num_configs, budgets = self.get_next_iteration(iteration=iteration, clip=self.clip)
             if verbose:
@@ -256,6 +255,8 @@ class DEHBV2(DEHBBase):
                 self.logger.append((0, 0, 0, self.inc_score, int(budget)))
             elif pop_size == len(self.population) and \
                  self.randomize is not None and self.randomize > 0:
+                # executes in the first step of every SH iteration other than first DEHB iteration
+                # also conditional on whether a randomization fraction has been specified
                 num_replace = np.ceil(self.randomize * pop_size).astype(int)
                 # fetching the worst performing individuals
                 idxs = np.sort(np.argsort(-self.fitness)[:num_replace])
@@ -278,22 +279,20 @@ class DEHBV2(DEHBBase):
             # Passing onto DE-SH steps a subset of top individuals from global population
             de.population = self.population[self.rank]
             de.fitness = np.array(self.fitness)[self.rank]
+            de.pop_size = pop_size
 
             # Successive Halving iterations carrying out DE
             for i_sh in range(num_SH_iters):
                 print(i_sh, self.rank)
                 # Repeating DE over entire population 'generations' times
                 for gen in range(self.generations):
-                    # DE sweep : Evolving the population for a single generation
-                    for j in range(pop_size):
-                        fitness, cost = de.step(j, budget=budget)
-                        if fitness < self.inc_score:
-                            self.inc_score = fitness
-                            self.inc_config = de.inc_config
-                            self.logger.append((iteration, i_sh, gen, self.inc_score, int(budget)))
-                        traj.append(self.inc_score)
-                        runtime.append(cost)
+                    de_traj, de_runtime = de.evolve_generation(budget)
+                    traj.extend(de_traj)
+                    runtime.extend(de_runtime)
 
+                # Updating global incumbent after each DE step
+                self.inc_score = de.inc_score
+                self.inc_config = de.inc_config
                 # Updating global population with evolved individuals
                 self.population[self.rank] = de.population
                 self.fitness[self.rank] = de.fitness

@@ -1,4 +1,5 @@
 import numpy as np
+
 import ConfigSpace
 
 
@@ -159,44 +160,58 @@ class DE(DEBase):
             mutant = self.mutation_rand1(r1, r2, r3)
         return mutant
 
-    def crossover_bin(self, parent, mutant):
+    def crossover_bin(self, target, mutant):
         '''Performs the binomial crossover of DE
         '''
         cross_points = np.random.rand(self.dimensions) < self.crossover_prob
         if not np.any(cross_points):
             cross_points[np.random.randint(0, self.dimensions)] = True
-        offspring = np.where(cross_points, mutant, parent)
+        offspring = np.where(cross_points, mutant, target)
         return offspring
 
-    def crossover(self, parent, mutant):
+    def crossover(self, target, mutant):
         '''Performs DE crossover
         '''
         if self.crossover_strategy == 'bin':
-            offspring = self.crossover_bin(parent, mutant)
+            offspring = self.crossover_bin(target, mutant)
         return offspring
 
-    def evolve(self, current=None, best=None):
-        '''Performs a DE mutation and crossover
+    def selection(self, trials, budget=None):
+        '''Carries out a parent-offspring competition given a set of trial population
         '''
-        mutant = self.mutation()
-        offspring = self.crossover(current, mutant)
-        offspring = self.boundary_check(offspring)
-        return offspring
+        assert len(self.population) == len(trials)
+        traj = []
+        runtime = []
+        for i in range(len(trials)):
+            # evaluation of the newly created individuals
+            fitness, cost = self.f_objective(trials[i], budget)
+            # selection -- competition between parent[i] -- child[i]
+            if fitness < self.fitness[i]:
+                self.population[i] = trials[i]
+                self.fitness[i] = fitness
+            # updation of global incumbent for trajectory
+            if self.fitness[i] < self.inc_score:
+                self.inc_score = self.fitness[i]
+                self.inc_config = self.population[i]
+            traj.append(self.inc_score)
+            runtime.append(cost)
+        return traj, runtime
 
-    def step(self, j, budget=None):
-        '''Performs a single DE evolution for an individual
+    def evolve_generation(self, budget=None):
+        '''Performs a complete DE evolution, mutation -> crossover -> selection
         '''
-        offspring = self.evolve(current=self.population[j])
-        fitness, cost = self.f_objective(offspring, budget)
-        if fitness < self.fitness[j]:
-            self.fitness[j] = fitness
-            self.population[j] = offspring
-            if self.fitness[j] < self.inc_score:
-                self.inc_score = self.fitness[j]
-                self.inc_config = self.population[j]
-        return self.inc_score, cost
+        trials = []
+        for j in range(self.pop_size):
+            target = self.population[j]
+            donor = self.mutation()
+            trial = self.crossover(target, donor)
+            trial = self.boundary_check(trial)
+            trials.append(trial)
+        trials = np.array(trials)
+        traj, runtime = self.selection(trials, budget)
+        return traj, runtime
 
-    def run(self, iterations=100, verbose=False):
+    def run(self, generations=100, verbose=False):
         self.traj = []
         self.runtime = []
 
@@ -206,15 +221,12 @@ class DE(DEBase):
 
         if verbose:
             print("Running evolutionary search...")
-        for i in range(iterations):
-            for j in range(self.pop_size):
-                if verbose:
-                    print("Iteration {:<2}/{:<2} -- "
-                          "Evaluating individual {:<2}/{:<2}".format(i+1, iterations, j+1,
-                                                                     self.pop_size), end='\r')
-                traj, runtime = self.step(j)
-                self.traj.append(traj)
-                self.runtime.append(runtime)
+        for i in range(generations):
+            if verbose:
+                print("Generation {:<2}/{:<2} -- {:<0.7}".format(i+1, generations, self.inc_score))
+            traj, runtime = self.evolve_generation()
+            self.traj.extend(traj)
+            self.runtime.extend(runtime)
 
         if verbose:
             print("\nRun complete!")
