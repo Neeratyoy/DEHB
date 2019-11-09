@@ -45,7 +45,9 @@ class DEHBBase():
         # Miscellaneous
         self.output_path = kwargs['output_path'] if 'output_path' in kwargs else ''
 
-        # Incumbent trackers
+        # Global trackers
+        self.population = None
+        self.fitness = None
         self.inc_score = np.inf
         self.inc_config = None
 
@@ -53,6 +55,7 @@ class DEHBBase():
         self.inc_score = np.inf
         self.inc_config = None
         self.population = None
+        self.fitness = None
 
     def init_population(self, pop_size=10):
         population = np.random.uniform(low=0.0, high=1.0, size=(pop_size, self.dimensions))
@@ -167,7 +170,7 @@ class DEHBV1(DEHBBase):
                     de_traj, de_runtime = de.evolve_generation(budget)
                     traj.extend(de_traj)
                     runtime.extend(de_runtime)
-                
+
                 # Updating global incumbent after each DE step
                 self.inc_score = de.inc_score
                 self.inc_config = de.inc_config
@@ -227,7 +230,6 @@ class DEHBV2(DEHBBase):
 
         # Performs DEHB iterations
         for iteration in range(iterations):
-            print(de.inc_score, self.inc_score)
             # Retrieves SH budgets and number of configurations
             num_configs, budgets = self.get_next_iteration(iteration=iteration, clip=self.clip)
             if verbose:
@@ -308,6 +310,120 @@ class DEHBV2(DEHBBase):
                     de.population = de.population[self.de_rank]
                     de.fitness = np.array(de.fitness)[self.de_rank]
                     de.pop_size = pop_size
+
+        if verbose:
+            print("\nRun complete!")
+
+        return np.array(traj), np.array(runtime)
+
+
+class DEHBV3(DEHBBase):
+    '''Version 3 of DEHB
+
+    At anytime, each set of population contains the best individuals from that budget
+    '''
+    def __init__(self, b=None, cs=None, dimensions=None, mutation_factor=None,
+                 crossover_prob=None, strategy=None, min_budget=None, max_budget=None,
+                 eta=None, generations=None, clip=3, randomize=None, **kwargs):
+        super().__init__(b=b, cs=cs, dimensions=dimensions, mutation_factor=mutation_factor,
+                         crossover_prob=crossover_prob, strategy=strategy, min_budget=min_budget,
+                         max_budget=max_budget, eta=eta, generations=generations, clip=clip)
+        self.randomize = randomize
+        self.logger = []
+
+    def reset(self):
+        super().reset()
+        self.logger = []
+
+    def clan_selection(self, rival_pop, rival_fitness, target_pop=None, target_fitness=None):
+        if target_pop is None and target_fitness is None:
+            return rival_pop, rival_fitness
+
+        assert len(target_pop) == len(rival_pop)
+        assert len(target_fitness) == len(rival_fitness)
+        assert len(target_pop) == len(rival_fitness)
+
+        for i in range(len(target_pop)):
+            if rival_fitness[i] < target_fitness[i]:
+                target_fitness[i] = rival_fitness[i]
+                target_pop[i] = rival_fitness[i]
+        return target_pop, target_fitness
+
+    def run(self, iterations=100, verbose=True):
+        # Book-keeping variables
+        traj = []
+        runtime = []
+
+        # To retrieve the population and budget ranges
+        num_configs, budgets = self.get_next_iteration(iteration=0, clip=self.clip)
+        # List of DE objects corresponding to the populations
+        de = []
+        for i in range(len(budgets)):
+            de.append(DE(b=self.b, cs=self.cs, dimensions=self.dimensions, pop_size=num_configs[i],
+                      mutation_factor=self.mutation_factor, crossover_prob=self.crossover_prob,
+                      strategy=self.strategy, budget=budgets[i]))
+
+        # Performs DEHB iterations
+        for iteration in range(iterations):
+            # Retrieves SH budgets and number of configurations
+            num_configs, budgets = self.get_next_iteration(iteration=iteration, clip=self.clip)
+            if verbose:
+                print('Iteration #{:>3}\n{}'.format(iteration, '-' * 15))
+                print(num_configs, budgets, self.inc_score)
+
+            # Sets budget and population size for first SH iteration
+            pop_size = num_configs[0]
+            budget = budgets[0]
+            # Number of SH iterations in this DEHB iteration
+            num_SH_iters = len(budgets)
+
+            # Index determining the population to begin DE with for current iteration number
+            de_idx = iteration % len(de)
+
+            # The first DEHB iteration - only time when a random population is initialized
+            if iteration == 0:
+                # creating new population for DEHB iteration to be used for the next SH steps
+                de_traj, de_runtime = de[0].init_eval_pop(budget)
+                # maintaining global copy of random population created
+                self.population = de[0].population
+                self.fitness = de[0].fitness
+                # update global incumbent with new population scores
+                self.inc_score = de[0].inc_score
+                self.inc_config = de[0].inc_config
+                traj.extend(de_traj)
+                runtime.extend(de_runtime)
+                self.logger.append((0, 0, 0, self.inc_score, int(budget)))
+
+            # Successive Halving iterations carrying out DE
+            for i_sh in range(num_SH_iters):
+                de_curr = de_idx + i_sh
+                # Warmstarting DE incumbent
+                de[de_curr].inc_score = self.inc_score
+                de[de_curr].inc_config = self.inc_config
+                # Repeating DE over entire population 'generations' times
+                for gen in range(self.generations):
+                    de_traj, de_runtime = de[de_curr].evolve_generation(budget)
+                    traj.extend(de_traj)
+                    runtime.extend(de_runtime)
+                # Updating global incumbent after each DE step
+                self.inc_score = de[de_curr].inc_score
+                self.inc_config = de[de_curr].inc_config
+
+                # Retrieving budget, pop_size, population for the next SH iteration
+                if i_sh < num_SH_iters-1:  # when not final SH iteration
+                    pop_size = num_configs[i_sh+1]
+                    budget = budgets[i_sh+1]
+                    rank = np.sort(np.argsort(de[de_curr].fitness)[:pop_size])
+                    rival_population = de[de_curr].population[rank]
+                    rival_fitness = de[de_curr].fitness[rank]
+                    # selection to determine which individuals to use for each index
+                    ## competition between population evolved from lower budget vs.
+                    ## existing population determined to be best for next higher budget
+                    pop, fit = self.clan_selection(rival_population, rival_fitness,
+                                                   de[de_curr + 1].population,
+                                                   de[de_curr + 1].fitness)
+                    de[de_curr + 1].population = pop
+                    de[de_curr + 1].fitness = fit
 
         if verbose:
             print("\nRun complete!")

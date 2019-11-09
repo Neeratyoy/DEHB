@@ -24,14 +24,17 @@ class DEBase():
         # Miscellaneous
         self.output_path = kwargs['output_path'] if 'output_path' in kwargs else ''
 
-        # Incumbent trackers
+        # Global trackers
         self.inc_score = np.inf
         self.inc_config = None
+        self.population = None
+        self.fitness = None
 
     def reset(self):
         self.inc_score = np.inf
         self.inc_config = None
         self.population = None
+        self.fitness = None
 
     def init_population(self, pop_size=10):
         self.population = np.random.uniform(low=0.0, high=1.0, size=(pop_size, self.dimensions))
