@@ -185,19 +185,23 @@ class DE(DEBase):
         assert len(self.population) == len(trials)
         traj = []
         runtime = []
+        track = []
         for i in range(len(trials)):
             # evaluation of the newly created individuals
             fitness, cost = self.f_objective(trials[i], budget)
             # selection -- competition between parent[i] -- child[i]
-            if fitness < self.fitness[i]:
+            ## equality is important for landscape exploration
+            if fitness <= self.fitness[i]:
                 self.population[i] = trials[i]
                 self.fitness[i] = fitness
+                track.append(i)
             # updation of global incumbent for trajectory
             if self.fitness[i] < self.inc_score:
                 self.inc_score = self.fitness[i]
                 self.inc_config = self.population[i]
             traj.append(self.inc_score)
             runtime.append(cost)
+        print("Len: {}; Track: {}".format(len(trials), track))
         return traj, runtime
 
     def evolve_generation(self, budget=None):

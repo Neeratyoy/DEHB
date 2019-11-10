@@ -211,7 +211,7 @@ class DEHBV2(DEHBBase):
         self.randomize = randomize
         self.logger = []
         # Fixing to 1 -- specific attribute of version 2 of DEHB
-        self.generations = 1
+        # self.generations = 1
 
     def reset(self):
         super().reset()
@@ -335,20 +335,6 @@ class DEHBV3(DEHBBase):
         super().reset()
         self.logger = []
 
-    def clan_selection(self, rival_pop, rival_fitness, target_pop=None, target_fitness=None):
-        if target_pop is None and target_fitness is None:
-            return rival_pop, rival_fitness
-
-        assert len(target_pop) == len(rival_pop)
-        assert len(target_fitness) == len(rival_fitness)
-        assert len(target_pop) == len(rival_fitness)
-
-        for i in range(len(target_pop)):
-            if rival_fitness[i] < target_fitness[i]:
-                target_fitness[i] = rival_fitness[i]
-                target_pop[i] = rival_fitness[i]
-        return target_pop, target_fitness
-
     def run(self, iterations=100, verbose=True):
         # Book-keeping variables
         traj = []
@@ -401,6 +387,7 @@ class DEHBV3(DEHBBase):
                 de[de_curr].inc_score = self.inc_score
                 de[de_curr].inc_config = self.inc_config
                 # Repeating DE over entire population 'generations' times
+                print(de_curr, budget)
                 for gen in range(self.generations):
                     de_traj, de_runtime = de[de_curr].evolve_generation(budget)
                     traj.extend(de_traj)
@@ -411,20 +398,24 @@ class DEHBV3(DEHBBase):
 
                 # Retrieving budget, pop_size, population for the next SH iteration
                 if i_sh < num_SH_iters-1:  # when not final SH iteration
-                    pop_size = num_configs[i_sh+1]
-                    budget = budgets[i_sh+1]
+                    pop_size = num_configs[i_sh + 1]
+                    budget = budgets[i_sh + 1]
+                    # selecting top ranking individuals from lower budget
+                    ## to be evaluated on higher budget and be eligible for competition
                     rank = np.sort(np.argsort(de[de_curr].fitness)[:pop_size])
                     rival_population = de[de_curr].population[rank]
-                    rival_fitness = de[de_curr].fitness[rank]
-                    # selection to determine which individuals to use for each index
-                    ## competition between population evolved from lower budget vs.
-                    ## existing population determined to be best for next higher budget
-                    pop, fit = self.clan_selection(rival_population, rival_fitness,
-                                                   de[de_curr + 1].population,
-                                                   de[de_curr + 1].fitness)
-                    de[de_curr + 1].population = pop
-                    de[de_curr + 1].fitness = fit
-
+                    # print(i_sh, rank)
+                    if de[de_curr + 1].population is not None:
+                        # warmstarting DE incumbents to maintain global trajectory
+                        de[de_curr + 1].inc_score = self.inc_score
+                        de[de_curr + 1].inc_config = self.inc_config
+                        de_traj, de_runtime = de[de_curr + 1].selection(rival_population, budget)
+                        traj.extend(de_traj)
+                        runtime.extend(de_runtime)
+                    else:  # equivalent to iteration == 0
+                        print("Iteration: ", iteration)
+                        de[de_curr + 1].population = rival_population
+                        de[de_curr + 1].fitness = de[de_curr].fitness[rank]
         if verbose:
             print("\nRun complete!")
 

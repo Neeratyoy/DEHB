@@ -49,7 +49,7 @@ parser.add_argument('--mutation_factor', default=0.5, type=float, nargs='?', hel
 parser.add_argument('--gens', default=1, type=int, nargs='?', help='number of generations')
 parser.add_argument('--crossover_prob', default=0.5, type=float, nargs='?', help='probability of crossover')
 parser.add_argument('--verbose', default='False', choices=['True', 'False'], nargs='?', help='to print progress or not')
-parser.add_argument('--version', default='1', choices=['1', '2'], nargs='?', help='the version of DEHB to run')
+parser.add_argument('--version', default='1', choices=['1', '2', '3'], nargs='?', help='the version of DEHB to run')
 parser.add_argument('--folder', default='dehb', type=str, nargs='?', help='name of folder where files will be dumped')
 
 args = parser.parse_args()
@@ -57,8 +57,10 @@ args.verbose = True if args.verbose == 'True' else False
 
 if args.version == '1':
     from optimizers import DEHBV1 as DEHB
-else:
+elif args.version == '2':
     from optimizers import DEHBV2 as DEHB
+else:
+    from optimizers import DEHBV3 as DEHB
 
 if args.benchmark == "nas_cifar10a":
     min_budget = 4
