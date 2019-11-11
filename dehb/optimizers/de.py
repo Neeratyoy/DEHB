@@ -204,6 +204,30 @@ class DE(DEBase):
         print("Len: {}; Track: {}".format(len(trials), track))
         return traj, runtime
 
+    def ranked_selection(self, trials, budget=None):
+        '''Returns the fittest individuals from two sets of population
+        '''
+        assert len(self.population) == len(trials)
+        traj = []
+        runtime = []
+        track = []
+        trial_fitness = []
+        for i in range(len(trials)):
+            fitness, cost = self.f_objective(trials[i], budget)
+            trial_fitness.append(fitness)
+            if fitness < self.inc_score:
+                self.inc_score = fitness
+                self.inc_config = trials[i]
+            traj.append(self.inc_score)
+            runtime.append(cost)
+        tot_pop = np.vstack((self.population, trials))
+        tot_fitness = np.hstack((self.fitness, trial_fitness))
+        rank = np.sort(np.argsort(tot_fitness)[:len(trials)])
+        self.population = tot_pop[rank]
+        self.fitness = tot_fitness[rank]
+        print("Rank: {}".format(rank))
+        return traj, runtime
+
     def evolve_generation(self, budget=None):
         '''Performs a complete DE evolution, mutation -> crossover -> selection
         '''

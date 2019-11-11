@@ -23,7 +23,7 @@ def save(trajectory, runtime, path, run_id, filename="run"):
     global y_star_valid
     res = {}
     res['runtime'] = np.cumsum(runtime).tolist()
-    res['regret_validation'] = np.array(traj - y_star_valid).tolist()
+    res['regret_validation'] = np.array(np.clip(traj - y_star_valid, a_min=0, a_max=np.inf)).tolist()
     fh = open(os.path.join(output_path, '{}_{}.json'.format(filename, run_id)), 'w')
     json.dump(res, fh)
     fh.close()

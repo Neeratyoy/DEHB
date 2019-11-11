@@ -21,7 +21,7 @@ def save(trajectory, runtime, path, run_id, filename="run", logger=None):
     global y_star_valid
     res = {}
     res['runtime'] = np.cumsum(runtime).tolist()
-    res['regret_validation'] = np.array(traj - y_star_valid).tolist()
+    res['regret_validation'] = np.array(np.clip(traj - y_star_valid, a_min=0, a_max=np.inf)).tolist()
     if logger is not None:
         res['logger'] = logger
     fh = open(os.path.join(output_path, '{}_{}.json'.format(filename, run_id)), 'w')
@@ -43,7 +43,8 @@ parser.add_argument('--data_dir', default="../tabular_benchmarks", type=str, nar
                     help='specifies the path to the tabular data')
 parser.add_argument('--strategy', default="rand1_bin", type=str, nargs='?', help='type of mutation & crossover scheme')
 parser.add_argument('--eta', default=3, type=int, nargs='?', help='eta for Successive Halving')
-parser.add_argument('--clip', default=3, type=int, nargs='?', help='minimum number of configurations')
+parser.add_argument('--min_clip', default=3, type=int, nargs='?', help='minimum number of configurations')
+parser.add_argument('--max_clip', default=None, type=int, nargs='?', help='maximum number of configurations')
 parser.add_argument('--randomize', default=None, type=float, help='fraction of population to randomize in v2')
 parser.add_argument('--mutation_factor', default=0.5, type=float, nargs='?', help='mutation factor value')
 parser.add_argument('--gens', default=1, type=int, nargs='?', help='number of generations')
@@ -112,7 +113,8 @@ os.makedirs(output_path, exist_ok=True)
 
 dehb = DEHB(b=b, cs=cs, dimensions=dimensions, mutation_factor=args.mutation_factor,
             crossover_prob=args.crossover_prob, strategy=args.strategy, min_budget=min_budget,
-            max_budget=max_budget, generations=args.gens, eta=args.eta, randomize=args.randomize)
+            max_budget=max_budget, min_clip=args.min_clip, max_clip=args.max_clip,
+            generations=args.gens, eta=args.eta, randomize=args.randomize)
 
 if args.runs is None:
     traj, runtime = dehb.run(iterations=args.n_iters, verbose=args.verbose)
