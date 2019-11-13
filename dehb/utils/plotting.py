@@ -86,15 +86,18 @@ n_runs = args.n_runs
 plot_type = args.type
 plot_name = args.name
 
-methods = [("bohb", "BOHB"),
+# methods = [("bohb", "BOHB"),
 #         ("re", "RE"),
 #         ("hyperband", "HB"),
 #         ("random_search", "RS"),
 #         ("tpe", "TPE"),
-           ("de", "DE"),
-           ("dehb_v1", "DEHB V1"),
-           ("dehb_v2", "DEHB V2"),
-           ("dehb_v3", "DEHB V3")]
+methods = [("de", "DE"),
+           ("dehb_v1", "DEHB V1; $gen=1$;"),
+           ("dehb_v2", "DEHB V2; $gen=1$; $rand=0.3$;"),
+           ("dehb_v3", "DEHB V3; $gen=1$; $rand=0$;"),
+           ("dehb_v3_pop10", "DEHB V3 $gen=1$; $rand=0$; $pop=10$"),
+           ("dehb_v3_rand0.3", "DEHB V3; $gen=1$; $rand=0.3$;"),
+           ("dehb_v3_pop10_rand0.3", "DEHB V3 $gen=1$; $rand=0.3$; $pop=10$")]
         # ("dehb_v2_rand", "DEHB V2 $rand=0.2$"),
         # ("dehb_v2_rand_0.9", "DEHB V2 $rand=0.9$")]
 
