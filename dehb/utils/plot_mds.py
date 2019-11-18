@@ -132,6 +132,17 @@ class AnimateRun():
         self.runtimes = self.res['runtime']
         self.history = process_history(self.res, self.cs, self.per_budget)
 
+    def build_config_frequency(self):
+        '''Applicable only for ConfigSpace
+        '''
+        config_dict = {}
+        for i, config in enumerate(self.history['trajectory_cs']):
+            if str(config) not in config_dict:
+                config_dict[str(config)] = [self.history['budgets'][i]]
+            else:
+                config_dict[str(config)].append(self.history['budgets'][i])
+        return config_dict
+
     def plot_gif(self, filename=None, per_budget=False, delay=150, repeat=True, type='raw'):
         '''Plots a gif over the optimisation trajectory for a run
         '''
