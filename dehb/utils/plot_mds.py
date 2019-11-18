@@ -98,41 +98,19 @@ def generate_colors(i, budgets=None):
         rgba_colors[idxs, 0] = light[0]
         rgba_colors[idxs, 1] = light[1]
         rgba_colors[idxs, 2] = light[2]
-    if i > 1:
-        rgba_colors[i-1, 0] = 1
-        rgba_colors[i-1, 1] = 1
-        rgba_colors[i-1, 2] = 1
     return rgba_colors
 
-def plot_gif(X, delay=100, repeat=True, filename=None, xlim=None, ylim=None, budgets=None):
-    plt.clf()
-    fig, ax = plt.subplots(figsize=(5, 5))
-    if xlim is None:
-        xlim = (np.min(X[:,0])-1, np.max(X[:,0])+1)
-    if ylim is None:
-        ylim = (np.min(X[:,1])-1, np.max(X[:,1])+1)
-    ax.set(xlim=xlim, ylim=ylim)
-    scat = ax.scatter(X[0,0], X[0,1])
-
-    def animate(i):
-        rgba_colors = generate_colors(i, budgets)
-        scat.set_offsets(X[:i])
-        scat.set_facecolor(rgba_colors[:i])
-        ax.set_title('# function evaluations: {}'.format(i))
-
-    anim = FuncAnimation(fig, animate, interval=delay, frames=range(X.shape[0]),
-                         repeat=repeat, repeat_delay=5000)
-    if filename is not None:
-        anim.save('{}.gif'.format(filename), writer='imagemagick')
-    else:
-        plt.show()
-
 def color_pairs(i=0):
-    colors = [((0.60784314, 0.54901961, 0.83137255), (0.18039216, 0.21960784, 0.18039216)), # (9B8CD4, 2E382E) -- (BLUE BELL, JET)
-              ((0.45882353, 0.29803922, 0.16078431), (0.15294118, 0.09019608, 0.05490196)), # (754C29, 27170E) -- (DONKEY BROWN, ZINNWALDITE BROWN)
-              ((0.83921569, 0.70196078, 0.02352941), (0.83921569, 0.34901961, 0.00000000)), # (D6B306, D65900) -- (VIVID AMBER, TENNE)
-              ((0.56470588, 0.80784314, 0.45098039), (0.27843137, 0.60784314, 0.49803922)), # (90CE73, 479B7F) -- (PISTACHIO, WINTERGREEN DREAM)
-              ((0.75294118, 0.37647059, 0.36078431), (0.43137255, 0.01176471, 0.12941176))  # (C0605C, 6E0321) -- (INDIAN RED, BURGUNDY)
+    colors = [((0.60784314, 0.54901961, 0.83137255),  #9B8CD4 -- BLUE BELL
+               (0.18039216, 0.21960784, 0.18039216)), #2E382E -- JET
+              ((0.45882353, 0.29803922, 0.16078431),  #754C29 -- DONKEY BROWN
+               (0.15294118, 0.09019608, 0.05490196)), #27170E -- ZINNWALDITE BROWN
+              ((0.83921569, 0.70196078, 0.02352941),  #D6B306 -- VIVID AMBER
+               (0.83921569, 0.34901961, 0.00000000)), #D65900 -- TENNE
+              ((0.56470588, 0.80784314, 0.45098039),  #90CE73 -- PISTACHIO
+               (0.27843137, 0.60784314, 0.49803922)), #479B7F -- WINTERGREEN DREAM
+              ((0.75294118, 0.37647059, 0.36078431),  #C0605C -- INDIAN RED
+               (0.43137255, 0.01176471, 0.12941176))  #6E0321 -- BURGUNDY
     ]
     return colors[i]
 
@@ -144,6 +122,8 @@ class AnimateRun():
         self.cs = None
         self.per_budget = per_budget
         self.output_path = output_path
+        if self.output_path is None:
+            self.output_path = self.path
 
         if os.path.isfile(os.path.join(path, 'configspace.pkl')):
             self.cs = load_pkl(os.path.join(path, 'configspace.pkl'))
@@ -152,46 +132,164 @@ class AnimateRun():
         self.runtimes = self.res['runtime']
         self.history = process_history(self.res, self.cs, self.per_budget)
 
-    def plot_gif(self, delay=100, repeat=True, colors=2, filename=None, type='raw'):
+    def plot_gif(self, filename=None, per_budget=False, delay=150, repeat=True, type='raw'):
+        '''Plots a gif over the optimisation trajectory for a run
+        '''
         if filename is not None:
-            if self.output_path is None:
-                filename = os.path.join(self.path, filename)
-            else:
-                filename = os.path.join(self.output_path, filename)
-            filename = "{}_{}".format(filename, type)
-        if type == 'cs':
-            X = get_mds(self.history['trajectory'])
-        else:
-            X = get_mds(self.history['trajectory_cs'])
-        plot_gif(X, delay, repeat, filename, colors)
+            filename = os.path.join(self.output_path, filename)
 
-    def plot_each_budget_gif(self, filename, delay=100, repeat=True, type='raw'):
-        filename = "{}_{}".format(filename, type)
-        if self.output_path is None:
-            filename = os.path.join(self.path, filename)
+        if type == "cs":
+            X = get_mds(self.history['trajectory_cs'])
         else:
+            X = get_mds(self.history['trajectory'])
+        xlim = (np.min(X[:,0])-0.5, np.max(X[:,0])+0.5)
+        ylim = (np.min(X[:,1])-0.5, np.max(X[:,1])+0.5)
+        plt.clf()
+        fig, ax = plt.subplots(figsize=(5, 5))
+        ax.set(xlim=xlim, ylim=ylim, xlabel="$MDS-X$", ylabel="$MDS-Y$")
+        scat = ax.scatter(X[0,0], X[0,1])
+
+        if per_budget:
+            budgets = self.history['budgets']
+        else:
+            budgets = None
+        def animate(i):
+            rgba_colors = generate_colors(i, budgets)
+            scat.set_offsets(X[:i])
+            scat.set_facecolor(rgba_colors[:i])
+            ax.set_title('# function evaluations: {}'.format(i))
+
+        anim = FuncAnimation(fig, animate, interval=delay, frames=range(X.shape[0]),
+                             repeat=repeat, repeat_delay=5000)
+        if filename is not None:
+            anim.save('{}.gif'.format(filename), writer='imagemagick')
+        else:
+            plt.show()
+
+    def plot_gif_compare(self, filename=None, per_budget=False, delay=150, repeat=True):
+        '''Plots a gif over the optimisation trajectory for a run comparing parameter spaces
+        '''
+        if filename is not None:
+            filename = os.path.join(self.output_path, filename)
+
+        X = get_mds(self.history['trajectory'])
+        X_cs = get_mds(self.history['trajectory_cs'])
+        plt.clf()
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+        xlim = (np.min(X[:,0])-0.5, np.max(X[:,0])+0.5)
+        ylim = (np.min(X[:,1])-0.5, np.max(X[:,1])+0.5)
+        ax1.set(xlim=xlim, ylim=ylim)
+        scat1 = ax1.scatter(X[0,0], X[0,1])
+        xlim_cs = (np.min(X_cs[:,0])-0.5, np.max(X_cs[:,0])+0.5)
+        ylim_cs = (np.min(X_cs[:,1])-0.5, np.max(X_cs[:,1])+0.5)
+        ax2.set(xlim=xlim_cs, ylim=ylim_cs)
+        scat2 = ax2.scatter(X_cs[0,0], X_cs[0,1])
+
+        if per_budget:
+            budgets = self.history['budgets']
+        else:
+            budgets = None
+        def animate(i):
+            rgba_colors = generate_colors(i, budgets)
+            scat1.set_offsets(X[:i])
+            scat1.set_facecolor(rgba_colors[:i])
+            scat2.set_offsets(X_cs[:i])
+            scat2.set_facecolor(rgba_colors[:i])
+            ax1.set_title('[Uniform] # function evaluations: {}'.format(i))
+            ax2.set_title('[ConfigSpace] # function evaluations: {}'.format(i))
+
+        anim = FuncAnimation(fig, animate, interval=delay, frames=range(X.shape[0]),
+                             repeat=repeat, repeat_delay=5000)
+        if filename is not None:
+            anim.save('{}.gif'.format(filename), writer='imagemagick')
+        else:
+            plt.show()
+
+    def plot_budget_histogram(self, filename=None):
+        '''Plots a histogram for the no. of function evaluations per budget in a run
+        '''
+        if filename is not None:
+            filename = os.path.join(self.output_path, filename)
+        plot_dict = {}
+        for key in self.history['fidelities']:
+            plot_dict[str(key)] = len(self.history['fidelities'][key])
+        plt.clf()
+        plt.bar(list(plot_dict.keys()), list(plot_dict.values()))
+        plt.title("# function evaluations per budget")
+        plt.ylabel("# of function evaluations")
+        plt.xlabel("Budgets")
+        if filename is not None:
+            plt.savefig('{}.png'.format(filename), dpi=300)
+        else:
+            plt.show()
+
+    def plot_final(self, filename=None, per_budget=False, type='raw'):
+        '''Plots a scatter plot showing the optimisation trajectory for a run
+        '''
+        if filename is not None:
             filename = os.path.join(self.output_path, filename)
         if type == 'cs':
-            X = get_mds(self.history['trajectory'])
-        else:
             X = get_mds(self.history['trajectory_cs'])
-        xlim = (np.min(X[:,0])-1, np.max(X[:,0])+1)
-        ylim = (np.min(X[:,1])-1, np.max(X[:,1])+1)
-        length = len(run.history['fidelities'].keys())
-        for i, budget in enumerate(run.history['fidelities'].keys()):
-            X_budget = X[run.history['fidelities'][budget]]
-            plot_gif(X_budget, delay, repeat, "{}_{}".format(filename, budget), xlim, ylim)
+        else:
+            X = get_mds(self.history['trajectory'])
+        xlim = (np.min(X[:,0])-0.5, np.max(X[:,0])+0.5)
+        ylim = (np.min(X[:,1])-0.5, np.max(X[:,1])+0.5)
+        plt.clf()
+        if per_budget:
+            rgba_colors = generate_colors(X.shape[0], self.history['budgets'])
+            for i, key in enumerate(self.history['fidelities'].keys()):
+                budget = self.history['fidelities'][key]
+                # reversing the arrays to get the high alpha value label in legend
+                plt.scatter(X[budget,0][::-1], X[budget,1][::-1],
+                            color=rgba_colors[budget][::-1], label=key)
+            plt.legend()
+        else:
+            rgba_colors = generate_colors(X.shape[0], None)
+            plt.scatter(X[:,0], X[:,1], color=rgba_colors)
+        plt.xlim(xlim)
+        plt.ylim(ylim)
+        plt.xlabel("$MDS-X$")
+        plt.ylabel("$MDS-Y$")
+        plt.title("Trajectory of function evaluations")
+        if filename is not None:
+            plt.savefig('{}.png'.format(filename), dpi=300)
+        else:
+            plt.show()
 
-    def plot_all_budget_gif(self, filename, delay=100, repeat=True, type='raw'):
-        filename = "{}_{}".format(filename, type)
-        if self.output_path is None:
-            filename = os.path.join(self.path, filename)
-        else:
+    def plot_final_compare(self, filename=None, per_budget=False):
+        '''Plots a scatter plot comparing parameter spaces based on their trajectories in a run
+        '''
+        if filename is not None:
             filename = os.path.join(self.output_path, filename)
-        if type == 'cs':
-            X = get_mds(self.history['trajectory'])
+        X_cs = get_mds(self.history['trajectory_cs'])
+        xlim_cs = (np.min(X_cs[:,0])-0.5, np.max(X_cs[:,0])+0.5)
+        ylim_cs = (np.min(X_cs[:,1])-0.5, np.max(X_cs[:,1])+0.5)
+        X = get_mds(self.history['trajectory'])
+        xlim = (np.min(X[:,0])-0.5, np.max(X[:,0])+0.5)
+        ylim = (np.min(X[:,1])-0.5, np.max(X[:,1])+0.5)
+        plt.clf()
+        fig, (ax1, ax2) = plt.subplots(1, 2)
+        if per_budget:
+            rgba_colors = generate_colors(X.shape[0], self.history['budgets'])
+            for key in self.history['fidelities'].keys():
+                budget = self.history['fidelities'][key]
+                # reversing the arrays to get the high alpha value label in legend
+                ax1.scatter(X[budget,0][::-1], X[budget,1][::-1],
+                            color=rgba_colors[budget][::-1], label=key)
+                ax2.scatter(X_cs[budget,0][::-1], X_cs[budget,1][::-1],
+                            color=rgba_colors[budget][::-1], label=key)
+            ax1.legend()
+            ax2.legend()
         else:
-            X = get_mds(self.history['trajectory_cs'])
-        xlim = (np.min(X[:,0])-1, np.max(X[:,0])+1)
-        ylim = (np.min(X[:,1])-1, np.max(X[:,1])+1)
-        plot_gif(X=X, delay=delay, repeat=repeat, filename=filename, budgets=self.history['budgets'])
+            rgba_colors = generate_colors(X.shape[0], None)
+            ax1.scatter(X[:,0], X[:,1], color=rgba_colors)
+            ax2.scatter(X_cs[:,0], X_cs[:,1], color=rgba_colors)
+        ax1.set(xlim=xlim, ylim=ylim, xlabel="$MDS-X$", ylabel="$MDS-Y$")
+        ax2.set(xlim=xlim_cs, ylim=ylim_cs, xlabel="$MDS-X$", ylabel="$MDS-Y$")
+        plt.suptitle("Trajectory of function evaluations")
+        ax1.set_title('Uniform parameter space')
+        ax2.set_title('ConfigSpace parameter space')
+        if filename is not None:
+            plt.savefig('{}.png'.format(filename), dpi=300)
+        else:
+            plt.show()
