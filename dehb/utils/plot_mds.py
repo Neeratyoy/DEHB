@@ -11,6 +11,14 @@ from sklearn.decomposition import PCA
 import ConfigSpace
 from ConfigSpace import ConfigurationSpace
 
+from matplotlib import rcParams
+rcParams["font.size"] = "10"
+rcParams['text.usetex'] = True
+rcParams['font.family'] = 'serif'
+# rcParams['figure.figsize'] = (16.0, 9.0)
+rcParams['legend.frameon'] = 'True'
+rcParams['legend.framealpha'] = 1
+
 
 def vector_to_configspace(cs, vector):
     '''Converts numpy array to ConfigSpace object
@@ -62,7 +70,7 @@ def process_history(res, cs=None, per_budget=False):
 
     history = {}
     history['trajectory'] = trajectory
-    history['fitness'] = fitness
+    history['fitness'] = np.clip(fitness - res['y_star_valid'], 0, np.inf)
     history['budgets'] = budgets
     history['fidelities'] = fidelities
     history['trajectory_cs'] = trajectory_cs
@@ -103,14 +111,14 @@ def generate_colors(i, budgets=None):
 def color_pairs(i=0):
     colors = [((0.60784314, 0.54901961, 0.83137255),  #9B8CD4 -- BLUE BELL
                (0.18039216, 0.21960784, 0.18039216)), #2E382E -- JET
-              ((0.45882353, 0.29803922, 0.16078431),  #754C29 -- DONKEY BROWN
-               (0.15294118, 0.09019608, 0.05490196)), #27170E -- ZINNWALDITE BROWN
               ((0.83921569, 0.70196078, 0.02352941),  #D6B306 -- VIVID AMBER
                (0.83921569, 0.34901961, 0.00000000)), #D65900 -- TENNE
               ((0.56470588, 0.80784314, 0.45098039),  #90CE73 -- PISTACHIO
                (0.27843137, 0.60784314, 0.49803922)), #479B7F -- WINTERGREEN DREAM
               ((0.75294118, 0.37647059, 0.36078431),  #C0605C -- INDIAN RED
-               (0.43137255, 0.01176471, 0.12941176))  #6E0321 -- BURGUNDY
+               (0.43137255, 0.01176471, 0.12941176)),  #6E0321 -- BURGUNDY
+              ((0.45882353, 0.29803922, 0.16078431),  #754C29 -- DONKEY BROWN
+               (0.15294118, 0.09019608, 0.05490196)) #27170E -- ZINNWALDITE BROWN
     ]
     return colors[i]
 
@@ -131,17 +139,6 @@ class AnimateRun():
         self.incumbent = self.res['regret_validation']
         self.runtimes = self.res['runtime']
         self.history = process_history(self.res, self.cs, self.per_budget)
-
-    def build_config_frequency(self):
-        '''Applicable only for ConfigSpace
-        '''
-        config_dict = {}
-        for i, config in enumerate(self.history['trajectory_cs']):
-            if str(config) not in config_dict:
-                config_dict[str(config)] = [self.history['budgets'][i]]
-            else:
-                config_dict[str(config)].append(self.history['budgets'][i])
-        return config_dict
 
     def plot_gif(self, filename=None, per_budget=False, delay=150, repeat=True, type='raw'):
         '''Plots a gif over the optimisation trajectory for a run
@@ -230,11 +227,12 @@ class AnimateRun():
         plt.ylabel("# of function evaluations")
         plt.xlabel("Budgets")
         if filename is not None:
+            plt.tight_layout()
             plt.savefig('{}.png'.format(filename), dpi=300)
         else:
             plt.show()
 
-    def plot_final(self, filename=None, per_budget=False, type='raw'):
+    def plot_final(self, filename=None, per_budget=False, type='raw', incumbents=False):
         '''Plots a scatter plot showing the optimisation trajectory for a run
         '''
         if filename is not None:
@@ -253,21 +251,30 @@ class AnimateRun():
                 # reversing the arrays to get the high alpha value label in legend
                 plt.scatter(X[budget,0][::-1], X[budget,1][::-1],
                             color=rgba_colors[budget][::-1], label=key)
-            plt.legend()
+            plt.legend(loc='upper right', framealpha=1, prop={'size': 10})
         else:
             rgba_colors = generate_colors(X.shape[0], None)
-            plt.scatter(X[:,0], X[:,1], color=rgba_colors)
+            plt.scatter(X[:,0], X[:,1], color=rgba_colors, s=30)
+
+        if incumbents:
+            idxs = np.where(self.incumbent == self.history['fitness'])[0]
+            rgba_colors[idxs, :3] = 0
+            plt.scatter(X[idxs,0][::-1], X[idxs,1][::-1], color=rgba_colors[idxs][::-1],
+                        label='incumbents', marker='v', s=50)
+            plt.legend(loc='upper right', framealpha=1, prop={'size': 10})
+
         plt.xlim(xlim)
         plt.ylim(ylim)
         plt.xlabel("$MDS-X$")
         plt.ylabel("$MDS-Y$")
         plt.title("Trajectory of function evaluations")
         if filename is not None:
+            plt.tight_layout()
             plt.savefig('{}.png'.format(filename), dpi=300)
         else:
             plt.show()
 
-    def plot_final_compare(self, filename=None, per_budget=False):
+    def plot_final_compare(self, filename=None, per_budget=False, incumbents=False):
         '''Plots a scatter plot comparing parameter spaces based on their trajectories in a run
         '''
         if filename is not None:
@@ -286,21 +293,85 @@ class AnimateRun():
                 budget = self.history['fidelities'][key]
                 # reversing the arrays to get the high alpha value label in legend
                 ax1.scatter(X[budget,0][::-1], X[budget,1][::-1],
-                            color=rgba_colors[budget][::-1], label=key)
+                            color=rgba_colors[budget][::-1], label=key, s=15)
                 ax2.scatter(X_cs[budget,0][::-1], X_cs[budget,1][::-1],
-                            color=rgba_colors[budget][::-1], label=key)
-            ax1.legend()
-            ax2.legend()
+                            color=rgba_colors[budget][::-1], label=key, s=15)
+            ax1.legend(loc='upper right', framealpha=1, prop={'size': 10})
+            ax2.legend(loc='upper right', framealpha=1, prop={'size': 10})
         else:
             rgba_colors = generate_colors(X.shape[0], None)
-            ax1.scatter(X[:,0], X[:,1], color=rgba_colors)
-            ax2.scatter(X_cs[:,0], X_cs[:,1], color=rgba_colors)
+            ax1.scatter(X[:,0], X[:,1], color=rgba_colors, s=15)
+            ax2.scatter(X_cs[:,0], X_cs[:,1], color=rgba_colors, s=15)
+
+        if incumbents:
+            idxs = np.where(self.incumbent == self.history['fitness'])[0]
+            rgba_colors[idxs, :3] = 0
+            ax1.scatter(X[idxs,0][::-1], X[idxs,1][::-1], color=rgba_colors[idxs][::-1],
+                        label='incumbents', marker='v', s=50)
+            ax2.scatter(X_cs[idxs,0][::-1], X_cs[idxs,1][::-1], color=rgba_colors[idxs][::-1],
+                        label='incumbents', marker='v', s=50)
+            ax1.legend(loc='upper right', framealpha=1, prop={'size': 10})
+            ax2.legend(loc='upper right', framealpha=1, prop={'size': 10})
+
         ax1.set(xlim=xlim, ylim=ylim, xlabel="$MDS-X$", ylabel="$MDS-Y$")
         ax2.set(xlim=xlim_cs, ylim=ylim_cs, xlabel="$MDS-X$", ylabel="$MDS-Y$")
         plt.suptitle("Trajectory of function evaluations")
         ax1.set_title('Uniform parameter space')
         ax2.set_title('ConfigSpace parameter space')
         if filename is not None:
+            plt.tight_layout()
+            plt.savefig('{}.png'.format(filename), dpi=300) #, bbox_inches='tight')
+        else:
+            plt.show()
+
+    def plot_config_frequency(self, filename=None, per_budget=False, incumbents=False):
+        '''Plots a scatter plot for ConfigSpace showing frequency of samples
+        '''
+        if filename is not None:
+            filename = os.path.join(self.output_path, filename)
+        config_dict = {}
+        for i, config in enumerate(self.history['trajectory_cs']):
+            if str(config) not in config_dict:
+                config_dict[str(config)] = [1, np.array([i])]
+            else:
+                config_dict[str(config)][0] += 1
+                config_dict[str(config)][1] = np.append(config_dict[str(config)][1], i)
+        X = get_mds(self.history['trajectory_cs'])
+        xlim = (np.min(X[:,0])-0.5, np.max(X[:,0])+0.5)
+        ylim = (np.min(X[:,1])-0.5, np.max(X[:,1])+0.5)
+        sizes = np.zeros(X.shape[0])
+        for key in config_dict:
+            sizes[config_dict[key][1]] = config_dict[key][0]
+        size_range = np.max(sizes) - np.min(sizes)
+        sizes = 20 + sizes * size_range / np.max(sizes)
+
+        plt.clf()
+        if per_budget:
+            rgba_colors = generate_colors(X.shape[0], self.history['budgets'])
+            for i, key in enumerate(self.history['fidelities'].keys()):
+                budget = self.history['fidelities'][key]
+                # reversing the arrays to get the high alpha value label in legend
+                plt.scatter(X[budget,0][::-1], X[budget,1][::-1],
+                            color=rgba_colors[budget][::-1], label=key, s=sizes)
+            plt.legend(loc='upper right', framealpha=1, prop={'size': 10})
+        else:
+            rgba_colors = generate_colors(X.shape[0], None)
+            plt.scatter(X[:,0], X[:,1], color=rgba_colors, s=sizes)
+
+        if incumbents:
+            idxs = np.where(self.incumbent == self.history['fitness'])[0]
+            rgba_colors[idxs, :3] = 0
+            plt.scatter(X[idxs,0][::-1], X[idxs,1][::-1], color=rgba_colors[idxs][::-1],
+                        label='incumbents', marker='v', s=sizes[idxs] + 20)
+            plt.legend(loc='upper right', framealpha=1, prop={'size': 10})
+
+        plt.xlim(xlim)
+        plt.ylim(ylim)
+        plt.xlabel("$MDS-X$")
+        plt.ylabel("$MDS-Y$")
+        plt.title("Trajectory of function evaluations")
+        if filename is not None:
+            plt.tight_layout()
             plt.savefig('{}.png'.format(filename), dpi=300)
         else:
             plt.show()
