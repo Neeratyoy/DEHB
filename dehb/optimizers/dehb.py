@@ -51,12 +51,14 @@ class DEHBBase():
         self.fitness = None
         self.inc_score = np.inf
         self.inc_config = None
+        self.history = []
 
     def reset(self):
         self.inc_score = np.inf
         self.inc_config = None
         self.population = None
         self.fitness = None
+        self.history = []
 
     def init_population(self, pop_size=10):
         population = np.random.uniform(low=0.0, high=1.0, size=(pop_size, self.dimensions))
@@ -118,16 +120,12 @@ class DEHBV1(DEHBBase):
                          crossover_prob=crossover_prob, strategy=strategy, min_budget=min_budget,
                          max_budget=max_budget, eta=eta, generations=generations,
                          min_clip=min_clip, max_clip=max_clip)
-        self.logger = []
-
-    def reset(self):
-        super().reset()
-        self.logger = []
 
     def run(self, iterations=100, verbose=True):
         # Book-keeping variables
         traj = []
         runtime = []
+        history = []
         # Performs DEHB iterations
         for iteration in range(iterations):
             # Retrieves SH budgets and number of configurations
@@ -150,9 +148,10 @@ class DEHBV1(DEHBBase):
             de.inc_score = self.inc_score
             de.inc_config = self.inc_config
             # Creating new population for current DEHB iteration
-            de_traj, de_runtime = de.init_eval_pop(budget)
+            de_traj, de_runtime, de_history = de.init_eval_pop(budget)
             traj.extend(de_traj)
             runtime.extend(de_runtime)
+            history.extend(de_history)
 
             # Incorporating global incumbent into the new DE population
             if all(de.inc_config == self.inc_config):
@@ -171,9 +170,10 @@ class DEHBV1(DEHBBase):
             for i_sh in range(num_SH_iters):
                 # Repeating DE over entire population 'generations' times
                 for gen in range(self.generations):
-                    de_traj, de_runtime = de.evolve_generation(budget)
+                    de_traj, de_runtime, de_history = de.evolve_generation(budget)
                     traj.extend(de_traj)
                     runtime.extend(de_runtime)
+                    history.extend(de_history)
 
                 # Updating global incumbent after each DE step
                 self.inc_score = de.inc_score
@@ -192,7 +192,7 @@ class DEHBV1(DEHBBase):
         if verbose:
             print("\nRun complete!")
 
-        return np.array(traj), np.array(runtime)
+        return np.array(traj), np.array(runtime), np.array(history)
 
 
 class DEHBV2(DEHBBase):
@@ -215,18 +215,14 @@ class DEHBV2(DEHBBase):
                          max_budget=max_budget, eta=eta, generations=generations,
                          min_clip=min_clip, max_clip=max_clip)
         self.randomize = randomize
-        self.logger = []
         # Fixing to 1 -- specific attribute of version 2 of DEHB
         # self.generations = 1
-
-    def reset(self):
-        super().reset()
-        self.logger = []
 
     def run(self, iterations=100, verbose=True):
         # Book-keeping variables
         traj = []
         runtime = []
+        history = []
 
         # To retrieve the maximal pop_size and initialize a single DE object for all DEHB runs
         num_configs, budgets = self.get_next_iteration(iteration=0)
@@ -251,7 +247,7 @@ class DEHBV2(DEHBBase):
             # The first DEHB iteration - only time when a random population is initialized
             if iteration == 0:
                 # creating new population for DEHB iteration to be used for the next SH steps
-                de_traj, de_runtime = de.init_eval_pop(budget)
+                de_traj, de_runtime, de_history = de.init_eval_pop(budget)
                 # maintaining global copy of random population created
                 self.population = de.population
                 self.fitness = de.fitness
@@ -260,6 +256,7 @@ class DEHBV2(DEHBBase):
                 self.inc_config = de.inc_config
                 traj.extend(de_traj)
                 runtime.extend(de_runtime)
+                history.extend(de_history)
             elif pop_size == len(self.population) and \
                  self.randomize is not None and self.randomize > 0:
                 # executes in the first step of every SH iteration other than first DEHB iteration
@@ -281,6 +278,8 @@ class DEHBV2(DEHBBase):
                         self.inc_config = self.population[i]
                     traj.append(self.inc_score)
                     runtime.append(cost)
+                    history.append((de[0].population[i].tolist(),
+                                    float(de[0].fitness[i]), float(budget or 0)))
 
             # Ranking current population
             self.rank = np.sort(np.argsort(self.fitness)[:pop_size])
@@ -294,9 +293,10 @@ class DEHBV2(DEHBBase):
                 print(i_sh, self.rank)
                 # Repeating DE over entire population 'generations' times
                 for gen in range(self.generations):
-                    de_traj, de_runtime = de.evolve_generation(budget)
+                    de_traj, de_runtime, de_history = de.evolve_generation(budget)
                     traj.extend(de_traj)
                     runtime.extend(de_runtime)
+                    history.extend(de_history)
 
                 # Updating global incumbent after each DE step
                 self.inc_score = de.inc_score
@@ -320,7 +320,7 @@ class DEHBV2(DEHBBase):
         if verbose:
             print("\nRun complete!")
 
-        return np.array(traj), np.array(runtime)
+        return np.array(traj), np.array(runtime), np.array(history)
 
 
 class DEHBV3(DEHBBase):
@@ -337,16 +337,12 @@ class DEHBV3(DEHBBase):
                          max_budget=max_budget, eta=eta, generations=generations,
                          min_clip=min_clip, max_clip=max_clip)
         self.randomize = randomize
-        self.logger = []
-
-    def reset(self):
-        super().reset()
-        self.logger = []
 
     def run(self, iterations=100, verbose=True):
         # Book-keeping variables
         traj = []
         runtime = []
+        history = []
 
         # To retrieve the population and budget ranges
         num_configs, budgets = self.get_next_iteration(iteration=0)
@@ -377,7 +373,7 @@ class DEHBV3(DEHBBase):
             # The first DEHB iteration - only time when a random population is initialized
             if iteration == 0:
                 # creating new population for DEHB iteration to be used for the next SH steps
-                de_traj, de_runtime = de[0].init_eval_pop(budget)
+                de_traj, de_runtime, de_history = de[0].init_eval_pop(budget)
                 # maintaining global copy of random population created
                 self.population = de[0].population
                 self.fitness = de[0].fitness
@@ -386,6 +382,7 @@ class DEHBV3(DEHBBase):
                 self.inc_config = de[0].inc_config
                 traj.extend(de_traj)
                 runtime.extend(de_runtime)
+                history.extend(de_history)
             elif de_idx == 0 and self.randomize is not None and self.randomize > 0:
                 # executes in the first step of every SH iteration other than first DEHB iteration
                 # also conditional on whether a randomization fraction has been specified
@@ -405,6 +402,8 @@ class DEHBV3(DEHBBase):
                         self.inc_config = de[0].population[i]
                     traj.append(self.inc_score)
                     runtime.append(cost)
+                    history.append((de[0].population[i].tolist(),
+                                    float(de[0].fitness[i]), float(budget or 0)))
 
             # Successive Halving iterations carrying out DE
             for i_sh in range(num_SH_iters):
@@ -415,9 +414,10 @@ class DEHBV3(DEHBBase):
                 # Repeating DE over entire population 'generations' times
                 print("DE index: {}; DE budget: {}".format(de_curr, budget))
                 for gen in range(self.generations):
-                    de_traj, de_runtime = de[de_curr].evolve_generation(budget)
+                    de_traj, de_runtime, de_history = de[de_curr].evolve_generation(budget)
                     traj.extend(de_traj)
                     runtime.extend(de_runtime)
+                    history.extend(de_history)
                 # Updating global incumbent after each DE step
                 self.inc_score = de[de_curr].inc_score
                 self.inc_config = de[de_curr].inc_config
@@ -435,12 +435,13 @@ class DEHBV3(DEHBBase):
                         # warmstarting DE incumbents to maintain global trajectory
                         de[de_curr + 1].inc_score = self.inc_score
                         de[de_curr + 1].inc_config = self.inc_config
-                        de_traj, de_runtime = de[de_curr + 1].ranked_selection(rival_population,
-                                                                               budget)
+                        de_traj, de_runtime, de_history = \
+                            de[de_curr + 1].ranked_selection(rival_population, budget)
                         self.inc_score = de[de_curr + 1].inc_score
                         self.inc_config = de[de_curr + 1].inc_config
                         traj.extend(de_traj)
                         runtime.extend(de_runtime)
+                        history.extend(de_history)
                     else:  # equivalent to iteration == 0
                         print("Iteration: ", iteration)
                         de[de_curr + 1].population = rival_population
@@ -448,4 +449,4 @@ class DEHBV3(DEHBBase):
         if verbose:
             print("\nRun complete!")
 
-        return np.array(traj), np.array(runtime)
+        return np.array(traj), np.array(runtime), np.array(history)

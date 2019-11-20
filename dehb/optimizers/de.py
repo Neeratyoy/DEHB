@@ -29,12 +29,14 @@ class DEBase():
         self.inc_config = None
         self.population = None
         self.fitness = None
+        self.history = []
 
     def reset(self):
         self.inc_score = np.inf
         self.inc_config = None
         self.population = None
         self.fitness = None
+        self.history = []
 
     def init_population(self, pop_size=10):
         self.population = np.random.uniform(low=0.0, high=1.0, size=(pop_size, self.dimensions))
@@ -137,6 +139,7 @@ class DE(DEBase):
 
         traj = []
         runtime = []
+        history = []
         for i in range(self.pop_size):
             config = self.population[i]
             self.fitness[i], cost = self.f_objective(config, budget)
@@ -145,8 +148,9 @@ class DE(DEBase):
                 self.inc_config = config
             traj.append(self.inc_score)
             runtime.append(cost)
+            history.append((config.tolist(), float(self.fitness[i]), float(budget or 0)))
 
-        return traj, runtime
+        return traj, runtime, history
 
     def mutation_rand1(self, r1, r2, r3):
         '''Performs the 'rand1' type of DE mutation
@@ -186,6 +190,7 @@ class DE(DEBase):
         traj = []
         runtime = []
         track = []
+        history = []
         for i in range(len(trials)):
             # evaluation of the newly created individuals
             fitness, cost = self.f_objective(trials[i], budget)
@@ -201,8 +206,9 @@ class DE(DEBase):
                 self.inc_config = self.population[i]
             traj.append(self.inc_score)
             runtime.append(cost)
-        print("Len: {}; Track: {}".format(len(trials), track))
-        return traj, runtime
+            history.append((trials[i].tolist(), float(fitness), float(budget or 0)))
+        # print("Len: {}; Track: {}".format(len(trials), track))
+        return traj, runtime, history
 
     def ranked_selection(self, trials, budget=None):
         '''Returns the fittest individuals from two sets of population
@@ -210,6 +216,7 @@ class DE(DEBase):
         assert len(self.population) == len(trials)
         traj = []
         runtime = []
+        history = []
         track = []
         trial_fitness = []
         for i in range(len(trials)):
@@ -220,13 +227,14 @@ class DE(DEBase):
                 self.inc_config = trials[i]
             traj.append(self.inc_score)
             runtime.append(cost)
+            history.append((trials[i].tolist(), float(fitness), float(budget or 0)))
         tot_pop = np.vstack((self.population, trials))
         tot_fitness = np.hstack((self.fitness, trial_fitness))
         rank = np.sort(np.argsort(tot_fitness)[:len(trials)])
         self.population = tot_pop[rank]
         self.fitness = tot_fitness[rank]
         print("Rank: {}".format(rank))
-        return traj, runtime
+        return traj, runtime, history
 
     def evolve_generation(self, budget=None):
         '''Performs a complete DE evolution, mutation -> crossover -> selection
@@ -239,27 +247,29 @@ class DE(DEBase):
             trial = self.boundary_check(trial)
             trials.append(trial)
         trials = np.array(trials)
-        traj, runtime = self.selection(trials, budget)
-        return traj, runtime
+        traj, runtime, history = self.selection(trials, budget)
+        return traj, runtime, history
 
     def run(self, generations=100, verbose=False):
         self.traj = []
         self.runtime = []
+        self.history = []
 
         if verbose:
             print("Initializing and evaluating new population...")
-        self.traj, self.runtime = self.init_eval_pop()
+        self.traj, self.runtime, self.history = self.init_eval_pop()
 
         if verbose:
             print("Running evolutionary search...")
         for i in range(generations):
             if verbose:
                 print("Generation {:<2}/{:<2} -- {:<0.7}".format(i+1, generations, self.inc_score))
-            traj, runtime = self.evolve_generation()
+            traj, runtime, history = self.evolve_generation()
             self.traj.extend(traj)
             self.runtime.extend(runtime)
+            self.history.extend(history)
 
         if verbose:
             print("\nRun complete!")
 
-        return np.array(self.traj), np.array(self.runtime)
+        return np.array(self.traj), np.array(self.runtime), np.array(self.history)

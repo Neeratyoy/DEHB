@@ -3,6 +3,7 @@ sys.path.append('../')
 
 import os
 import json
+import pickle
 import argparse
 import numpy as np
 
@@ -11,21 +12,32 @@ from tabular_benchmarks import FCNetProteinStructureBenchmark, FCNetSliceLocaliz
 from tabular_benchmarks import NASCifar10A, NASCifar10B, NASCifar10C
 
 
-def remove_invalid_configs(traj, runtime):
+def remove_invalid_configs(traj, runtime, history):
     idx = np.where(np.array(runtime)==0)
     runtime = np.delete(runtime, idx)
     traj = np.delete(np.array(traj), idx)
-    return traj, runtime
+    history = np.delete(history, idx)
+    return traj, runtime, history
 
-def save(trajectory, runtime, path, run_id, filename="run", logger=None):
-    global y_star_valid
+def save(trajectory, runtime, history, path, run_id, filename="run"):
+    global y_star_valid, y_star_test, inc_config
     res = {}
-    res['runtime'] = np.cumsum(runtime).tolist()
-    res['regret_validation'] = np.array(np.clip(traj - y_star_valid, a_min=0, a_max=np.inf)).tolist()
-    if logger is not None:
-        res['logger'] = logger
+    res["runtime"] = np.cumsum(runtime).tolist()
+    res["regret_validation"] = np.array(np.clip(traj - y_star_valid,
+                                                a_min=0, a_max=np.inf)).tolist()
+    res["history"] = history.tolist()
+    res['y_star_valid'] = float(y_star_valid)
+    res['y_star_test'] = float(y_star_test)
+    # if inc_config is not None:
+    #     inc_config = inc_config.tolist()
+    res['inc_config'] = inc_config
     fh = open(os.path.join(output_path, '{}_{}.json'.format(filename, run_id)), 'w')
     json.dump(res, fh)
+    fh.close()
+
+def save_configspace(cs, path, filename='configspace'):
+    fh = open(os.path.join(output_path, '{}.pkl'.format(filename)), 'wb')
+    pickle.dump(cs, fh)
     fh.close()
 
 parser = argparse.ArgumentParser()
@@ -68,42 +80,48 @@ if args.benchmark == "nas_cifar10a":
     max_budget = 108
     b = NASCifar10A(data_dir=args.data_dir, multi_fidelity=True)
     y_star_valid = b.y_star_valid
+    y_star_test = b.y_star_test
+    inc_config = None
 
 elif args.benchmark == "nas_cifar10b":
     min_budget = 4
     max_budget = 108
     b = NASCifar10B(data_dir=args.data_dir, multi_fidelity=True)
     y_star_valid = b.y_star_valid
+    y_star_test = b.y_star_test
+    inc_config = None
 
 elif args.benchmark == "nas_cifar10c":
     min_budget = 4
     max_budget = 108
     b = NASCifar10C(data_dir=args.data_dir, multi_fidelity=True)
     y_star_valid = b.y_star_valid
+    y_star_test = b.y_star_test
+    inc_config = None
 
 elif args.benchmark == "protein_structure":
     min_budget = 4
     max_budget = 100
     b = FCNetProteinStructureBenchmark(data_dir=args.data_dir)
-    _, y_star_valid, _ = b.get_best_configuration()
+    inc_config, y_star_valid, y_star_test = b.get_best_configuration()
 
 elif args.benchmark == "slice_localization":
     min_budget = 4
     max_budget = 100
     b = FCNetSliceLocalizationBenchmark(data_dir=args.data_dir)
-    _, y_star_valid, _ = b.get_best_configuration()
+    inc_config, y_star_valid, y_star_test = b.get_best_configuration()
 
 elif args.benchmark == "naval_propulsion":
     min_budget = 4
     max_budget = 100
     b = FCNetNavalPropulsionBenchmark(data_dir=args.data_dir)
-    _, y_star_valid, _ = b.get_best_configuration()
+    inc_config, y_star_valid, y_star_test = b.get_best_configuration()
 
 elif args.benchmark == "parkinsons_telemonitoring":
     min_budget = 4
     max_budget = 100
     b = FCNetParkinsonsTelemonitoringBenchmark(data_dir=args.data_dir)
-    _, y_star_valid, _ = b.get_best_configuration()
+    inc_config, y_star_valid, y_star_test = b.get_best_configuration()
 
 cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
@@ -117,20 +135,22 @@ dehb = DEHB(b=b, cs=cs, dimensions=dimensions, mutation_factor=args.mutation_fac
             generations=args.gens, eta=args.eta, randomize=args.randomize)
 
 if args.runs is None:
-    traj, runtime = dehb.run(iterations=args.n_iters, verbose=args.verbose)
-    save(traj, runtime, output_path, args.run_id, filename="raw_run", logger=dehb.logger)
+    traj, runtime, history = dehb.run(iterations=args.n_iters, verbose=args.verbose)
     if 'cifar' in args.benchmark:
-        traj, runtime = remove_invalid_configs(traj, runtime)
-    save(traj, runtime, output_path, args.run_id)
+        save(traj, runtime, history, output_path, args.run_id, filename="raw_run")
+        traj, runtime, history = remove_invalid_configs(traj, runtime, history)
+    save(traj, runtime, history, output_path, args.run_id)
 else:
     for run_id, _ in enumerate(range(args.runs), start=args.run_start):
         if args.verbose:
             print("\nRun #{:<3}\n{}".format(run_id + 1, '-' * 8))
-        traj, runtime = dehb.run(iterations=args.n_iters, verbose=args.verbose)
-        save(traj, runtime, output_path, run_id, filename="raw_run", logger=dehb.logger)
+        traj, runtime, history = dehb.run(iterations=args.n_iters, verbose=args.verbose)
         if 'cifar' in args.benchmark:
-            traj, runtime = remove_invalid_configs(traj, runtime)
-        save(traj, runtime, output_path, run_id)
+            save(traj, runtime, history, output_path, run_id, filename="raw_run")
+            traj, runtime, history = remove_invalid_configs(traj, runtime, history)
+        save(traj, runtime, history, output_path, run_id)
         print("Run saved. Resetting...")
         dehb.reset()
         b.reset_tracker()
+
+save_configspace(cs, output_path)
