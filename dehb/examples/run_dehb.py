@@ -54,15 +54,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--run_id', default=0, type=int, nargs='?', help='unique number to identify this run')
 parser.add_argument('--runs', default=None, type=int, nargs='?', help='number of runs to perform')
 parser.add_argument('--run_start', default=0, type=int, nargs='?', help='run index to start with for multiple runs')
-parser.add_argument('--benchmark', default="protein_structure",
-                    choices=["protein_structure", "slice_localization", "naval_propulsion",
-                             "parkinsons_telemonitoring", "nas_cifar10a", "nas_cifar10b",
-                             "nas_cifar10c", "counting_*_*", "svm"],
-                    type=str, nargs='?', help='specifies the benchmark')
+choices = ["protein_structure", "slice_localization", "naval_propulsion",
+           "parkinsons_telemonitoring", "nas_cifar10a", "nas_cifar10b",
+           "nas_cifar10c", "counting_*_*", "svm"]
+parser.add_argument('--benchmark', default="protein_structure", help="specify the benchmark to run on from among {}".format(choices), type=str)
 parser.add_argument('--n_iters', default=100, type=int, nargs='?', help='number of iterations for optimization method')
 parser.add_argument('--output_path', default="./", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
-parser.add_argument('--data_dir', default="../tabular_benchmarks", type=str, nargs='?',
+parser.add_argument('--data_dir', default="../tabular_benchmarks/fcnet_tabular_benchmarks/", type=str, nargs='?',
                     help='specifies the path to the tabular data')
 parser.add_argument('--strategy', default="rand1_bin", type=str, nargs='?', help='type of mutation & crossover scheme')
 parser.add_argument('--eta', default=3, type=int, nargs='?', help='eta for Successive Halving')
@@ -85,6 +84,8 @@ elif args.version == '2':
     from optimizers import DEHBV2 as DEHB
 else:
     from optimizers import DEHBV3 as DEHB
+
+benchmark_type = "nasbench"
 
 if args.benchmark == "nas_cifar10a":
     min_budget = 4
@@ -136,11 +137,13 @@ elif args.benchmark == "parkinsons_telemonitoring":
 
 elif "counting" in args.benchmark:
     assert len(args.benchmark.split('_')) == 3
-    num_categorical = args.benchmark.split('_')[-2]
-    num_continuous = args.benchmark.split('_')[-1]
+    benchmark_type = "countingones"
+    n_categorical = int(args.benchmark.split('_')[-2])
+    n_continuous = int(args.benchmark.split('_')[-1])
     b = CountingOnes()
     min_budget = 9
     max_budget = 729
+    inc_config, y_star_valid, y_star_test = (None, 0, 0)
     def f(config, budget=None):
         if budget is not None:
             res = b.objective_function(config, budget=budget)
@@ -153,9 +156,11 @@ elif "counting" in args.benchmark:
         return fitness, cost
 
 elif "svm" in args.benchmark:
+    benchmark_type = "svm"
     min_budget = 1 / 512
     max_budget = 1
     b = surrogate(path=None)
+    inc_config, y_star_valid, y_star_test = (None, 0, 0)
     def f(config, budget=None):
         if budget is not None:
             res = b.objective_function(config, dataset_fraction=budget)
@@ -168,7 +173,9 @@ elif "svm" in args.benchmark:
         return fitness, cost
 
 if "counting" in args.benchmark:
-    cs = CountingOnes.get_configuration_space(n_categorical=6, n_continuous=6)
+    cs = CountingOnes.get_configuration_space(n_categorical=n_categorical,
+                                              n_continuous=n_continuous)
+    args.output_path = os.path.join(args.output_path, "{}_{}".format(n_categorical, n_continuous))
 else:
     cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
@@ -198,6 +205,7 @@ else:
         save(traj, runtime, history, output_path, run_id)
         print("Run saved. Resetting...")
         dehb.reset()
-        b.reset_tracker()
+        if benchmark_type == "nasbench":
+            b.reset_tracker()
 
 save_configspace(cs, output_path)

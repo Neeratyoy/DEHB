@@ -348,12 +348,13 @@ class DEHBV3(DEHBBase):
 
         # To retrieve the population and budget ranges
         num_configs, budgets = self.get_next_iteration(iteration=0)
+        full_budget = budgets[0]
         # List of DE objects corresponding to the populations
-        de = []
-        for i in range(len(budgets)):
-            de.append(DE(cs=self.cs, f=self.f, dimensions=self.dimensions, pop_size=num_configs[i],
-                      mutation_factor=self.mutation_factor, crossover_prob=self.crossover_prob,
-                      strategy=self.strategy, budget=budgets[i]))
+        de = {}
+        for i, b in enumerate(budgets):
+            de[b] = DE(cs=self.cs, f=self.f, dimensions=self.dimensions, pop_size=num_configs[i],
+                       mutation_factor=self.mutation_factor, crossover_prob=self.crossover_prob,
+                       strategy=self.strategy, budget=b)
 
         # Performs DEHB iterations
         for iteration in range(iterations):
@@ -375,82 +376,83 @@ class DEHBV3(DEHBBase):
             # The first DEHB iteration - only time when a random population is initialized
             if iteration == 0:
                 # creating new population for DEHB iteration to be used for the next SH steps
-                de_traj, de_runtime, de_history = de[0].init_eval_pop(budget)
+                de_traj, de_runtime, de_history = de[full_budget].init_eval_pop(budget)
                 # maintaining global copy of random population created
-                self.population = de[0].population
-                self.fitness = de[0].fitness
+                self.population = de[full_budget].population
+                self.fitness = de[full_budget].fitness
                 # update global incumbent with new population scores
-                self.inc_score = de[0].inc_score
-                self.inc_config = de[0].inc_config
+                self.inc_score = de[full_budget].inc_score
+                self.inc_config = de[full_budget].inc_config
                 traj.extend(de_traj)
                 runtime.extend(de_runtime)
                 history.extend(de_history)
-            elif de_idx == 0 and self.randomize is not None and self.randomize > 0:
+            elif budget == full_budget and self.randomize is not None and self.randomize > 0:
                 # executes in the first step of every SH iteration other than first DEHB iteration
                 # also conditional on whether a randomization fraction has been specified
                 num_replace = np.ceil(self.randomize * pop_size).astype(int)
                 # fetching the worst performing individuals
-                idxs = np.sort(np.argsort(-de[0].fitness)[:num_replace])
+                idxs = np.sort(np.argsort(-de[full_budget].fitness)[:num_replace])
                 if debug:
                     print("Replacing {}/{} -- {}".format(num_replace, pop_size, idxs))
                 new_pop = self.init_population(pop_size=num_replace)
-                de[0].population[idxs] = new_pop
-                de[0].inc_score = self.inc_score
-                de[0].inc_config = self.inc_config
+                de[full_budget].population[idxs] = new_pop
+                de[full_budget].inc_score = self.inc_score
+                de[full_budget].inc_config = self.inc_config
                 # evaluating new individuals
                 for i in idxs:
-                    de[0].fitness[i], cost = de[0].f_objective(de[0].population[i], budget)
+                    de[full_budget].fitness[i], cost = de[full_budget].f_objective(de[full_budget].population[i], budget)
                     if self.fitness[i] < self.inc_score:
-                        self.inc_score = de[0].fitness[i]
-                        self.inc_config = de[0].population[i]
+                        self.inc_score = de[full_budget].fitness[i]
+                        self.inc_config = de[full_budget].population[i]
                     traj.append(self.inc_score)
                     runtime.append(cost)
-                    history.append((de[0].population[i].tolist(),
-                                    float(de[0].fitness[i]), float(budget or 0)))
+                    history.append((de[full_budget].population[i].tolist(),
+                                    float(de[full_budget].fitness[i]), float(budget or 0)))
 
             # Successive Halving iterations carrying out DE
             for i_sh in range(num_SH_iters):
                 de_curr = de_idx + i_sh
                 # Warmstarting DE incumbent
-                de[de_curr].inc_score = self.inc_score
-                de[de_curr].inc_config = self.inc_config
+                de[budget].inc_score = self.inc_score
+                de[budget].inc_config = self.inc_config
                 if debug:
-                    print("DE index: {}; DE budget: {}".format(de_curr, budget))
+                    print("DE index: {}; DE budget: {}".format(budget, budget))
                 # Repeating DE over entire population 'generations' times
                 for gen in range(self.generations):
-                    de_traj, de_runtime, de_history = de[de_curr].evolve_generation(budget)
+                    de_traj, de_runtime, de_history = de[budget].evolve_generation(budget)
                     traj.extend(de_traj)
                     runtime.extend(de_runtime)
                     history.extend(de_history)
                 # Updating global incumbent after each DE step
-                self.inc_score = de[de_curr].inc_score
-                self.inc_config = de[de_curr].inc_config
+                self.inc_score = de[budget].inc_score
+                self.inc_config = de[budget].inc_config
 
                 # Retrieving budget, pop_size, population for the next SH iteration
                 if i_sh < num_SH_iters-1:  # when not final SH iteration
                     pop_size = num_configs[i_sh + 1]
-                    budget = budgets[i_sh + 1]
+                    next_budget = budgets[i_sh + 1]
                     # selecting top ranking individuals from lower budget
                     ## to be evaluated on higher budget and be eligible for competition
-                    rank = np.sort(np.argsort(de[de_curr].fitness)[:pop_size])
-                    rival_population = de[de_curr].population[rank]
+                    rank = np.sort(np.argsort(de[budget].fitness)[:pop_size])
+                    rival_population = de[budget].population[rank]
                     # print(i_sh, rank)
-                    if de[de_curr + 1].population is not None:
+                    if de[next_budget].population is not None:
                         # warmstarting DE incumbents to maintain global trajectory
-                        de[de_curr + 1].inc_score = self.inc_score
-                        de[de_curr + 1].inc_config = self.inc_config
+                        de[next_budget].inc_score = self.inc_score
+                        de[next_budget].inc_config = self.inc_config
                         de_traj, de_runtime, de_history = \
-                            de[de_curr + 1].ranked_selection(rival_population, budget)
-                        self.inc_score = de[de_curr + 1].inc_score
-                        self.inc_config = de[de_curr + 1].inc_config
+                            de[next_budget].ranked_selection(rival_population, budget, debug)
+                        self.inc_score = de[next_budget].inc_score
+                        self.inc_config = de[next_budget].inc_config
                         traj.extend(de_traj)
                         runtime.extend(de_runtime)
                         history.extend(de_history)
                     else:  # equivalent to iteration == 0
                         if debug:
                             print("Iteration: ", iteration)
-                        de[de_curr + 1].population = rival_population
-                        de[de_curr + 1].fitness = de[de_curr].fitness[rank]
+                        de[next_budget].population = rival_population
+                        de[next_budget].fitness = de[budget].fitness[rank]
+                    budget = next_budget
         if verbose:
             print("\nRun complete!")
 

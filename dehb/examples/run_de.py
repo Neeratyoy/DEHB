@@ -56,15 +56,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--run_id', default=0, type=int, nargs='?', help='unique number to identify this run')
 parser.add_argument('--runs', default=None, type=int, nargs='?', help='number of runs to perform')
 parser.add_argument('--run_start', default=0, type=int, nargs='?', help='run index to start with for multiple runs')
-parser.add_argument('--benchmark', default="protein_structure",
-                    choices=["protein_structure", "slice_localization", "naval_propulsion",
-                             "parkinsons_telemonitoring", "nas_cifar10a", "nas_cifar10b",
-                             "nas_cifar10c", "counting_*_*", "svm"],
-                    type=str, nargs='?', help='specifies the benchmark')
+choices = ["protein_structure", "slice_localization", "naval_propulsion",
+           "parkinsons_telemonitoring", "nas_cifar10a", "nas_cifar10b",
+           "nas_cifar10c", "counting_*_*", "svm"]
+parser.add_argument('--benchmark', default="protein_structure", help="specify the benchmark to run on from among {}".format(choices), type=str)
 parser.add_argument('--gens', default=100, type=int, nargs='?', help='number of generations for DE to evolve')
 parser.add_argument('--output_path', default="./", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
-parser.add_argument('--data_dir', default="../tabular_benchmarks", type=str, nargs='?',
+parser.add_argument('--data_dir', default="../tabular_benchmarks/fcnet_tabular_benchmarks/", type=str, nargs='?',
                     help='specifies the path to the tabular data')
 parser.add_argument('--pop_size', default=10, type=int, nargs='?', help='population size')
 parser.add_argument('--strategy', default="rand1_bin", type=str, nargs='?', help='type of mutation & crossover scheme')
@@ -72,9 +71,12 @@ parser.add_argument('--mutation_factor', default=0.5, type=float, nargs='?', hel
 parser.add_argument('--crossover_prob', default=0.5, type=float, nargs='?', help='probability of crossover')
 parser.add_argument('--max_budget', default=None, type=str, nargs='?', help='maximum wallclock time to run DE for')
 parser.add_argument('--verbose', default='False', choices=['True', 'False'], nargs='?', help='to print progress or not')
+parser.add_argument('--folder', default='de', type=str, nargs='?', help='name of folder where files will be dumped')
 
 args = parser.parse_args()
 args.verbose = True if args.verbose == 'True' else False
+
+benchmark_type = "nasbench"
 
 if args.benchmark == "nas_cifar10a":
     min_budget = 4
@@ -126,8 +128,9 @@ elif args.benchmark == "parkinsons_telemonitoring":
 
 elif "counting" in args.benchmark:
     assert len(args.benchmark.split('_')) == 3
-    num_categorical = args.benchmark.split('_')[-2]
-    num_continuous = args.benchmark.split('_')[-1]
+    benchmark_type = "countingones"
+    n_categorical = int(args.benchmark.split('_')[-2])
+    n_continuous = int(args.benchmark.split('_')[-1])
     b = CountingOnes()
     min_budget = 9
     max_budget = 729
@@ -144,6 +147,7 @@ elif "counting" in args.benchmark:
         return fitness, cost
 
 elif "svm" in args.benchmark:
+    benchmark_type = "svm"
     min_budget = 1 / 512
     max_budget = 1
     b = surrogate(path=None)
@@ -160,12 +164,14 @@ elif "svm" in args.benchmark:
         return fitness, cost
 
 if "counting" in args.benchmark:
-    cs = CountingOnes.get_configuration_space(n_categorical=6, n_continuous=6)
+    cs = CountingOnes.get_configuration_space(n_categorical=n_categorical,
+                                              n_continuous=n_continuous)
+    args.output_path = os.path.join(args.output_path, "{}_{}".format(n_categorical, n_continuous))
 else:
     cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
 
-output_path = os.path.join(args.output_path, "de")
+output_path = os.path.join(args.output_path, args.folder)
 os.makedirs(output_path, exist_ok=True)
 
 de = DE(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size,
@@ -189,6 +195,7 @@ else:
         save(traj, runtime, history, output_path, run_id)
         print("Run saved. Resetting...")
         de.reset()
-        b.reset_tracker()
+        if benchmark_type == "nasbench":
+            b.reset_tracker()
 
 save_configspace(cs, output_path)

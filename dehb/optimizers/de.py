@@ -210,15 +210,16 @@ class DE(DEBase):
         # print("Len: {}; Track: {}".format(len(trials), track))
         return traj, runtime, history
 
-    def ranked_selection(self, trials, budget=None):
+    def ranked_selection(self, trials, budget=None, debug=False):
         '''Returns the fittest individuals from two sets of population
         '''
-        assert len(self.population) == len(trials)
+        # assert len(self.population) == len(trials)
         traj = []
         runtime = []
         history = []
         track = []
         trial_fitness = []
+        pop_size = len(trials)
         for i in range(len(trials)):
             fitness, cost = self.f_objective(trials[i], budget)
             trial_fitness.append(fitness)
@@ -230,10 +231,12 @@ class DE(DEBase):
             history.append((trials[i].tolist(), float(fitness), float(budget or 0)))
         tot_pop = np.vstack((self.population, trials))
         tot_fitness = np.hstack((self.fitness, trial_fitness))
-        rank = np.sort(np.argsort(tot_fitness)[:len(trials)])
+        rank = np.sort(np.argsort(tot_fitness)[:pop_size])
         self.population = tot_pop[rank]
         self.fitness = tot_fitness[rank]
-        print("Rank: {}".format(rank))
+        self.pop_size = pop_size
+        if debug:
+            print("Rank: {}".format(rank))
         return traj, runtime, history
 
     def evolve_generation(self, budget=None):
