@@ -4,11 +4,11 @@ import ConfigSpace
 
 
 class DEBase():
-    def __init__(self, b=None, cs=None, dimensions=None, pop_size=None, mutation_factor=None,
+    def __init__(self, cs=None, f=None, dimensions=None, pop_size=None, mutation_factor=None,
                  crossover_prob=None, strategy=None, budget=None, **kwargs):
         # Benchmark related variables
-        self.b = b
-        self.cs = self.b.get_configuration_space() if cs is None and b is not None else cs
+        self.cs = cs
+        self.f = f
         if dimensions is None and self.cs is not None:
             self.dimensions = len(self.cs.get_hyperparameters())
         else:
@@ -110,11 +110,11 @@ class DEBase():
 
 
 class DE(DEBase):
-    def __init__(self, b=None, cs=None, dimensions=None, pop_size=None, mutation_factor=None,
+    def __init__(self, cs=None, f=None, dimensions=None, pop_size=None, mutation_factor=None,
                  crossover_prob=None, strategy='rand1_bin', budget=None, **kwargs):
-        super().__init__(b=b, cs=cs, dimensions=dimensions, pop_size=pop_size, mutation_factor=mutation_factor,
-                         crossover_prob=crossover_prob, strategy=strategy, budget=budget, **kwargs)
-
+        super().__init__(cs=cs, f=f, dimensions=dimensions, pop_size=pop_size,
+                         mutation_factor=mutation_factor, crossover_prob=crossover_prob,
+                         strategy=strategy, budget=budget, **kwargs)
         if self.strategy is not None:
             self.mutation_strategy = self.strategy.split('_')[0]
             self.crossover_strategy = self.strategy.split('_')[1]
@@ -122,13 +122,13 @@ class DE(DEBase):
             self.mutation_strategy = self.crossover_strategy = None
 
     def f_objective(self, x, budget=None):
-        if self.b is None:
-            raise NotImplementedError("The custom objective function needs to be defined here.")
+        if self.f is None:
+            raise NotImplementedError("An objective function needs to be passed.")
         config = self.vector_to_configspace(x)
         if budget is not None:  # to be used when called by multi-fidelity based optimizers
-            fitness, cost = self.b.objective_function(config, budget=budget)
+            fitness, cost = self.f(config, budget=budget)
         else:
-            fitness, cost = self.b.objective_function(config)
+            fitness, cost = self.f(config)
         return fitness, cost
 
     def init_eval_pop(self, budget=None):

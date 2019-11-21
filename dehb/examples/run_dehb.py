@@ -11,6 +11,9 @@ from tabular_benchmarks import FCNetProteinStructureBenchmark, FCNetSliceLocaliz
     FCNetNavalPropulsionBenchmark, FCNetParkinsonsTelemonitoringBenchmark
 from tabular_benchmarks import NASCifar10A, NASCifar10B, NASCifar10C
 
+from hpolib.benchmarks.surrogates.svm import SurrogateSVM as surrogate
+from hpolib.benchmarks.synthetic_functions.counting_ones import CountingOnes
+
 
 def remove_invalid_configs(traj, runtime, history):
     idx = np.where(np.array(runtime)==0)
@@ -40,13 +43,21 @@ def save_configspace(cs, path, filename='configspace'):
     pickle.dump(cs, fh)
     fh.close()
 
+def f(config, budget=None):
+    if budget is not None:
+        fitness, cost = b.objective_function(config, budget=budget)
+    else:
+        fitness, cost = b.objective_function(config)
+    return fitness, cost
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--run_id', default=0, type=int, nargs='?', help='unique number to identify this run')
 parser.add_argument('--runs', default=None, type=int, nargs='?', help='number of runs to perform')
 parser.add_argument('--run_start', default=0, type=int, nargs='?', help='run index to start with for multiple runs')
 parser.add_argument('--benchmark', default="protein_structure",
                     choices=["protein_structure", "slice_localization", "naval_propulsion",
-                             "parkinsons_telemonitoring", "nas_cifar10a", "nas_cifar10b", "nas_cifar10c"],
+                             "parkinsons_telemonitoring", "nas_cifar10a", "nas_cifar10b",
+                             "nas_cifar10c", "counting_*_*", "svm"],
                     type=str, nargs='?', help='specifies the benchmark')
 parser.add_argument('--n_iters', default=100, type=int, nargs='?', help='number of iterations for optimization method')
 parser.add_argument('--output_path', default="./", type=str, nargs='?',
@@ -123,13 +134,49 @@ elif args.benchmark == "parkinsons_telemonitoring":
     b = FCNetParkinsonsTelemonitoringBenchmark(data_dir=args.data_dir)
     inc_config, y_star_valid, y_star_test = b.get_best_configuration()
 
-cs = b.get_configuration_space()
+elif "counting" in args.benchmark:
+    assert len(args.benchmark.split('_')) == 3
+    num_categorical = args.benchmark.split('_')[-2]
+    num_continuous = args.benchmark.split('_')[-1]
+    b = CountingOnes()
+    min_budget = 9
+    max_budget = 729
+    def f(config, budget=None):
+        if budget is not None:
+            res = b.objective_function(config, budget=budget)
+            fitness = res["function_value"]
+            cost = 1
+        else:
+            res = b.objective_function(config)
+            fitness = res["function_value"]
+            cost = 1
+        return fitness, cost
+
+elif "svm" in args.benchmark:
+    min_budget = 1 / 512
+    max_budget = 1
+    b = surrogate(path=None)
+    def f(config, budget=None):
+        if budget is not None:
+            res = b.objective_function(config, dataset_fraction=budget)
+            fitness = res["function_value"]
+            cost = res["cost"]
+        else:
+            res = b.objective_function(config)
+            fitness = res["function_value"]
+            cost = res["cost"]
+        return fitness, cost
+
+if "counting" in args.benchmark:
+    cs = CountingOnes.get_configuration_space(n_categorical=6, n_continuous=6)
+else:
+    cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
 
 output_path = os.path.join(args.output_path, args.folder)
 os.makedirs(output_path, exist_ok=True)
 
-dehb = DEHB(b=b, cs=cs, dimensions=dimensions, mutation_factor=args.mutation_factor,
+dehb = DEHB(cs=cs, f=f, dimensions=dimensions, mutation_factor=args.mutation_factor,
             crossover_prob=args.crossover_prob, strategy=args.strategy, min_budget=min_budget,
             max_budget=max_budget, min_clip=args.min_clip, max_clip=args.max_clip,
             generations=args.gens, eta=args.eta, randomize=args.randomize)

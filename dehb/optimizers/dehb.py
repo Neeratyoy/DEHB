@@ -7,16 +7,16 @@ from optimizers.de import DE
 
 
 class DEHBBase():
-    def __init__(self, b=None, cs=None, dimensions=None, mutation_factor=None,
-                 crossover_prob=None, strategy='rand1_bin', generations=None, min_budget=None,
+    def __init__(self, cs=None, f=None, dimensions=None, mutation_factor=None,
+                 crossover_prob=None, strategy=None, generations=None, min_budget=None,
                  max_budget=None, eta=None, min_clip=3, max_clip=None, **kwargs):
         # Benchmark related variables
-        self.b = b
-        self.cs = self.b.get_configuration_space() if cs is None and b is not None else cs
+        self.cs = cs
         if dimensions is None and self.cs is not None:
             self.dimensions = len(self.cs.get_hyperparameters())
         else:
             self.dimensions = dimensions
+        self.f = f
 
         # DE related variables
         self.mutation_factor = mutation_factor
@@ -41,7 +41,7 @@ class DEHBBase():
             self.budgets = self.max_budget * np.power(self.eta,
                                                      -np.linspace(start=self.max_SH_iter - 1,
                                                                   stop=0, num=self.max_SH_iter))
-            self.budgets = self.budgets.astype(int)
+            # self.budgets = self.budgets.astype(int)
 
         # Miscellaneous
         self.output_path = kwargs['output_path'] if 'output_path' in kwargs else ''
@@ -113,15 +113,15 @@ class DEHBV1(DEHBBase):
         The top performing individuals are carried forward to the next higher budget.
     Each SH iteration in each DEHB iteration is evolved for a certain number of generations.
     '''
-    def __init__(self, b=None, cs=None, dimensions=None, mutation_factor=None,
-                 crossover_prob=None, strategy=None, min_budget=None, max_budget=None,
+    def __init__(self, cs=None, f=None, dimensions=None, mutation_factor=None,
+                 crossover_prob=None, strategy='rand1_bin', min_budget=None, max_budget=None,
                  eta=None, generations=None, min_clip=3, max_clip=None, **kwargs):
-        super().__init__(b=b, cs=cs, dimensions=dimensions, mutation_factor=mutation_factor,
+        super().__init__(cs=cs, f=f, dimensions=dimensions, mutation_factor=mutation_factor,
                          crossover_prob=crossover_prob, strategy=strategy, min_budget=min_budget,
                          max_budget=max_budget, eta=eta, generations=generations,
                          min_clip=min_clip, max_clip=max_clip)
 
-    def run(self, iterations=100, verbose=True):
+    def run(self, iterations=100, verbose=False, debug=False):
         # Book-keeping variables
         traj = []
         runtime = []
@@ -141,7 +141,7 @@ class DEHBV1(DEHBBase):
             num_SH_iters = len(budgets)
             # Initializing DE object that will be used across this DEHB iteration
             # The DE object is initialized with the current pop_size and budget
-            de = DE(b=self.b, cs=self.cs, dimensions=self.dimensions, pop_size=pop_size,
+            de = DE(cs=self.cs, f=self.f, dimensions=self.dimensions, pop_size=pop_size,
                     mutation_factor=self.mutation_factor, crossover_prob=self.crossover_prob,
                     strategy=self.strategy, budget=budget)
             # Warmstarting DE incumbent to be the global incumbent
@@ -206,11 +206,11 @@ class DEHBV2(DEHBBase):
     Each SH iteration in each DEHB iteration is evolved for only one generation,
         using the best individuals from the evolved population from previous iteration.
     '''
-    def __init__(self, b=None, cs=None, dimensions=None, mutation_factor=None,
-                 crossover_prob=None, strategy=None, min_budget=None, max_budget=None,
+    def __init__(self, cs=None, f=None, dimensions=None, mutation_factor=None,
+                 crossover_prob=None, strategy='rand1_bin', min_budget=None, max_budget=None,
                  eta=None, generations=None,  min_clip=3, max_clip=None,
                  randomize=None, **kwargs):
-        super().__init__(b=b, cs=cs, dimensions=dimensions, mutation_factor=mutation_factor,
+        super().__init__(cs=cs, f=f, dimensions=dimensions, mutation_factor=mutation_factor,
                          crossover_prob=crossover_prob, strategy=strategy, min_budget=min_budget,
                          max_budget=max_budget, eta=eta, generations=generations,
                          min_clip=min_clip, max_clip=max_clip)
@@ -218,7 +218,7 @@ class DEHBV2(DEHBBase):
         # Fixing to 1 -- specific attribute of version 2 of DEHB
         # self.generations = 1
 
-    def run(self, iterations=100, verbose=True):
+    def run(self, iterations=100, verbose=False, debug=False):
         # Book-keeping variables
         traj = []
         runtime = []
@@ -226,7 +226,7 @@ class DEHBV2(DEHBBase):
 
         # To retrieve the maximal pop_size and initialize a single DE object for all DEHB runs
         num_configs, budgets = self.get_next_iteration(iteration=0)
-        de = DE(b=self.b, cs=self.cs, dimensions=self.dimensions, pop_size=num_configs[0],
+        de = DE(cs=self.cs, f=self.f, dimensions=self.dimensions, pop_size=num_configs[0],
                 mutation_factor=self.mutation_factor, crossover_prob=self.crossover_prob,
                 strategy=self.strategy, budget=budgets[0])
 
@@ -264,7 +264,8 @@ class DEHBV2(DEHBBase):
                 num_replace = np.ceil(self.randomize * pop_size).astype(int)
                 # fetching the worst performing individuals
                 idxs = np.sort(np.argsort(-self.fitness)[:num_replace])
-                print("Replacing {}/{} -- {}".format(num_replace, pop_size, idxs))
+                if debug:
+                    print("Replacing {}/{} -- {}".format(num_replace, pop_size, idxs))
                 new_pop = self.init_population(pop_size=num_replace)
                 self.population[idxs] = new_pop
                 de.inc_score = self.inc_score
@@ -290,7 +291,8 @@ class DEHBV2(DEHBBase):
 
             # Successive Halving iterations carrying out DE
             for i_sh in range(num_SH_iters):
-                print(i_sh, self.rank)
+                if debug:
+                    print(i_sh, self.rank)
                 # Repeating DE over entire population 'generations' times
                 for gen in range(self.generations):
                     de_traj, de_runtime, de_history = de.evolve_generation(budget)
@@ -328,17 +330,17 @@ class DEHBV3(DEHBBase):
 
     At anytime, each set of population contains the best individuals from that budget
     '''
-    def __init__(self, b=None, cs=None, dimensions=None, mutation_factor=None,
-                 crossover_prob=None, strategy=None, min_budget=None, max_budget=None,
+    def __init__(self, cs=None, f=None, dimensions=None, mutation_factor=None,
+                 crossover_prob=None, strategy='rand1_bin', min_budget=None, max_budget=None,
                  eta=None, generations=None,  min_clip=3, max_clip=None,
                  randomize=None, **kwargs):
-        super().__init__(b=b, cs=cs, dimensions=dimensions, mutation_factor=mutation_factor,
+        super().__init__(cs=cs, f=f, dimensions=dimensions, mutation_factor=mutation_factor,
                          crossover_prob=crossover_prob, strategy=strategy, min_budget=min_budget,
                          max_budget=max_budget, eta=eta, generations=generations,
                          min_clip=min_clip, max_clip=max_clip)
         self.randomize = randomize
 
-    def run(self, iterations=100, verbose=True):
+    def run(self, iterations=100, verbose=False, debug=False):
         # Book-keeping variables
         traj = []
         runtime = []
@@ -349,7 +351,7 @@ class DEHBV3(DEHBBase):
         # List of DE objects corresponding to the populations
         de = []
         for i in range(len(budgets)):
-            de.append(DE(b=self.b, cs=self.cs, dimensions=self.dimensions, pop_size=num_configs[i],
+            de.append(DE(cs=self.cs, f=self.f, dimensions=self.dimensions, pop_size=num_configs[i],
                       mutation_factor=self.mutation_factor, crossover_prob=self.crossover_prob,
                       strategy=self.strategy, budget=budgets[i]))
 
@@ -389,7 +391,8 @@ class DEHBV3(DEHBBase):
                 num_replace = np.ceil(self.randomize * pop_size).astype(int)
                 # fetching the worst performing individuals
                 idxs = np.sort(np.argsort(-de[0].fitness)[:num_replace])
-                print("Replacing {}/{} -- {}".format(num_replace, pop_size, idxs))
+                if debug:
+                    print("Replacing {}/{} -- {}".format(num_replace, pop_size, idxs))
                 new_pop = self.init_population(pop_size=num_replace)
                 de[0].population[idxs] = new_pop
                 de[0].inc_score = self.inc_score
@@ -411,8 +414,9 @@ class DEHBV3(DEHBBase):
                 # Warmstarting DE incumbent
                 de[de_curr].inc_score = self.inc_score
                 de[de_curr].inc_config = self.inc_config
+                if debug:
+                    print("DE index: {}; DE budget: {}".format(de_curr, budget))
                 # Repeating DE over entire population 'generations' times
-                print("DE index: {}; DE budget: {}".format(de_curr, budget))
                 for gen in range(self.generations):
                     de_traj, de_runtime, de_history = de[de_curr].evolve_generation(budget)
                     traj.extend(de_traj)
@@ -443,7 +447,8 @@ class DEHBV3(DEHBBase):
                         runtime.extend(de_runtime)
                         history.extend(de_history)
                     else:  # equivalent to iteration == 0
-                        print("Iteration: ", iteration)
+                        if debug:
+                            print("Iteration: ", iteration)
                         de[de_curr + 1].population = rival_population
                         de[de_curr + 1].fitness = de[de_curr].fitness[rank]
         if verbose:

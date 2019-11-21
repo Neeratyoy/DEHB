@@ -11,6 +11,9 @@ from tabular_benchmarks import FCNetProteinStructureBenchmark, FCNetSliceLocaliz
     FCNetNavalPropulsionBenchmark, FCNetParkinsonsTelemonitoringBenchmark
 from tabular_benchmarks import NASCifar10A, NASCifar10B, NASCifar10C
 
+from hpolib.benchmarks.surrogates.svm import SurrogateSVM as surrogate
+from hpolib.benchmarks.synthetic_functions.counting_ones import CountingOnes
+
 from optimizers import DE
 
 
@@ -42,13 +45,21 @@ def save_configspace(cs, path, filename='configspace'):
     pickle.dump(cs, fh)
     fh.close()
 
+def f(config, budget=None):
+    if budget is not None:
+        fitness, cost = b.objective_function(config, budget=budget)
+    else:
+        fitness, cost = b.objective_function(config)
+    return fitness, cost
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--run_id', default=0, type=int, nargs='?', help='unique number to identify this run')
 parser.add_argument('--runs', default=None, type=int, nargs='?', help='number of runs to perform')
 parser.add_argument('--run_start', default=0, type=int, nargs='?', help='run index to start with for multiple runs')
 parser.add_argument('--benchmark', default="protein_structure",
                     choices=["protein_structure", "slice_localization", "naval_propulsion",
-                             "parkinsons_telemonitoring", "nas_cifar10a", "nas_cifar10b", "nas_cifar10c"],
+                             "parkinsons_telemonitoring", "nas_cifar10a", "nas_cifar10b",
+                             "nas_cifar10c", "counting_*_*", "svm"],
                     type=str, nargs='?', help='specifies the benchmark')
 parser.add_argument('--gens', default=100, type=int, nargs='?', help='number of generations for DE to evolve')
 parser.add_argument('--output_path', default="./", type=str, nargs='?',
@@ -66,46 +77,98 @@ args = parser.parse_args()
 args.verbose = True if args.verbose == 'True' else False
 
 if args.benchmark == "nas_cifar10a":
-    b = NASCifar10A(data_dir=args.data_dir, multi_fidelity=False)
+    min_budget = 4
+    max_budget = 108
+    b = NASCifar10A(data_dir=args.data_dir, multi_fidelity=True)
     y_star_valid = b.y_star_valid
     y_star_test = b.y_star_test
     inc_config = None
 
 elif args.benchmark == "nas_cifar10b":
-    b = NASCifar10B(data_dir=args.data_dir, multi_fidelity=False)
+    min_budget = 4
+    max_budget = 108
+    b = NASCifar10B(data_dir=args.data_dir, multi_fidelity=True)
     y_star_valid = b.y_star_valid
     y_star_test = b.y_star_test
     inc_config = None
 
 elif args.benchmark == "nas_cifar10c":
-    b = NASCifar10C(data_dir=args.data_dir, multi_fidelity=False)
+    min_budget = 4
+    max_budget = 108
+    b = NASCifar10C(data_dir=args.data_dir, multi_fidelity=True)
     y_star_valid = b.y_star_valid
     y_star_test = b.y_star_test
     inc_config = None
 
 elif args.benchmark == "protein_structure":
+    min_budget = 4
+    max_budget = 100
     b = FCNetProteinStructureBenchmark(data_dir=args.data_dir)
     inc_config, y_star_valid, y_star_test = b.get_best_configuration()
 
 elif args.benchmark == "slice_localization":
+    min_budget = 4
+    max_budget = 100
     b = FCNetSliceLocalizationBenchmark(data_dir=args.data_dir)
     inc_config, y_star_valid, y_star_test = b.get_best_configuration()
 
 elif args.benchmark == "naval_propulsion":
+    min_budget = 4
+    max_budget = 100
     b = FCNetNavalPropulsionBenchmark(data_dir=args.data_dir)
     inc_config, y_star_valid, y_star_test = b.get_best_configuration()
 
 elif args.benchmark == "parkinsons_telemonitoring":
+    min_budget = 4
+    max_budget = 100
     b = FCNetParkinsonsTelemonitoringBenchmark(data_dir=args.data_dir)
     inc_config, y_star_valid, y_star_test = b.get_best_configuration()
 
-cs = b.get_configuration_space()
+elif "counting" in args.benchmark:
+    assert len(args.benchmark.split('_')) == 3
+    num_categorical = args.benchmark.split('_')[-2]
+    num_continuous = args.benchmark.split('_')[-1]
+    b = CountingOnes()
+    min_budget = 9
+    max_budget = 729
+    inc_config, y_star_valid, y_star_test = (None, 0, 0)
+    def f(config, budget=None):
+        if budget is not None:
+            res = b.objective_function(config, budget=budget)
+            fitness = res["function_value"]
+            cost = 1
+        else:
+            res = b.objective_function(config)
+            fitness = res["function_value"]
+            cost = 1
+        return fitness, cost
+
+elif "svm" in args.benchmark:
+    min_budget = 1 / 512
+    max_budget = 1
+    b = surrogate(path=None)
+    inc_config, y_star_valid, y_star_test = (None, 0, 0)
+    def f(config, budget=None):
+        if budget is not None:
+            res = b.objective_function(config, dataset_fraction=budget)
+            fitness = res["function_value"]
+            cost = res["cost"]
+        else:
+            res = b.objective_function(config)
+            fitness = res["function_value"]
+            cost = res["cost"]
+        return fitness, cost
+
+if "counting" in args.benchmark:
+    cs = CountingOnes.get_configuration_space(n_categorical=6, n_continuous=6)
+else:
+    cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
 
 output_path = os.path.join(args.output_path, "de")
 os.makedirs(output_path, exist_ok=True)
 
-de = DE(b=b, cs=cs, dimensions=dimensions, pop_size=args.pop_size,
+de = DE(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size,
         mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
         strategy=args.strategy, max_budget=args.max_budget)
 
