@@ -26,8 +26,14 @@ def save(trajectory, runtime, history, path, run_id, filename="run"):
     global y_star_valid, y_star_test, inc_config
     res = {}
     res["runtime"] = np.cumsum(runtime).tolist()
+    if np.max(traj) < 0:
+        a_min = -np.inf
+        a_max = 0
+    else:
+        a_min = 0
+        a_max = np.inf
     res["regret_validation"] = np.array(np.clip(traj - y_star_valid,
-                                                a_min=0, a_max=np.inf)).tolist()
+                                                a_min=a_min, a_max=a_max)).tolist()
     res["history"] = history.tolist()
     res['y_star_valid'] = float(y_star_valid)
     res['y_star_test'] = float(y_star_test)

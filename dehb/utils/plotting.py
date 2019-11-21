@@ -1,6 +1,7 @@
 import os
 import json
 import sys
+import pickle
 import argparse
 import collections
 import pandas as pd
@@ -92,12 +93,12 @@ methods = [("bohb", "BOHB"),
 #         ("random_search", "RS"),
 #         ("tpe", "TPE"),
            ("de", "DE"),
-           ("dehb_v1", "DEHB V1; $gen=1$;"),
-           ("dehb_v2", "DEHB V2; $gen=1$; $rand=0.3$;"),
-           ("dehb_v3", "DEHB V3; $gen=1$; $rand=0$;"),
-           ("dehb_v3_pop10", "DEHB V3 $gen=1$; $rand=0$; $pop=10$"),
-           ("dehb_v3_rand0.3", "DEHB V3; $gen=1$; $rand=0.3$;"),
-           ("dehb_v3_pop10_rand0.3", "DEHB V3 $gen=1$; $rand=0.3$; $pop=10$")]
+           ("dehb_v1", "DEHB V1; $gen=5$;"),
+           ("dehb_v2", "DEHB V2; $gen=1$;"),
+           ("dehb_v3", "DEHB V3; $gen=1$;")]
+           # ("dehb_v3_pop10", "DEHB V3 $gen=1$; $rand=0$; $pop=10$"),
+           # ("dehb_v3_rand0.3", "DEHB V3; $gen=1$; $rand=0.3$;"),
+           # ("dehb_v3_pop10_rand0.3", "DEHB V3 $gen=1$; $rand=0.3$; $pop=10$")]
         # ("dehb_v2_rand", "DEHB V2 $rand=0.2$"),
         # ("dehb_v2_rand_0.9", "DEHB V2 $rand=0.9$")]
 
@@ -117,16 +118,26 @@ for index, (m, label) in enumerate(methods):
     runtimes = []
     for k, i in enumerate(np.arange(n_runs)):
         try:
-            res = json.load(open(os.path.join(path, m, "run_%d.json" % i)))
-            no_runs_found = False
+            if 'counting' in path and 'bohb' in m:
+                res = pickle.load(open(os.path.join(path, m, "run_%d.pkl" % i), 'rb'))
+                no_runs_found = False
+            else:
+                res = json.load(open(os.path.join(path, m, "run_%d.json" % i)))
+                no_runs_found = False
         except Exception as e:
             print(m, i, e)
             no_runs_found = True
             continue
-        _, idx = np.unique(res['regret_validation'], return_index=True)
+        if 'counting' in path and 'bohb' in m:
+            regret_key = "losses"
+            runtime_key = "cummulative_budget"
+        else:
+            regret_key = "regret_validation"
+            runtime_key = "runtime"
+        _, idx = np.unique(res[regret_key], return_index=True)
         idx.sort()
-        regret.append(np.array(res['regret_validation'])[idx])
-        runtimes.append(np.array(res["runtime"])[idx])
+        regret.append(np.array(res[regret_key])[idx])
+        runtimes.append(np.array(res[runtime_key])[idx])
 
     if not no_runs_found:
         # finds the latest time where the first measurement was made across runs
@@ -142,6 +153,7 @@ for index, (m, label) in enumerate(methods):
         idx = np.where(time < 1e7)[0]
 
         print("{}. Plotting for {}".format(index, m))
+        print(len(regret), len(runtimes))
         # The mean plot
         plt.plot(time[idx], np.mean(te, axis=1)[idx], color=colors[index],
                  linewidth=4, label=label, linestyle=linestyles[index % len(linestyles)],
@@ -158,7 +170,8 @@ for index, (m, label) in enumerate(methods):
         max_regret = max(max_regret, np.mean(te, axis=1)[idx][0])
 
 plt.xscale("log")
-plt.yscale("log")
+if "counting" not in path:
+    plt.yscale("log")
 plt.tick_params(which='both', direction="in")
 plt.legend(loc='upper right', framealpha=1, prop={'size': 15})
 plt.title(args.title)
