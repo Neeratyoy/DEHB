@@ -408,6 +408,35 @@ class DEHBV3(DEHBBase):
                     runtime.append(cost)
                     history.append((de[full_budget].population[i].tolist(),
                                     float(de[full_budget].fitness[i]), float(budget or 0)))
+            elif pop_size > de[budget].pop_size:
+                filler = pop_size - de[budget].pop_size
+                if debug:
+                    print("Adding {} random individuals for budget {}".format(filler, budget))
+                new_pop = self.init_population(pop_size=filler)
+                de[budget].inc_score = self.inc_score
+                de[budget].inc_config = self.inc_config
+                for i in range(filler):
+                    fitness, cost = de[budget].f_objective(new_pop[i], budget)
+                    de[budget].population = np.vstack((de[budget].population, new_pop[i]))
+                    de[budget].fitness = np.append(de[budget].fitness, fitness)
+                    if fitness < self.inc_score:
+                        self.inc_score = fitness
+                        self.inc_config = new_pop[i]
+                    traj.append(self.inc_score)
+                    runtime.append(cost)
+                    history.append((new_pop[i].tolist(), float(fitness), float(budget or 0)))
+                de[budget].pop_size = pop_size
+                if debug:
+                    print("Pop size: {}; Len pop: {}".format(de[budget].pop_size,
+                                                             len(de[budget].population)))
+            elif pop_size < de[budget].pop_size:
+                if debug:
+                    print("Reducing population from {} to {} "
+                          "for budget {}".format(de[budget].pop_size, pop_size, budget))
+                rank = np.sort(np.argsort(de[budget].fitness)[:pop_size])
+                de[budget].population = de[budget].population[rank]
+                de[budget].fitness = de[budget].fitness[rank]
+                de[budget].pop_size = pop_size
 
             # Successive Halving iterations carrying out DE
             for i_sh in range(num_SH_iters):
@@ -416,7 +445,7 @@ class DEHBV3(DEHBBase):
                 de[budget].inc_score = self.inc_score
                 de[budget].inc_config = self.inc_config
                 if debug:
-                    print("DE index: {}; DE budget: {}".format(budget, budget))
+                    print("Pop size: {}; DE budget: {}".format(de[budget].pop_size, budget))
                 # Repeating DE over entire population 'generations' times
                 for gen in range(self.generations):
                     de_traj, de_runtime, de_history = de[budget].evolve_generation(budget)
@@ -441,7 +470,7 @@ class DEHBV3(DEHBBase):
                         de[next_budget].inc_score = self.inc_score
                         de[next_budget].inc_config = self.inc_config
                         de_traj, de_runtime, de_history = \
-                            de[next_budget].ranked_selection(rival_population, budget, debug)
+                            de[next_budget].ranked_selection(rival_population, pop_size, budget, debug)
                         self.inc_score = de[next_budget].inc_score
                         self.inc_config = de[next_budget].inc_config
                         traj.extend(de_traj)

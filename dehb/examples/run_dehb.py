@@ -45,7 +45,7 @@ def save_configspace(cs, path, filename='configspace'):
 
 def f(config, budget=None):
     if budget is not None:
-        fitness, cost = b.objective_function(config, budget=budget)
+        fitness, cost = b.objective_function(config, budget=int(budget))
     else:
         fitness, cost = b.objective_function(config)
     return fitness, cost
