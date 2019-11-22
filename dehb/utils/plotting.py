@@ -106,7 +106,10 @@ methods = [("bohb", "BOHB"),
 min_time = np.inf
 max_time = 0
 min_regret = 1
-max_regret = 0
+if 'counting' in path:
+    max_regret = -np.inf
+else:
+    max_regret = 0
 
 # plot setup
 colors = ["C%d" % i for i in range(len(methods))]
@@ -171,7 +174,10 @@ for index, (m, label) in enumerate(methods):
 
 plt.xscale("log")
 if "counting" not in path:
-    plt.yscale("log")
+    plt.set_yscale("log")
+else:
+    max_regret += 0.5
+    min_regret -= 0.5
 plt.tick_params(which='both', direction="in")
 plt.legend(loc='upper right', framealpha=1, prop={'size': 15})
 plt.title(args.title)
