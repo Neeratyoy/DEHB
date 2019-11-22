@@ -141,15 +141,10 @@ elif "counting" in args.benchmark:
     min_budget = 9
     max_budget = 729
     inc_config, y_star_valid, y_star_test = (None, 0, 0)
-    def f(config, budget=None):
-        if budget is not None:
-            res = b.objective_function(config, budget=budget)
-            fitness = res["function_value"]
-            cost = 1
-        else:
-            res = b.objective_function(config)
-            fitness = res["function_value"]
-            cost = 1
+    def f(config, budget=max_budget):
+        res = b.objective_function(config, budget=budget)
+        fitness = res["function_value"]
+        cost = budget
         return fitness, cost
 
 elif "svm" in args.benchmark:
