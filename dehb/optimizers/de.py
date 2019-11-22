@@ -4,8 +4,8 @@ import ConfigSpace
 
 
 class DEBase():
-    def __init__(self, cs=None, f=None, dimensions=None, pop_size=None, mutation_factor=None,
-                 crossover_prob=None, strategy=None, budget=None, **kwargs):
+    def __init__(self, cs=None, f=None, dimensions=None, pop_size=None, max_age=None,
+                 mutation_factor=None, crossover_prob=None, strategy=None, budget=None, **kwargs):
         # Benchmark related variables
         self.cs = cs
         self.f = f
@@ -16,6 +16,7 @@ class DEBase():
 
         # DE related variables
         self.pop_size = pop_size
+        self.max_age = max_age
         self.mutation_factor = mutation_factor
         self.crossover_prob = crossover_prob
         self.strategy = strategy
@@ -29,6 +30,7 @@ class DEBase():
         self.inc_config = None
         self.population = None
         self.fitness = None
+        self.age = None
         self.history = []
 
     def reset(self):
@@ -36,11 +38,12 @@ class DEBase():
         self.inc_config = None
         self.population = None
         self.fitness = None
+        self.age = None
         self.history = []
 
     def init_population(self, pop_size=10):
-        self.population = np.random.uniform(low=0.0, high=1.0, size=(pop_size, self.dimensions))
-        return self.population
+        population = np.random.uniform(low=0.0, high=1.0, size=(pop_size, self.dimensions))
+        return population
 
     def sample_population(self, size=3):
         selection = np.random.choice(np.arange(len(self.population)), size, replace=False)
@@ -110,9 +113,10 @@ class DEBase():
 
 
 class DE(DEBase):
-    def __init__(self, cs=None, f=None, dimensions=None, pop_size=None, mutation_factor=None,
-                 crossover_prob=None, strategy='rand1_bin', budget=None, **kwargs):
-        super().__init__(cs=cs, f=f, dimensions=dimensions, pop_size=pop_size,
+    def __init__(self, cs=None, f=None, dimensions=None, pop_size=None, max_age=3,
+                 mutation_factor=None, crossover_prob=None, strategy='rand1_bin',
+                 budget=None, **kwargs):
+        super().__init__(cs=cs, f=f, dimensions=dimensions, pop_size=pop_size, max_age=max_age,
                          mutation_factor=mutation_factor, crossover_prob=crossover_prob,
                          strategy=strategy, budget=budget, **kwargs)
         if self.strategy is not None:
@@ -136,6 +140,7 @@ class DE(DEBase):
         '''
         self.population = self.init_population(self.pop_size)
         self.fitness = np.array([np.inf for i in range(self.pop_size)])
+        self.age = np.array([self.max_age] * self.pop_size)
 
         traj = []
         runtime = []
@@ -199,7 +204,12 @@ class DE(DEBase):
             if fitness <= self.fitness[i]:
                 self.population[i] = trials[i]
                 self.fitness[i] = fitness
+                # resetting age since new individual in the population
+                self.age[i] = self.max_age
                 track.append(i)
+            else:
+                # decreasing age by 1 of parent who is better than offspring/trial
+                self.age[i] -= 1
             # updation of global incumbent for trajectory
             if self.fitness[i] < self.inc_score:
                 self.inc_score = self.fitness[i]
@@ -233,10 +243,37 @@ class DE(DEBase):
             print("Ranking {} from {} vs. {}".format(pop_size, self.pop_size, len(trials)))
         tot_pop = np.vstack((self.population, trials))
         tot_fitness = np.hstack((self.fitness, trial_fitness))
+        tot_age = np.hstack((self.age, [self.max_age] * len(trials)))
         rank = np.sort(np.argsort(tot_fitness)[:pop_size])
         self.population = tot_pop[rank]
         self.fitness = tot_fitness[rank]
+        self.age = tot_age[rank]
         self.pop_size = pop_size
+        return traj, runtime, history
+
+    def kill_aged_pop(self, budget=None, debug=False):
+        '''Replaces individuals with age older than max_age
+        '''
+        traj = []
+        runtime = []
+        history = []
+        idxs = np.where(self.age <= 0)[0]
+        if len(idxs) == 0:
+            return traj, runtime, history
+        if debug:
+            print("Killing {} individuals for budget {}: {}".format(len(idxs), budget, self.age[idxs]))
+        new_pop = self.init_population(pop_size=len(idxs))
+        for i, index in enumerate(idxs):
+            self.population[index] = new_pop[i]
+            self.fitness[index], cost = self.f_objective(self.population[index], budget)
+            self.age[index] = self.max_age
+            if self.fitness[index] < self.inc_score:
+                self.inc_score = self.fitness[index]
+                self.inc_config = self.population[index]
+            traj.append(self.inc_score)
+            runtime.append(cost)
+            history.append((self.population[index].tolist(), float(self.fitness[index]),
+                            float(budget or 0)))
         return traj, runtime, history
 
     def evolve_generation(self, budget=None):

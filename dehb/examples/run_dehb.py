@@ -74,15 +74,18 @@ parser.add_argument('--eta', default=3, type=int, nargs='?', help='eta for Succe
 parser.add_argument('--min_clip', default=3, type=int, nargs='?', help='minimum number of configurations')
 parser.add_argument('--max_clip', default=None, type=int, nargs='?', help='maximum number of configurations')
 parser.add_argument('--randomize', default=None, type=float, help='fraction of population to randomize in v2')
+parser.add_argument('--max_age', default=5, type=int, help='maximum age an individual can survive')
 parser.add_argument('--mutation_factor', default=0.5, type=float, nargs='?', help='mutation factor value')
 parser.add_argument('--gens', default=1, type=int, nargs='?', help='number of generations')
 parser.add_argument('--crossover_prob', default=0.5, type=float, nargs='?', help='probability of crossover')
 parser.add_argument('--verbose', default='False', choices=['True', 'False'], nargs='?', help='to print progress or not')
 parser.add_argument('--version', default='1', choices=['1', '2', '3'], nargs='?', help='the version of DEHB to run')
+parser.add_argument('--debug', default='False', choices=['True', 'False'], nargs='?', help='for additional logs')
 parser.add_argument('--folder', default='dehb', type=str, nargs='?', help='name of folder where files will be dumped')
 
 args = parser.parse_args()
 args.verbose = True if args.verbose == 'True' else False
+args.debug = True if args.debug == 'True' else False
 
 if args.version == '1':
     from optimizers import DEHBV1 as DEHB
@@ -187,10 +190,11 @@ os.makedirs(output_path, exist_ok=True)
 dehb = DEHB(cs=cs, f=f, dimensions=dimensions, mutation_factor=args.mutation_factor,
             crossover_prob=args.crossover_prob, strategy=args.strategy, min_budget=min_budget,
             max_budget=max_budget, min_clip=args.min_clip, max_clip=args.max_clip,
-            generations=args.gens, eta=args.eta, randomize=args.randomize)
+            generations=args.gens, eta=args.eta, randomize=args.randomize, max_age=args.max_age)
 
 if args.runs is None:
-    traj, runtime, history = dehb.run(iterations=args.n_iters, verbose=args.verbose)
+    traj, runtime, history = dehb.run(iterations=args.n_iters, verbose=args.verbose,
+                                      debug=args.debug)
     if 'cifar' in args.benchmark:
         save(traj, runtime, history, output_path, args.run_id, filename="raw_run")
         traj, runtime, history = remove_invalid_configs(traj, runtime, history)
@@ -199,7 +203,8 @@ else:
     for run_id, _ in enumerate(range(args.runs), start=args.run_start):
         if args.verbose:
             print("\nRun #{:<3}\n{}".format(run_id + 1, '-' * 8))
-        traj, runtime, history = dehb.run(iterations=args.n_iters, verbose=args.verbose)
+        traj, runtime, history = dehb.run(iterations=args.n_iters, verbose=args.verbose,
+                                          debug=args.debug)
         if 'cifar' in args.benchmark:
             save(traj, runtime, history, output_path, run_id, filename="raw_run")
             traj, runtime, history = remove_invalid_configs(traj, runtime, history)
