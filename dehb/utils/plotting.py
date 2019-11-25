@@ -95,7 +95,7 @@ methods = [("bohb", "BOHB"),
            ("de", "DE"),
            ("dehb_v1", "DEHB V1; $gen=5$;"),
            ("dehb_v2", "DEHB V2; $gen=1$;"),
-           ("dehb_v3", "DEHB V3; $gen=1$;")]
+           ("dehb_v3", "DEHB V3; $gen=1$; $age=5$")]
            # ("dehb_v3_pop10", "DEHB V3 $gen=1$; $rand=0$; $pop=10$"),
            # ("dehb_v3_rand0.3", "DEHB V3; $gen=1$; $rand=0.3$;"),
            # ("dehb_v3_pop10_rand0.3", "DEHB V3 $gen=1$; $rand=0.3$; $pop=10$")]
@@ -174,7 +174,7 @@ for index, (m, label) in enumerate(methods):
 
 plt.xscale("log")
 if "counting" not in path:
-    plt.set_yscale("log")
+    plt.yscale("log")
 else:
     max_regret += 0.5
     min_regret -= 0.5

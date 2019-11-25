@@ -51,12 +51,12 @@ def load_pkl(filename):
         res = pickle.load(f)
     return res
 
-def process_history(res, cs=None, per_budget=False):
+def process_history(res, cs=None, per_budget=False, max_len=None):
     assert all(i in res.keys() for i in ['runtime', 'regret_validation', 'history'])
 
-    trajectory = np.array([np.array(l[0]) for l in res['history']])
-    fitness = np.array([l[1] for l in res['history']])
-    budgets = np.array([l[2] for l in res['history']])
+    trajectory = np.array([np.array(l[0]) for l in res['history']])[:max_len]
+    fitness = np.array([l[1] for l in res['history']])[:max_len]
+    budgets = np.array([l[2] for l in res['history']])[:max_len]
 
     trajectory_cs = None
     if cs is not None and isinstance(cs, ConfigurationSpace):
@@ -70,17 +70,24 @@ def process_history(res, cs=None, per_budget=False):
 
     history = {}
     history['trajectory'] = trajectory
-    history['fitness'] = np.clip(fitness - res['y_star_valid'], 0, np.inf)
+    if np.max(fitness) < 1:
+        history['fitness'] = np.clip(fitness - res['y_star_valid'], -np.inf, 0)
+    else:
+        history['fitness'] = np.clip(fitness - res['y_star_valid'], 0, np.inf)
     history['budgets'] = budgets
     history['fidelities'] = fidelities
     history['trajectory_cs'] = trajectory_cs
     return history
 
 def get_mds(X):
+    if X.shape[0] <= 2:
+        return X
     embedding = MDS(n_components=2)
     return embedding.fit_transform(X)
 
 def get_pca(X):
+    if X.shape[0] <= 2:
+        return X
     pca = PCA(n_components=2)
     return pca.fit_transform(X)
 
@@ -124,7 +131,7 @@ def color_pairs(i=0):
 
 
 class AnimateRun():
-    def __init__(self, path, filename, per_budget=False, output_path=None):
+    def __init__(self, path, filename, per_budget=False, output_path=None, max_len=None):
         self.path = path
         self.filename = os.path.join(path, filename)
         self.cs = None
@@ -132,13 +139,14 @@ class AnimateRun():
         self.output_path = output_path
         if self.output_path is None:
             self.output_path = self.path
+        self.max_len = max_len
 
         if os.path.isfile(os.path.join(path, 'configspace.pkl')):
             self.cs = load_pkl(os.path.join(path, 'configspace.pkl'))
         self.res = load_json(self.filename)
-        self.incumbent = self.res['regret_validation']
-        self.runtimes = self.res['runtime']
-        self.history = process_history(self.res, self.cs, self.per_budget)
+        self.incumbent = self.res['regret_validation'][:max_len]
+        self.runtimes = self.res['runtime'][:max_len]
+        self.history = process_history(self.res, self.cs, self.per_budget, self.max_len)
 
     def plot_gif(self, filename=None, per_budget=False, delay=150, repeat=True, type='raw'):
         '''Plots a gif over the optimisation trajectory for a run
@@ -318,6 +326,37 @@ class AnimateRun():
         plt.suptitle("Trajectory of function evaluations")
         ax1.set_title('Uniform parameter space')
         ax2.set_title('ConfigSpace parameter space')
+        if filename is not None:
+            plt.tight_layout()
+            plt.savefig('{}.png'.format(filename), dpi=300) #, bbox_inches='tight')
+        else:
+            plt.show()
+
+    def plot_incumbents_per_budget(self, filename=None, type='raw'):
+        if filename is not None:
+            filename = os.path.join(self.output_path, filename)
+        if type == 'cs':
+            X = get_mds(self.history['trajectory_cs'])
+        else:
+            X = get_mds(self.history['trajectory'])
+        xlim = (np.min(X[:,0])-0.5, np.max(X[:,0])+0.5)
+        ylim = (np.min(X[:,1])-0.5, np.max(X[:,1])+0.5)
+
+        b_size = len(np.unique(self.history['budgets']))
+        plt.clf()
+        fig, ax = plt.subplots(1, l, sharey=True, sharex=True)
+        incs = np.where(run.incumbent == run.history['fitness'])[0]
+        budgets = self.history['budgets']
+        rgba_colors = generate_colors(X.shape[0], budgets)
+        for i, key in enumerate(self.history['fidelities']):
+            x = run.history['fidelities'][key]
+            ax[i].scatter(X[x, 0][::-1], X[x, 1][::-1], color=rgba_colors[x][::-1], label=key, s=25)
+            idxs = np.intersect1d(x, incs, assume_unique=True)
+            rgba_colors[idxs, :3] = 0
+            ax[i].scatter(X[idxs, 0][::-1], X[idxs, 1][::-1], color=rgba_colors[idxs][::-1],
+                          label='incumbent', marker='v', s=50)
+            ax[i].set_title('Trajectory for budget {}'.format(key))
+            ax[i].legend()
         if filename is not None:
             plt.tight_layout()
             plt.savefig('{}.png'.format(filename), dpi=300) #, bbox_inches='tight')
