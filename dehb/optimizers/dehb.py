@@ -313,7 +313,7 @@ class DEHBV2(DEHBBase):
                     budget = budgets[i_sh+1]
                     # Selecting top individuals to fit pop_size of next SH iteration
                     self.de_rank = np.sort(np.argsort(de.fitness)[:pop_size])
-                    # Saving index of new DE population from the global population
+                    # Saving index of new DE population from the global population in 'self.rank'
                     self.rank = self.rank[self.de_rank]
                     de.population = de.population[self.de_rank]
                     de.fitness = np.array(de.fitness)[self.de_rank]
@@ -481,6 +481,7 @@ class DEHBV3(DEHBBase):
                         # warmstarting DE incumbents to maintain global trajectory
                         de[next_budget].inc_score = self.inc_score
                         de[next_budget].inc_config = self.inc_config
+                        # ranking individuals to determine population for next SH step
                         de_traj, de_runtime, de_history = \
                             de[next_budget].ranked_selection(rival_population, pop_size,
                                                              budget, debug)
@@ -494,7 +495,8 @@ class DEHBV3(DEHBBase):
                             print("Iteration: ", iteration)
                         de[next_budget].population = rival_population
                         de[next_budget].fitness = de[budget].fitness[rank]
-                        de[next_budget].age = np.array([de[next_budget].max_age] * de[next_budget].pop_size)
+                        de[next_budget].age = np.array([de[next_budget].max_age] * \
+                                                        de[next_budget].pop_size)
                     budget = next_budget
         if verbose:
             print("\nRun complete!")

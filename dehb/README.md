@@ -6,6 +6,9 @@ DEHB versions:
     - DE is run for _5 generations_ for each SH iteration inside each
     such DEHB iteration. 
 
+![v1](utils/misc/flow_v1.png)
+
+
 - **Version 2**
     - Only the first DEHB iteration's first SH iteration is initialized
      with a random population.
@@ -15,6 +18,9 @@ DEHB versions:
     single large population is updated with these evolved individuals.
     - The next SH iteration then selects the top _n%_ from the evolved
     individuals from the previous SH steps and so on.
+    
+![v2](utils/misc/flow_v2.png)
+
 
 - **Version 3**
     - The total number of budget/configuration spacing from SH is
@@ -30,3 +36,5 @@ DEHB versions:
     where the top half is retained.
     - These individuals undergo DE for _1 generation_ and the top _n %_
     is forwarded to the next step and so on.  
+
+![v3](utils/misc/flow_v3.png)
