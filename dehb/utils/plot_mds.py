@@ -70,7 +70,7 @@ def process_history(res, cs=None, per_budget=False, max_len=None):
 
     history = {}
     history['trajectory'] = trajectory
-    if np.max(fitness) < 1:
+    if np.max(fitness) < 0:
         history['fitness'] = np.clip(fitness - res['y_star_valid'], -np.inf, 0)
     else:
         history['fitness'] = np.clip(fitness - res['y_star_valid'], 0, np.inf)
@@ -80,13 +80,13 @@ def process_history(res, cs=None, per_budget=False, max_len=None):
     return history
 
 def get_mds(X):
-    if X.shape[0] <= 2:
+    if X.shape[1] <= 2:
         return X
     embedding = MDS(n_components=2)
     return embedding.fit_transform(X)
 
 def get_pca(X):
-    if X.shape[0] <= 2:
+    if X.shape[1] <= 2:
         return X
     pca = PCA(n_components=2)
     return pca.fit_transform(X)
@@ -123,9 +123,11 @@ def color_pairs(i=0):
               ((0.56470588, 0.80784314, 0.45098039),  #90CE73 -- PISTACHIO
                (0.27843137, 0.60784314, 0.49803922)), #479B7F -- WINTERGREEN DREAM
               ((0.75294118, 0.37647059, 0.36078431),  #C0605C -- INDIAN RED
-               (0.43137255, 0.01176471, 0.12941176)),  #6E0321 -- BURGUNDY
+               (0.43137255, 0.01176471, 0.12941176)), #6E0321 -- BURGUNDY
               ((0.45882353, 0.29803922, 0.16078431),  #754C29 -- DONKEY BROWN
-               (0.15294118, 0.09019608, 0.05490196)) #27170E -- ZINNWALDITE BROWN
+               (0.15294118, 0.09019608, 0.05490196)), #27170E -- ZINNWALDITE BROWN
+              ((0.96862745, 0.72156863, 0.00392157),  #F7B801 -- SELECTIVE YELLOW
+               (0.65098039, 0.00000000, 0.00000000))  #A60000 -- DARK CANDY APPLE RED
     ]
     return colors[i]
 
@@ -344,19 +346,20 @@ class AnimateRun():
 
         b_size = len(np.unique(self.history['budgets']))
         plt.clf()
-        fig, ax = plt.subplots(1, l, sharey=True, sharex=True)
-        incs = np.where(run.incumbent == run.history['fitness'])[0]
+        fig, ax = plt.subplots(1, b_size, sharey=True, sharex=True)
+        incs = np.where(self.incumbent == self.history['fitness'])[0]
         budgets = self.history['budgets']
         rgba_colors = generate_colors(X.shape[0], budgets)
         for i, key in enumerate(self.history['fidelities']):
-            x = run.history['fidelities'][key]
+            x = self.history['fidelities'][key]
             ax[i].scatter(X[x, 0][::-1], X[x, 1][::-1], color=rgba_colors[x][::-1], label=key, s=25)
             idxs = np.intersect1d(x, incs, assume_unique=True)
-            rgba_colors[idxs, :3] = 0
-            ax[i].scatter(X[idxs, 0][::-1], X[idxs, 1][::-1], color=rgba_colors[idxs][::-1],
-                          label='incumbent', marker='v', s=50)
-            ax[i].set_title('Trajectory for budget {}'.format(key))
+            if len(idxs) > 0:
+                rgba_colors[idxs, :3] = 0
+                ax[i].scatter(X[idxs, 0][::-1], X[idxs, 1][::-1], color=rgba_colors[idxs][::-1],
+                              label='incumbent', marker='v', s=70)
             ax[i].legend()
+        plt.suptitle('Trajectory for different budgets')
         if filename is not None:
             plt.tight_layout()
             plt.savefig('{}.png'.format(filename), dpi=300) #, bbox_inches='tight')
