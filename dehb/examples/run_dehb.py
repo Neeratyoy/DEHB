@@ -13,6 +13,7 @@ from tabular_benchmarks import NASCifar10A, NASCifar10B, NASCifar10C
 
 from hpolib.benchmarks.surrogates.svm import SurrogateSVM as surrogate
 from hpolib.benchmarks.synthetic_functions.counting_ones import CountingOnes
+from hpolib.benchmarks.surrogates.paramnet import SurrogateReducedParamNetTime
 
 
 def remove_invalid_configs(traj, runtime, history):
@@ -62,7 +63,7 @@ parser.add_argument('--runs', default=None, type=int, nargs='?', help='number of
 parser.add_argument('--run_start', default=0, type=int, nargs='?', help='run index to start with for multiple runs')
 choices = ["protein_structure", "slice_localization", "naval_propulsion",
            "parkinsons_telemonitoring", "nas_cifar10a", "nas_cifar10b",
-           "nas_cifar10c", "counting_*_*", "svm"]
+           "nas_cifar10c", "counting_*_*", "svm", "paramnet_*"]
 parser.add_argument('--benchmark', default="protein_structure", help="specify the benchmark to run on from among {}".format(choices), type=str)
 parser.add_argument('--n_iters', default=100, type=int, nargs='?', help='number of iterations for optimization method')
 parser.add_argument('--output_path', default="./", type=str, nargs='?',
@@ -74,7 +75,7 @@ parser.add_argument('--eta', default=3, type=int, nargs='?', help='eta for Succe
 parser.add_argument('--min_clip', default=3, type=int, nargs='?', help='minimum number of configurations')
 parser.add_argument('--max_clip', default=None, type=int, nargs='?', help='maximum number of configurations')
 parser.add_argument('--randomize', default=None, type=float, help='fraction of population to randomize in v2')
-parser.add_argument('--max_age', default=5, type=int, help='maximum age an individual can survive')
+parser.add_argument('--max_age', default=np.inf, type=float, help='maximum age an individual can survive')
 parser.add_argument('--mutation_factor', default=0.5, type=float, nargs='?', help='mutation factor value')
 parser.add_argument('--gens', default=1, type=int, nargs='?', help='number of generations')
 parser.add_argument('--crossover_prob', default=0.5, type=float, nargs='?', help='probability of crossover')
@@ -176,10 +177,34 @@ elif "svm" in args.benchmark:
             cost = res["cost"]
         return fitness, cost
 
+elif "paramnet" in args.benchmark:
+    assert len(args.benchmark.split('_')) == 2
+    dataset = args.benchmark.split('_')[1]
+    benchmark_type = "paramnet"
+    budget_dict = {
+        'adult': (9, 243),
+        'higgs': (9, 243),
+        'letter': (3, 81),
+        'mnist': (9, 243),
+        'optdigits': (1, 27) ,
+        'poker': (81, 2187)
+    }
+    min_budget, max_budget = budget_dict[dataset]
+    b = SurrogateReducedParamNetTime(dataset=dataset)
+    inc_config, y_star_valid, y_star_test = (None, 0, 0)
+    def f(config, budget=max_budget):
+        res = b.objective_function(config, budget=budget)
+        fitness = res["function_value"]
+        cost = res["cost"]
+        return fitness, cost
+
 if "counting" in args.benchmark:
     cs = CountingOnes.get_configuration_space(n_categorical=n_categorical,
                                               n_continuous=n_continuous)
     args.output_path = os.path.join(args.output_path, "{}_{}".format(n_categorical, n_continuous))
+elif "paramnet" in args.benchmark:
+    cs = b.get_configuration_space()
+    args.output_path = os.path.join(args.output_path, dataset)
 else:
     cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
