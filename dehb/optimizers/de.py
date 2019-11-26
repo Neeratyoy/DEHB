@@ -113,7 +113,7 @@ class DEBase():
 
 
 class DE(DEBase):
-    def __init__(self, cs=None, f=None, dimensions=None, pop_size=None, max_age=3,
+    def __init__(self, cs=None, f=None, dimensions=None, pop_size=None, max_age=np.inf,
                  mutation_factor=None, crossover_prob=None, strategy='rand1_bin',
                  budget=None, **kwargs):
         super().__init__(cs=cs, f=f, dimensions=dimensions, pop_size=pop_size, max_age=max_age,
@@ -261,7 +261,7 @@ class DE(DEBase):
         if len(idxs) == 0:
             return traj, runtime, history
         if debug:
-            print("Killing {} individuals for budget {}: {}".format(len(idxs), budget, self.age[idxs]))
+            print("Killing {} individual(s) for budget {}: {}".format(len(idxs), budget, self.age[idxs]))
         new_pop = self.init_population(pop_size=len(idxs))
         for i, index in enumerate(idxs):
             self.population[index] = new_pop[i]

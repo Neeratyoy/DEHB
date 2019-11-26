@@ -115,11 +115,12 @@ class DEHBV1(DEHBBase):
     '''
     def __init__(self, cs=None, f=None, dimensions=None, mutation_factor=None,
                  crossover_prob=None, strategy='rand1_bin', min_budget=None, max_budget=None,
-                 eta=None, generations=None, min_clip=3, max_clip=None, **kwargs):
+                 eta=None, generations=None, min_clip=3, max_clip=None, max_age=np.inf, **kwargs):
         super().__init__(cs=cs, f=f, dimensions=dimensions, mutation_factor=mutation_factor,
                          crossover_prob=crossover_prob, strategy=strategy, min_budget=min_budget,
                          max_budget=max_budget, eta=eta, generations=generations,
                          min_clip=min_clip, max_clip=max_clip)
+        self.max_age = max_age
 
     def run(self, iterations=100, verbose=False, debug=False):
         # Book-keeping variables
@@ -143,7 +144,7 @@ class DEHBV1(DEHBBase):
             # The DE object is initialized with the current pop_size and budget
             de = DE(cs=self.cs, f=self.f, dimensions=self.dimensions, pop_size=pop_size,
                     mutation_factor=self.mutation_factor, crossover_prob=self.crossover_prob,
-                    strategy=self.strategy, budget=budget)
+                    strategy=self.strategy, budget=budget, max_age=self.max_age)
             # Warmstarting DE incumbent to be the global incumbent
             de.inc_score = self.inc_score
             de.inc_config = self.inc_config
@@ -160,6 +161,7 @@ class DEHBV1(DEHBBase):
                 idx = np.random.choice(np.arange(len(de.population)))
                 de.population[idx] = self.inc_config
                 de.fitness[idx] = self.inc_score
+                de.age[idx] = de.max_age
             else:
                 # if new population has a better individual, update
                 # the global incumbent and fitness
@@ -171,6 +173,13 @@ class DEHBV1(DEHBBase):
                 # Repeating DE over entire population 'generations' times
                 for gen in range(self.generations):
                     de_traj, de_runtime, de_history = de.evolve_generation(budget)
+                    traj.extend(de_traj)
+                    runtime.extend(de_runtime)
+                    history.extend(de_history)
+                    if debug:
+                        print("  Generation #{}: Ages -- {}".format(gen+1, de.age))
+                    # killing/replacing parents that have not changed/has aged
+                    de_traj, de_runtime, de_history = de.kill_aged_pop(budget, debug)
                     traj.extend(de_traj)
                     runtime.extend(de_runtime)
                     history.extend(de_history)
@@ -187,6 +196,7 @@ class DEHBV1(DEHBBase):
                     self.rank = np.sort(np.argsort(de.fitness)[:pop_size])
                     de.population = de.population[self.rank]
                     de.fitness = de.fitness[self.rank]
+                    de.age = de.age[self.rank]
                     de.pop_size = pop_size
 
         if verbose:
@@ -208,13 +218,14 @@ class DEHBV2(DEHBBase):
     '''
     def __init__(self, cs=None, f=None, dimensions=None, mutation_factor=None,
                  crossover_prob=None, strategy='rand1_bin', min_budget=None, max_budget=None,
-                 eta=None, generations=None,  min_clip=3, max_clip=None,
+                 eta=None, generations=None,  min_clip=3, max_clip=None, max_age=np.inf,
                  randomize=None, **kwargs):
         super().__init__(cs=cs, f=f, dimensions=dimensions, mutation_factor=mutation_factor,
                          crossover_prob=crossover_prob, strategy=strategy, min_budget=min_budget,
                          max_budget=max_budget, eta=eta, generations=generations,
                          min_clip=min_clip, max_clip=max_clip)
         self.randomize = randomize
+        self.max_age = max_age
         # Fixing to 1 -- specific attribute of version 2 of DEHB
         # self.generations = 1
 
@@ -228,7 +239,7 @@ class DEHBV2(DEHBBase):
         num_configs, budgets = self.get_next_iteration(iteration=0)
         de = DE(cs=self.cs, f=self.f, dimensions=self.dimensions, pop_size=num_configs[0],
                 mutation_factor=self.mutation_factor, crossover_prob=self.crossover_prob,
-                strategy=self.strategy, budget=budgets[0])
+                strategy=self.strategy, budget=budgets[0], max_age=self.max_age)
 
         # Performs DEHB iterations
         for iteration in range(iterations):
@@ -251,6 +262,7 @@ class DEHBV2(DEHBBase):
                 # maintaining global copy of random population created
                 self.population = de.population
                 self.fitness = de.fitness
+                self.age = de.age
                 # update global incumbent with new population scores
                 self.inc_score = de.inc_score
                 self.inc_config = de.inc_config
@@ -268,6 +280,7 @@ class DEHBV2(DEHBBase):
                     print("Replacing {}/{} -- {}".format(num_replace, pop_size, idxs))
                 new_pop = self.init_population(pop_size=num_replace)
                 self.population[idxs] = new_pop
+                self.age[idxs] = de.max_age
                 de.inc_score = self.inc_score
                 de.inc_config = self.inc_config
                 # evaluating new individuals
@@ -279,14 +292,15 @@ class DEHBV2(DEHBBase):
                         self.inc_config = self.population[i]
                     traj.append(self.inc_score)
                     runtime.append(cost)
-                    history.append((de[0].population[i].tolist(),
-                                    float(de[0].fitness[i]), float(budget or 0)))
+                    history.append((self.population[i].tolist(),
+                                    float(self.fitness[i]), float(budget or 0)))
 
             # Ranking current population
             self.rank = np.sort(np.argsort(self.fitness)[:pop_size])
             # Passing onto DE-SH steps a subset of top individuals from global population
             de.population = self.population[self.rank]
             de.fitness = np.array(self.fitness)[self.rank]
+            de.age = np.array(self.age)[self.rank]
             de.pop_size = pop_size
 
             # Successive Halving iterations carrying out DE
@@ -299,6 +313,13 @@ class DEHBV2(DEHBBase):
                     traj.extend(de_traj)
                     runtime.extend(de_runtime)
                     history.extend(de_history)
+                    if debug:
+                        print("  Generation #{}: Ages -- {}".format(gen+1, de.age))
+                    # killing/replacing parents that have not changed/has aged
+                    de_traj, de_runtime, de_history = de.kill_aged_pop(budget, debug)
+                    traj.extend(de_traj)
+                    runtime.extend(de_runtime)
+                    history.extend(de_history)
 
                 # Updating global incumbent after each DE step
                 self.inc_score = de.inc_score
@@ -306,6 +327,7 @@ class DEHBV2(DEHBBase):
                 # Updating global population with evolved individuals
                 self.population[self.rank] = de.population
                 self.fitness[self.rank] = de.fitness
+                self.age[self.rank] = de.age
 
                 # Retrieving budget, pop_size, population for the next SH iteration
                 if i_sh < num_SH_iters-1:  # when not final SH iteration
@@ -317,6 +339,7 @@ class DEHBV2(DEHBBase):
                     self.rank = self.rank[self.de_rank]
                     de.population = de.population[self.de_rank]
                     de.fitness = np.array(de.fitness)[self.de_rank]
+                    de.age = np.array(de.age)[self.de_rank]
                     de.pop_size = pop_size
 
         if verbose:
@@ -333,7 +356,7 @@ class DEHBV3(DEHBBase):
     def __init__(self, cs=None, f=None, dimensions=None, mutation_factor=None,
                  crossover_prob=None, strategy='rand1_bin', min_budget=None, max_budget=None,
                  eta=None, generations=None,  min_clip=3, max_clip=None,
-                 randomize=None, max_age=3, **kwargs):
+                 randomize=None, max_age=np.inf, **kwargs):
         super().__init__(cs=cs, f=f, dimensions=dimensions, mutation_factor=mutation_factor,
                          crossover_prob=crossover_prob, strategy=strategy, min_budget=min_budget,
                          max_budget=max_budget, eta=eta, generations=generations,

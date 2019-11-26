@@ -60,6 +60,7 @@ def f(config, budget=None):
     return fitness, cost
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--seed', default=0, type=int, nargs='?', help='seed')
 parser.add_argument('--run_id', default=0, type=int, nargs='?', help='unique number to identify this run')
 parser.add_argument('--runs', default=None, type=int, nargs='?', help='number of runs to perform')
 parser.add_argument('--run_start', default=0, type=int, nargs='?', help='run index to start with for multiple runs')
@@ -81,6 +82,7 @@ parser.add_argument('--verbose', default='False', choices=['True', 'False'], nar
 parser.add_argument('--folder', default='de', type=str, nargs='?', help='name of folder where files will be dumped')
 
 args = parser.parse_args()
+np.random.seed(args.seed)
 args.verbose = True if args.verbose == 'True' else False
 
 benchmark_type = "nasbench"
