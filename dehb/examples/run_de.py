@@ -60,7 +60,7 @@ def f(config, budget=None):
     return fitness, cost
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--seed', default=0, type=int, nargs='?', help='seed')
+parser.add_argument('--fix_seed', default='False', type=str, choices=['True', 'False'], nargs='?', help='seed')
 parser.add_argument('--run_id', default=0, type=int, nargs='?', help='unique number to identify this run')
 parser.add_argument('--runs', default=None, type=int, nargs='?', help='number of runs to perform')
 parser.add_argument('--run_start', default=0, type=int, nargs='?', help='run index to start with for multiple runs')
@@ -82,8 +82,8 @@ parser.add_argument('--verbose', default='False', choices=['True', 'False'], nar
 parser.add_argument('--folder', default='de', type=str, nargs='?', help='name of folder where files will be dumped')
 
 args = parser.parse_args()
-np.random.seed(args.seed)
 args.verbose = True if args.verbose == 'True' else False
+args.fix_seed = True if args.fix_seed == 'True' else False
 
 benchmark_type = "nasbench"
 
@@ -209,6 +209,8 @@ if args.runs is None:
     save(traj, runtime, history, output_path, args.run_id)
 else:
     for run_id, _ in enumerate(range(args.runs), start=args.run_start):
+        if not args.fix_seed:
+            np.random.seed(run_id)
         if args.verbose:
             print("\nRun #{:<3}\n{}".format(run_id + 1, '-' * 8))
         traj, runtime, history = de.run(generations=args.gens, verbose=args.verbose)
