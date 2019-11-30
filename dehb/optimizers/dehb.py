@@ -113,13 +113,8 @@ class DEHBV1(DEHBBase):
         The top performing individuals are carried forward to the next higher budget.
     Each SH iteration in each DEHB iteration is evolved for a certain number of generations.
     '''
-    def __init__(self, cs=None, f=None, dimensions=None, mutation_factor=None,
-                 crossover_prob=None, strategy='rand1_bin', min_budget=None, max_budget=None,
-                 eta=None, generations=None, min_clip=3, max_clip=None, max_age=np.inf, **kwargs):
-        super().__init__(cs=cs, f=f, dimensions=dimensions, mutation_factor=mutation_factor,
-                         crossover_prob=crossover_prob, strategy=strategy, min_budget=min_budget,
-                         max_budget=max_budget, eta=eta, generations=generations,
-                         min_clip=min_clip, max_clip=max_clip)
+    def __init__(self, max_age=np.inf, **kwargs):
+        super().__init__(**kwargs)
         self.max_age = max_age
 
     def run(self, iterations=100, verbose=False, debug=False):
@@ -202,7 +197,7 @@ class DEHBV1(DEHBBase):
         if verbose:
             print("\nRun complete!")
 
-        return np.array(traj), np.array(runtime), np.array(history)
+        return (np.array(traj), np.array(runtime), np.array(history))
 
 
 class DEHBV2(DEHBBase):
@@ -216,18 +211,10 @@ class DEHBV2(DEHBBase):
     Each SH iteration in each DEHB iteration is evolved for only one generation,
         using the best individuals from the evolved population from previous iteration.
     '''
-    def __init__(self, cs=None, f=None, dimensions=None, mutation_factor=None,
-                 crossover_prob=None, strategy='rand1_bin', min_budget=None, max_budget=None,
-                 eta=None, generations=None,  min_clip=3, max_clip=None, max_age=np.inf,
-                 randomize=None, **kwargs):
-        super().__init__(cs=cs, f=f, dimensions=dimensions, mutation_factor=mutation_factor,
-                         crossover_prob=crossover_prob, strategy=strategy, min_budget=min_budget,
-                         max_budget=max_budget, eta=eta, generations=generations,
-                         min_clip=min_clip, max_clip=max_clip)
+    def __init__(self, max_age=np.inf, randomize=None, **kwargs):
+        super().__init__(**kwargs)
         self.randomize = randomize
         self.max_age = max_age
-        # Fixing to 1 -- specific attribute of version 2 of DEHB
-        # self.generations = 1
 
     def run(self, iterations=100, verbose=False, debug=False):
         # Book-keeping variables
@@ -345,7 +332,7 @@ class DEHBV2(DEHBBase):
         if verbose:
             print("\nRun complete!")
 
-        return np.array(traj), np.array(runtime), np.array(history)
+        return (np.array(traj), np.array(runtime), np.array(history))
 
 
 class DEHBV3(DEHBBase):
@@ -353,14 +340,8 @@ class DEHBV3(DEHBBase):
 
     At anytime, each set of population contains the best individuals from that budget
     '''
-    def __init__(self, cs=None, f=None, dimensions=None, mutation_factor=None,
-                 crossover_prob=None, strategy='rand1_bin', min_budget=None, max_budget=None,
-                 eta=None, generations=None,  min_clip=3, max_clip=None,
-                 randomize=None, max_age=np.inf, **kwargs):
-        super().__init__(cs=cs, f=f, dimensions=dimensions, mutation_factor=mutation_factor,
-                         crossover_prob=crossover_prob, strategy=strategy, min_budget=min_budget,
-                         max_budget=max_budget, eta=eta, generations=generations,
-                         min_clip=min_clip, max_clip=max_clip)
+    def __init__(self, randomize=None, max_age=np.inf, **kwargs):
+        super().__init__(**kwargs)
         self.randomize = randomize
         self.max_age = max_age
 
@@ -524,4 +505,4 @@ class DEHBV3(DEHBBase):
         if verbose:
             print("\nRun complete!")
 
-        return np.array(traj), np.array(runtime), np.array(history)
+        return (np.array(traj), np.array(runtime), np.array(history))
