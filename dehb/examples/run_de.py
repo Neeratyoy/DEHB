@@ -25,18 +25,18 @@ def remove_invalid_configs(traj, runtime, history):
     history = np.delete(history, idx)
     return traj, runtime, history
 
-def save(trajectory, runtime, history, path, run_id, filename="run"):
+def save(trajectory, runtime, history, output_path, run_id, filename="run"):
     global y_star_valid, y_star_test, inc_config
+    trajectory = trajectory - y_star_valid
     res = {}
     res["runtime"] = np.cumsum(runtime).tolist()
-    if np.max(traj) < 0:
+    if np.max(trajectory) < 0:
         a_min = -np.inf
         a_max = 0
     else:
         a_min = 0
         a_max = np.inf
-    res["regret_validation"] = np.array(np.clip(traj - y_star_valid,
-                                                a_min=a_min, a_max=a_max)).tolist()
+    res["regret_validation"] = np.array(np.clip(trajectory,a_min=a_min, a_max=a_max)).tolist()
     res["history"] = history.tolist()
     res['y_star_valid'] = float(y_star_valid)
     res['y_star_test'] = float(y_star_test)
@@ -140,10 +140,13 @@ elif "counting" in args.benchmark:
     benchmark_type = "countingones"
     n_categorical = int(args.benchmark.split('_')[-2])
     n_continuous = int(args.benchmark.split('_')[-1])
+    d = n_categorical + n_continuous
     b = CountingOnes()
-    min_budget = 9
-    max_budget = 729
-    inc_config, y_star_valid, y_star_test = (None, 0, 0)
+    # min_budget = 9
+    # max_budget = 729
+    min_budget = 576 / d
+    max_budget = 93312 / d
+    inc_config, y_star_valid, y_star_test = (None, -d, -d)
     def f(config, budget=max_budget):
         res = b.objective_function(config, budget=budget)
         fitness = res["function_value"]

@@ -1,5 +1,5 @@
-import numpy as np
 
+import numpy as np
 import ConfigSpace
 
 
@@ -290,21 +290,21 @@ class DE(DEBase):
         traj, runtime, history = self.selection(trials, budget)
         return traj, runtime, history
 
-    def run(self, generations=100, verbose=False):
+    def run(self, generations=100, verbose=False, budget=None):
         self.traj = []
         self.runtime = []
         self.history = []
 
         if verbose:
             print("Initializing and evaluating new population...")
-        self.traj, self.runtime, self.history = self.init_eval_pop()
+        self.traj, self.runtime, self.history = self.init_eval_pop(budget=budget)
 
         if verbose:
             print("Running evolutionary search...")
         for i in range(generations):
             if verbose:
                 print("Generation {:<2}/{:<2} -- {:<0.7}".format(i+1, generations, self.inc_score))
-            traj, runtime, history = self.evolve_generation()
+            traj, runtime, history = self.evolve_generation(budget=budget)
             self.traj.extend(traj)
             self.runtime.extend(runtime)
             self.history.extend(history)
@@ -312,4 +312,4 @@ class DE(DEBase):
         if verbose:
             print("\nRun complete!")
 
-        return np.array(self.traj), np.array(self.runtime), np.array(self.history)
+        return (np.array(self.traj), np.array(self.runtime), np.array(self.history))
