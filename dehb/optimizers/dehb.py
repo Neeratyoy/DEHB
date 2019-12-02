@@ -117,7 +117,7 @@ class DEHBV1(DEHBBase):
         super().__init__(**kwargs)
         self.max_age = max_age
 
-    def run(self, iterations=100, verbose=False, debug=False):
+    def run(self, iterations=1, verbose=False, debug=False):
         # Book-keeping variables
         traj = []
         runtime = []
@@ -216,7 +216,7 @@ class DEHBV2(DEHBBase):
         self.randomize = randomize
         self.max_age = max_age
 
-    def run(self, iterations=100, verbose=False, debug=False):
+    def run(self, iterations=1, verbose=False, debug=False):
         # Book-keeping variables
         traj = []
         runtime = []
@@ -345,7 +345,7 @@ class DEHBV3(DEHBBase):
         self.randomize = randomize
         self.max_age = max_age
 
-    def run(self, iterations=100, verbose=False, debug=False):
+    def run(self, iterations=1, verbose=False, debug=False):
         # Book-keeping variables
         traj = []
         runtime = []
