@@ -232,7 +232,13 @@ class DE(DEBase):
     def crossover_exp(self, target, mutant):
         '''Performs the exponential crossover of DE
         '''
-        pass
+        n = np.random.randint(0, self.dimensions)
+        L = 0
+        while ((np.random.rand() < self.crossover_prob) and L < self.dimensions):
+            idx = (n+L) % self.dimensions
+            target[idx] = mutant[idx]
+            L = L + 1
+        return target
 
     def crossover(self, target, mutant):
         '''Performs DE crossover
@@ -240,7 +246,7 @@ class DE(DEBase):
         if self.crossover_strategy == 'bin':
             offspring = self.crossover_bin(target, mutant)
         elif self.crossover_strategy == 'exp':
-            pass
+            offspring = self.crossover_exp(target, mutant)
         return offspring
 
     def selection(self, trials, budget=None):
