@@ -353,7 +353,8 @@ class DEHBV3(DEHBBase):
 
         # To retrieve the population and budget ranges
         num_configs, budgets = self.get_next_iteration(iteration=0)
-        full_budget = budgets[0]
+        full_budget = budgets[-1]
+        small_budget = budgets[0]
         # List of DE objects corresponding to the populations
         de = {}
         for i, b in enumerate(budgets):
@@ -381,40 +382,40 @@ class DEHBV3(DEHBBase):
             # The first DEHB iteration - only time when a random population is initialized
             if iteration == 0:
                 # creating new population for DEHB iteration to be used for the next SH steps
-                de_traj, de_runtime, de_history = de[full_budget].init_eval_pop(budget)
+                de_traj, de_runtime, de_history = de[budget].init_eval_pop(budget)
                 # maintaining global copy of random population created
-                self.population = de[full_budget].population
-                self.fitness = de[full_budget].fitness
+                self.population = de[budget].population
+                self.fitness = de[budget].fitness
                 # update global incumbent with new population scores
-                self.inc_score = de[full_budget].inc_score
-                self.inc_config = de[full_budget].inc_config
+                self.inc_score = de[budget].inc_score
+                self.inc_config = de[budget].inc_config
                 traj.extend(de_traj)
                 runtime.extend(de_runtime)
                 history.extend(de_history)
-            elif budget == full_budget and self.randomize is not None and self.randomize > 0:
+            elif budget == small_budget and self.randomize is not None and self.randomize > 0:
                 # executes in the first step of every SH iteration other than first DEHB iteration
                 # also conditional on whether a randomization fraction has been specified
                 num_replace = np.ceil(self.randomize * pop_size).astype(int)
                 # fetching the worst performing individuals
-                idxs = np.sort(np.argsort(-de[full_budget].fitness)[:num_replace])
+                idxs = np.sort(np.argsort(-de[budget].fitness)[:num_replace])
                 if debug:
                     print("Replacing {}/{} -- {}".format(num_replace, pop_size, idxs))
                 new_pop = self.init_population(pop_size=num_replace)
-                de[full_budget].population[idxs] = new_pop
-                d[full_budget].age[idxs] = de[full_budget].max_age
-                de[full_budget].inc_score = self.inc_score
-                de[full_budget].inc_config = self.inc_config
+                de[budget].population[idxs] = new_pop
+                d[budget].age[idxs] = de[budget].max_age
+                de[budget].inc_score = self.inc_score
+                de[budget].inc_config = self.inc_config
                 # evaluating new individuals
                 for i in idxs:
-                    de[full_budget].fitness[i], cost = \
-                        de[full_budget].f_objective(de[full_budget].population[i], budget)
+                    de[budget].fitness[i], cost = \
+                        de[budget].f_objective(de[budget].population[i], budget)
                     if self.fitness[i] < self.inc_score:
-                        self.inc_score = de[full_budget].fitness[i]
-                        self.inc_config = de[full_budget].population[i]
+                        self.inc_score = de[budget].fitness[i]
+                        self.inc_config = de[budget].population[i]
                     traj.append(self.inc_score)
                     runtime.append(cost)
-                    history.append((de[full_budget].population[i].tolist(),
-                                    float(de[full_budget].fitness[i]), float(budget or 0)))
+                    history.append((de[budget].population[i].tolist(),
+                                    float(de[budget].fitness[i]), float(budget or 0)))
             elif pop_size > de[budget].pop_size:
                 filler = pop_size - de[budget].pop_size
                 if debug:
@@ -455,9 +456,12 @@ class DEHBV3(DEHBBase):
                 de[budget].inc_config = self.inc_config
                 if debug:
                     print("Pop size: {}; DE budget: {}".format(de[budget].pop_size, budget))
+                best = None
+                if iteration > 0:  # only after the first DEHB iteration
+                    best = de[full_budget].population[np.argmin(de[full_budget].fitness)]
                 # Repeating DE over entire population 'generations' times
                 for gen in range(self.generations):
-                    de_traj, de_runtime, de_history = de[budget].evolve_generation(budget)
+                    de_traj, de_runtime, de_history = de[budget].evolve_generation(budget, best)
                     traj.extend(de_traj)
                     runtime.extend(de_runtime)
                     history.extend(de_history)
@@ -494,7 +498,9 @@ class DEHBV3(DEHBBase):
                         traj.extend(de_traj)
                         runtime.extend(de_runtime)
                         history.extend(de_history)
-                    else:  # equivalent to iteration == 0
+                    else:
+                        # equivalent to iteration == 0
+                        # no ranked selection happens, rather top ranked individuals are selected
                         if debug:
                             print("Iteration: ", iteration)
                         de[next_budget].population = rival_population

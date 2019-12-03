@@ -183,7 +183,7 @@ class DE(DEBase):
         mutant = r1 + self.mutation_factor * diff / 2
         return mutant
 
-    def mutation(self, current=None):
+    def mutation(self, current=None, best=None):
         '''Performs DE mutation
         '''
         if self.mutation_strategy == 'rand1':
@@ -200,22 +200,26 @@ class DE(DEBase):
 
         elif self.mutation_strategy == 'best1':
             r1, r2 = self.sample_population(size=2)
-            best = self.population[np.argmin(self.fitness)]
+            if best is None:
+                best = self.population[np.argmin(self.fitness)]
             mutant = self.mutation_rand1(best, r1, r2)
 
         elif self.mutation_strategy == 'best2':
             r1, r2, r3, r4 = self.sample_population(size=4)
-            best = self.population[np.argmin(self.fitness)]
+            if best is None:
+                best = self.population[np.argmin(self.fitness)]
             mutant = self.mutation_rand2(best, r1, r2, r3, r4)
 
         elif self.mutation_strategy == 'currenttobest1':
             r1, r2 = self.sample_population(size=2)
-            best = self.population[np.argmin(self.fitness)]
+            if best is None:
+                best = self.population[np.argmin(self.fitness)]
             mutant = self.mutation_currenttobest1(current, best, r1, r2)
 
         elif self.mutation_strategy == 'randtobest1':
             r1, r2, r3 = self.sample_population(size=3)
-            best = self.population[np.argmin(self.fitness)]
+            if best is None:
+                best = self.population[np.argmin(self.fitness)]
             mutant = self.mutation_currenttobest1(r1, best, r2, r3)
 
         return mutant
@@ -334,13 +338,13 @@ class DE(DEBase):
                             float(budget or 0)))
         return traj, runtime, history
 
-    def evolve_generation(self, budget=None):
+    def evolve_generation(self, budget=None, best=None):
         '''Performs a complete DE evolution, mutation -> crossover -> selection
         '''
         trials = []
         for j in range(self.pop_size):
             target = self.population[j]
-            donor = self.mutation(current=target)
+            donor = self.mutation(current=target, best=best)
             trial = self.crossover(target, donor)
             trial = self.boundary_check(trial)
             trials.append(trial)
