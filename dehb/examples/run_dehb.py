@@ -58,32 +58,53 @@ def f(config, budget=None):
     return fitness, cost
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--fix_seed', default='False', type=str, choices=['True', 'False'], nargs='?', help='seed')
-parser.add_argument('--run_id', default=0, type=int, nargs='?', help='unique number to identify this run')
+parser.add_argument('--fix_seed', default='False', type=str, choices=['True', 'False'], nargs='?',
+                    help='seed')
+parser.add_argument('--run_id', default=0, type=int, nargs='?',
+                    help='unique number to identify this run')
 parser.add_argument('--runs', default=None, type=int, nargs='?', help='number of runs to perform')
-parser.add_argument('--run_start', default=0, type=int, nargs='?', help='run index to start with for multiple runs')
+parser.add_argument('--run_start', default=0, type=int, nargs='?',
+                    help='run index to start with for multiple runs')
 choices = ["protein_structure", "slice_localization", "naval_propulsion",
            "parkinsons_telemonitoring", "nas_cifar10a", "nas_cifar10b",
            "nas_cifar10c", "counting_*_*", "svm", "paramnet_*"]
-parser.add_argument('--benchmark', default="protein_structure", help="specify the benchmark to run on from among {}".format(choices), type=str)
-parser.add_argument('--n_iters', default=100, type=int, nargs='?', help='number of iterations for optimization method')
+parser.add_argument('--benchmark', default="protein_structure",
+                     help="specify the benchmark to run on from among {}".format(choices), type=str)
+parser.add_argument('--n_iters', default=100, type=int, nargs='?',
+                    help='number of iterations for optimization method')
 parser.add_argument('--output_path', default="./", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
-parser.add_argument('--data_dir', default="../tabular_benchmarks/fcnet_tabular_benchmarks/", type=str, nargs='?',
-                    help='specifies the path to the tabular data')
-parser.add_argument('--strategy', default="rand1_bin", type=str, nargs='?', help='type of mutation & crossover scheme')
+parser.add_argument('--data_dir', default="../tabular_benchmarks/fcnet_tabular_benchmarks/",
+                    type=str, nargs='?', help='specifies the path to the tabular data')
+strategy_choices = ['rand1_bin', 'rand2_bin', 'rand2dir_bin', 'best1_bin', 'best2_bin',
+                    'currenttobest1_bin', 'randtobest1_bin',
+                    'rand1_exp', 'rand2_exp', 'rand2dir_exp', 'best1_exp', 'best2_exp',
+                    'currenttobest1_exp', 'randtobest1_exp']
+parser.add_argument('--strategy', default="rand1_bin", choices=strategy_choices,
+                    type=str, nargs='?',
+                    help="specify the DE strategy from among {}".format(strategy_choices), type=str)
 parser.add_argument('--eta', default=3, type=int, nargs='?', help='eta for Successive Halving')
-parser.add_argument('--min_clip', default=3, type=int, nargs='?', help='minimum number of configurations')
-parser.add_argument('--max_clip', default=None, type=int, nargs='?', help='maximum number of configurations')
-parser.add_argument('--randomize', default=None, type=float, help='fraction of population to randomize in v2')
-parser.add_argument('--max_age', default=np.inf, type=float, help='maximum age an individual can survive')
-parser.add_argument('--mutation_factor', default=0.5, type=float, nargs='?', help='mutation factor value')
+parser.add_argument('--min_clip', default=3, type=int, nargs='?',
+                    help='minimum number of configurations')
+parser.add_argument('--max_clip', default=None, type=int, nargs='?',
+                    help='maximum number of configurations')
+parser.add_argument('--randomize', default=None, type=float,
+                    help='fraction of population to randomize in v2')
+parser.add_argument('--max_age', default=np.inf, type=float,
+                    help='maximum age an individual can survive')
+parser.add_argument('--mutation_factor', default=0.5, type=float, nargs='?',
+                    help='mutation factor value')
 parser.add_argument('--gens', default=1, type=int, nargs='?', help='number of generations')
-parser.add_argument('--crossover_prob', default=0.5, type=float, nargs='?', help='probability of crossover')
-parser.add_argument('--verbose', default='False', choices=['True', 'False'], nargs='?', help='to print progress or not')
-parser.add_argument('--version', default='1', choices=['1', '2', '3'], nargs='?', help='the version of DEHB to run')
-parser.add_argument('--debug', default='False', choices=['True', 'False'], nargs='?', help='for additional logs')
-parser.add_argument('--folder', default='dehb', type=str, nargs='?', help='name of folder where files will be dumped')
+parser.add_argument('--crossover_prob', default=0.5, type=float, nargs='?',
+                    help='probability of crossover')
+parser.add_argument('--verbose', default='False', choices=['True', 'False'], nargs='?',
+                    help='to print progress or not')
+parser.add_argument('--version', default='1', choices=['1', '2', '3'], nargs='?',
+                    help='the version of DEHB to run')
+parser.add_argument('--debug', default='False', choices=['True', 'False'], nargs='?',
+                    help='for additional logs')
+parser.add_argument('--folder', default='dehb', type=str, nargs='?',
+                    help='name of folder where files will be dumped')
 
 args = parser.parse_args()
 args.verbose = True if args.verbose == 'True' else False
@@ -217,12 +238,14 @@ dimensions = len(cs.get_hyperparameters())
 output_path = os.path.join(args.output_path, args.folder)
 os.makedirs(output_path, exist_ok=True)
 
+# Initializing DEHB object
 dehb = DEHB(cs=cs, f=f, dimensions=dimensions, mutation_factor=args.mutation_factor,
             crossover_prob=args.crossover_prob, strategy=args.strategy, min_budget=min_budget,
             max_budget=max_budget, min_clip=args.min_clip, max_clip=args.max_clip,
             generations=args.gens, eta=args.eta, randomize=args.randomize, max_age=args.max_age)
 
 if args.runs is None:
+    # Running DEHB iterations
     traj, runtime, history = dehb.run(iterations=args.n_iters, verbose=args.verbose,
                                       debug=args.debug)
     if 'cifar' in args.benchmark:
@@ -235,6 +258,7 @@ else:
             np.random.seed(run_id)
         if args.verbose:
             print("\nRun #{:<3}\n{}".format(run_id + 1, '-' * 8))
+        # Running DEHB iterations
         traj, runtime, history = dehb.run(iterations=args.n_iters, verbose=args.verbose,
                                           debug=args.debug)
         if 'cifar' in args.benchmark:
