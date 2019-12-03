@@ -457,8 +457,6 @@ class DEHBV3(DEHBBase):
                 if debug:
                     print("Pop size: {}; DE budget: {}".format(de[budget].pop_size, budget))
                 best = None
-                if iteration > 0:  # only after the first DEHB iteration
-                    best = de[full_budget].population[np.argmin(de[full_budget].fitness)]
                 # Repeating DE over entire population 'generations' times
                 for gen in range(self.generations):
                     de_traj, de_runtime, de_history = de[budget].evolve_generation(budget, best)
