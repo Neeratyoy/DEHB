@@ -8,7 +8,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn
-import torch
 from scipy import stats
 seaborn.set_style("ticks")
 
@@ -73,34 +72,38 @@ def fill_trajectory(performance_list, time_list, replace_nan=np.NaN):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--path', default='./', type=str, nargs='?', help='path to encodings or jsons for each algorithm')
-parser.add_argument('--n_runs', default=10, type=int, nargs='?', help='number of runs to plot data for')
+parser.add_argument('--path', default='./', type=str, nargs='?',
+                    help='path to encodings or jsons for each algorithm')
+parser.add_argument('--n_runs', default=10, type=int, nargs='?',
+                    help='number of runs to plot data for')
 parser.add_argument('--output_path', default="./", type=str, nargs='?',
                     help='specifies the path where the plot will be saved')
-parser.add_argument('--type', default="wallclock", type=str, choices=["wallclock", "fevals"], help='to plot for wallclock times or # function evaluations')
-parser.add_argument('--name', default="comparison", type=str, help='file name for the PNG plot to be saved')
-parser.add_argument('--title', default="benchmark", type=str, help='title name for the plot')
+parser.add_argument('--type', default="wallclock", type=str, choices=["wallclock", "fevals"],
+                    help='to plot for wallclock times or # function evaluations')
+parser.add_argument('--name', default="comparison", type=str,
+                    help='file name for the PNG plot to be saved')
+parser.add_argument('--title', default="benchmark", type=str,
+                    help='title name for the plot')
+parser.add_argument('--limit', default=1e7, type=float, help='wallclock limit')
+parser.add_argument('--regret', default='validation', type=str, choices=['validation', 'test'],
+                    help='type of regret')
 
 args = parser.parse_args()
 path = args.path
 n_runs = args.n_runs
 plot_type = args.type
 plot_name = args.name
+regret_type = args.regret
 
+# methods = [("random_search", "RS"),
 methods = [("bohb", "BOHB"),
-#         ("re", "RE"),
-#         ("hyperband", "HB"),
-#         ("random_search", "RS"),
-#         ("tpe", "TPE"),
-           ("de", "DE"),
-           ("dehb_v1", "DEHB V1; $gen=5$;"),
-           ("dehb_v2", "DEHB V2; $gen=1$;"),
-           ("dehb_v3", "DEHB V3; $gen=1$; $age=5$")]
-           # ("dehb_v3_pop10", "DEHB V3 $gen=1$; $rand=0$; $pop=10$"),
-           # ("dehb_v3_rand0.3", "DEHB V3; $gen=1$; $rand=0.3$;"),
-           # ("dehb_v3_pop10_rand0.3", "DEHB V3 $gen=1$; $rand=0.3$; $pop=10$")]
-        # ("dehb_v2_rand", "DEHB V2 $rand=0.2$"),
-        # ("dehb_v2_rand_0.9", "DEHB V2 $rand=0.9$")]
+#            ("hyperband", "HB"),
+           # ("tpe", "TPE"),
+           # ("smac", "SMAC"),
+           ("regularized_evolution", "RE"),
+           ("de_pop10", "DE $pop=10$")]
+           # ("de_pop50", "DE $pop=50$"),
+           # ("de_pop100", "DE $pop=100$")]
 
 # plot limits
 min_time = np.inf
@@ -135,7 +138,7 @@ for index, (m, label) in enumerate(methods):
             regret_key = "losses"
             runtime_key = "cummulative_budget"
         else:
-            regret_key = "regret_validation"
+            regret_key =  "regret_validation" if regret_type == 'validation' else "regret_test"
             runtime_key = "runtime"
         _, idx = np.unique(res[regret_key], return_index=True)
         idx.sort()
@@ -153,7 +156,7 @@ for index, (m, label) in enumerate(methods):
         time = time[idx:]
 
         # Clips off all measurements after 10^7s
-        idx = np.where(time < 1e7)[0]
+        idx = np.where(time < args.limit)[0]
 
         print("{}. Plotting for {}".format(index, m))
         print(len(regret), len(runtimes))
@@ -185,9 +188,10 @@ if plot_type == "wallclock":
     plt.xlabel("wall clock time $[s]$", fontsize=50)
 elif plot_type == "fevals":
     plt.xlabel("number of function evaluations", fontsize=50)
-plt.ylabel("regret", fontsize=50)
+plt.ylabel("{} regret".format(regret_type), fontsize=50)
 plt.xlim(max(min_time/10, 1e0), min(max_time*10, 1e7))
 plt.ylim(min_regret, max_regret)
 plt.grid(which='both', alpha=0.5, linewidth=0.5)
 print(os.path.join(args.output_path, '{}.png'.format(plot_name)))
-plt.savefig(os.path.join(args.output_path, '{}.png'.format(plot_name)), bbox_inches='tight', dpi=300)
+plt.savefig(os.path.join(args.output_path, '{}.png'.format(plot_name)),
+            bbox_inches='tight', dpi=300)
