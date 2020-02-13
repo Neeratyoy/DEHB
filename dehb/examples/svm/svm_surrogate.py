@@ -58,22 +58,3 @@ smac_deterministic = True
 
 # run experiment
 result = util.run_experiment(args, worker, dest_dir, smac_deterministic)
-
-print(result.get_incumbent_trajectory())
-
-# else:
-#     for run_id in range(args.runs):
-#         # this is a synthetic benchmark, so we will use the run_id to separate the independent runs
-#         worker = Worker(surrogate_path=args.surrogate_path, measure_test_loss=True, run_id=run_id)
-#
-#         # directory where the results are stored
-#         dest_dir = os.path.join(args.dest_dir, folder)
-#
-#         # SMAC can be informed whether the objective is deterministic or not
-#         smac_deterministic = True
-#
-#         # run experiment
-#         result = util.run_experiment(args, worker, dest_dir, smac_deterministic)
-#
-#         print(result.get_incumbent_trajectory())
-#         worker.shutdown()
