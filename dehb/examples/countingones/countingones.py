@@ -47,7 +47,8 @@ if args.folder is None:
 
 
 # this is a synthetic benchmark, so we will use the run_id to separate the independent runs
-worker = Worker(num_continuous=args.num_continuous, num_categorical=args.num_categoricals, max_budget=args.max_budget, measure_test_loss=True, run_id=args.run_id)
+worker = Worker(num_continuous=args.num_continuous, num_categorical=args.num_categoricals,
+                max_budget=args.max_budget, measure_test_loss=True, run_id=args.run_id)
 
 # directory where the results are stored
 dest_dir = os.path.join(args.dest_dir,
