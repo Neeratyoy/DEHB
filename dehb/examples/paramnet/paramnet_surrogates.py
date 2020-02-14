@@ -54,6 +54,7 @@ args.min_budget, args.max_budget = worker.budgets[args.dataset]
 
 # directory where the results are stored
 dest_dir = os.path.join(args.dest_dir, args.dataset, folder)
+args.working_directory = dest_dir
 
 # SMAC can be informed whether the objective is deterministic or not
 smac_deterministic = True

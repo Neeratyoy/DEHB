@@ -53,6 +53,7 @@ worker = Worker(num_continuous=args.num_continuous, num_categorical=args.num_cat
 # directory where the results are stored
 dest_dir = os.path.join(args.dest_dir,
                         "{}_{}".format(args.num_continuous, args.num_categoricals), folder)
+args.working_directory = dest_dir
 
 # SMAC can be informed whether the objective is deterministic or not
 smac_deterministic = True
