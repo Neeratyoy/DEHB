@@ -1,4 +1,4 @@
-'''Runs DE on NAS-Bench-101 and NAS-HPO-Bench
+'''Runs DEHB on NAS-Bench-101 and NAS-HPO-Bench
 '''
 
 import os
@@ -15,7 +15,7 @@ from tabular_benchmarks import FCNetProteinStructureBenchmark, FCNetSliceLocaliz
     FCNetNavalPropulsionBenchmark, FCNetParkinsonsTelemonitoringBenchmark
 from tabular_benchmarks import NASCifar10A, NASCifar10B, NASCifar10C
 
-from dehb import DE
+from dehb import DEHBV1, DEHBV2, DEHBV3
 
 
 def save_configspace(cs, path, filename='configspace'):
@@ -41,6 +41,8 @@ parser.add_argument('--run_id', default=0, type=int, nargs='?',
 parser.add_argument('--runs', default=None, type=int, nargs='?', help='number of runs to perform')
 parser.add_argument('--run_start', default=0, type=int, nargs='?',
                     help='run index to start with for multiple runs')
+parser.add_argument('--iter', default=20, type=int, nargs='?',
+                    help='number of DEHB iterations')
 choices = ["protein_structure", "slice_localization", "naval_propulsion",
            "parkinsons_telemonitoring", "nas_cifar10a", "nas_cifar10b", "nas_cifar10c"]
 parser.add_argument('--benchmark', default="protein_structure", type=str,
@@ -64,10 +66,14 @@ parser.add_argument('--mutation_factor', default=0.5, type=float, nargs='?',
                     help='mutation factor value')
 parser.add_argument('--crossover_prob', default=0.5, type=float, nargs='?',
                     help='probability of crossover')
+parser.add_argument('--eta', default=3, type=int, nargs='?',
+                    help='eta for Successive Halving')
 parser.add_argument('--verbose', default='False', choices=['True', 'False'], nargs='?', type=str,
                     help='to print progress or not')
 parser.add_argument('--folder', default='de', type=str, nargs='?',
                     help='name of folder where files will be dumped')
+parser.add_argument('--version', default="1", type=str, nargs='?',
+                    help='version of DEHB to run')
 
 args = parser.parse_args()
 args.verbose = True if args.verbose == 'True' else False
@@ -118,19 +124,28 @@ elif args.benchmark == "parkinsons_telemonitoring": # NAS-HPO-Bench
 cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
 
-output_path = os.path.join(args.output_path, args.folder)
+if args.folder is None:
+    folder = "dehb_v{}_pop{}".format(args.version, args.pop_size)
+else:
+    folder = args.folder
+
+output_path = os.path.join(args.output_path, folder)
 os.makedirs(output_path, exist_ok=True)
 
-# Initializing DE object
-de = DE(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size,
-        mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
-        strategy=args.strategy, budget=max_budget)
+dehbs = {"1": DEHBV1, "2": DEHBV2, "3": DEHBV3}
+DEHB = dehbs[args.version]
+
+# Initializing DEHB object
+dehb = DEHB(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size, strategy=args.strategy,
+            mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
+            eta=args.eta, min_budget=min_budget, max_budget=max_budget,
+            generations=args.gens)
 
 if args.runs is None:  # for a single run
     if not args.fix_seed:
         np.random.seed(0)
-    # Running DE iterations
-    traj, runtime, history = de.run(generations=args.gens, verbose=args.verbose)
+    # Running DEHB iterations
+    traj, runtime, history = dehb.run(iterations=args.iter, verbose=args.verbose)
     if 'cifar' in args.benchmark:
         res = b.get_results(ignore_invalid_configs=True)
     else:
@@ -144,8 +159,8 @@ else:  # for multiple runs
             np.random.seed(run_id)
         if args.verbose:
             print("\nRun #{:<3}\n{}".format(run_id + 1, '-' * 8))
-        # Running DE iterations
-        traj, runtime, history = de.run(generations=args.gens, verbose=args.verbose)
+        # Running DEHB iterations
+        traj, runtime, history = dehb.run(iterations=args.iter, verbose=args.verbose)
         if 'cifar' in args.benchmark:
             res = b.get_results(ignore_invalid_configs=True)
         else:
@@ -156,7 +171,7 @@ else:  # for multiple runs
         if args.verbose:
             print("Run saved. Resetting...")
         # essential step to not accumulate consecutive runs
-        de.reset()
+        dehb.reset()
         b.reset_tracker()
 
 save_configspace(cs, output_path)
