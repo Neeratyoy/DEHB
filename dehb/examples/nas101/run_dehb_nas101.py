@@ -80,6 +80,7 @@ args.verbose = True if args.verbose == 'True' else False
 args.fix_seed = True if args.fix_seed == 'True' else False
 
 if args.benchmark == "nas_cifar10a": # NAS-Bench-101
+    min_budget = 4
     max_budget = 108
     b = NASCifar10A(data_dir=args.data_dir, multi_fidelity=True)
     y_star_valid = b.y_star_valid
@@ -87,6 +88,7 @@ if args.benchmark == "nas_cifar10a": # NAS-Bench-101
     inc_config = None
 
 elif args.benchmark == "nas_cifar10b": # NAS-Bench-101
+    min_budget = 4
     max_budget = 108
     b = NASCifar10B(data_dir=args.data_dir, multi_fidelity=True)
     y_star_valid = b.y_star_valid
@@ -94,6 +96,7 @@ elif args.benchmark == "nas_cifar10b": # NAS-Bench-101
     inc_config = None
 
 elif args.benchmark == "nas_cifar10c": # NAS-Bench-101
+    min_budget = 4
     max_budget = 108
     b = NASCifar10C(data_dir=args.data_dir, multi_fidelity=True)
     y_star_valid = b.y_star_valid
@@ -101,21 +104,25 @@ elif args.benchmark == "nas_cifar10c": # NAS-Bench-101
     inc_config = None
 
 elif args.benchmark == "protein_structure": # NAS-HPO-Bench
+    min_budget = 4
     max_budget = 100
     b = FCNetProteinStructureBenchmark(data_dir=args.data_dir)
     inc_config, y_star_valid, y_star_test = b.get_best_configuration()
 
 elif args.benchmark == "slice_localization": # NAS-HPO-Bench
+    min_budget = 4
     max_budget = 100
     b = FCNetSliceLocalizationBenchmark(data_dir=args.data_dir)
     inc_config, y_star_valid, y_star_test = b.get_best_configuration()
 
 elif args.benchmark == "naval_propulsion": # NAS-HPO-Bench
+    min_budget = 4
     max_budget = 100
     b = FCNetNavalPropulsionBenchmark(data_dir=args.data_dir)
     inc_config, y_star_valid, y_star_test = b.get_best_configuration()
 
 elif args.benchmark == "parkinsons_telemonitoring": # NAS-HPO-Bench
+    min_budget = 4
     max_budget = 100
     b = FCNetParkinsonsTelemonitoringBenchmark(data_dir=args.data_dir)
     inc_config, y_star_valid, y_star_test = b.get_best_configuration()
