@@ -47,7 +47,7 @@ choices = ["protein_structure", "slice_localization", "naval_propulsion",
            "parkinsons_telemonitoring", "nas_cifar10a", "nas_cifar10b", "nas_cifar10c"]
 parser.add_argument('--benchmark', default="protein_structure", type=str,
                     help="specify the benchmark to run on from among {}".format(choices))
-parser.add_argument('--gens', default=100, type=int, nargs='?',
+parser.add_argument('--gens', default=1, type=int, nargs='?',
                     help='(iterations) number of generations for DE to evolve')
 parser.add_argument('--output_path', default="./results", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
@@ -70,7 +70,7 @@ parser.add_argument('--eta', default=3, type=int, nargs='?',
                     help='eta for Successive Halving')
 parser.add_argument('--verbose', default='False', choices=['True', 'False'], nargs='?', type=str,
                     help='to print progress or not')
-parser.add_argument('--folder', default='de', type=str, nargs='?',
+parser.add_argument('--folder', default=None, type=str, nargs='?',
                     help='name of folder where files will be dumped')
 parser.add_argument('--version', default="1", type=str, nargs='?',
                     help='version of DEHB to run')

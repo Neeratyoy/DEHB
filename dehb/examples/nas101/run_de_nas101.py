@@ -66,7 +66,7 @@ parser.add_argument('--crossover_prob', default=0.5, type=float, nargs='?',
                     help='probability of crossover')
 parser.add_argument('--verbose', default='False', choices=['True', 'False'], nargs='?', type=str,
                     help='to print progress or not')
-parser.add_argument('--folder', default='de', type=str, nargs='?',
+parser.add_argument('--folder', default=None, type=str, nargs='?',
                     help='name of folder where files will be dumped')
 
 args = parser.parse_args()
@@ -118,7 +118,8 @@ elif args.benchmark == "parkinsons_telemonitoring": # NAS-HPO-Bench
 cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
 
-output_path = os.path.join(args.output_path, args.folder)
+folder = "de_pop{}".format(args.pop_size) if args.folder is None else args.folder
+output_path = os.path.join(args.output_path, folder)
 os.makedirs(output_path, exist_ok=True)
 
 # Initializing DE object
