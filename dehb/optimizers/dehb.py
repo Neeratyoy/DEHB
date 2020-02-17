@@ -1,15 +1,12 @@
-import sys
-sys.path.append('../')
-
 import numpy as np
 
-from optimizers.de import DE
+from .de import DE
 
 
 class DEHBBase():
     def __init__(self, cs=None, f=None, dimensions=None, mutation_factor=None,
                  crossover_prob=None, strategy=None, generations=None, min_budget=None,
-                 max_budget=None, eta=None, min_clip=3, max_clip=None, **kwargs):
+                 max_budget=None, eta=None, min_clip=4, max_clip=None, **kwargs):
         # Benchmark related variables
         self.cs = cs
         if dimensions is None and self.cs is not None:

@@ -7,6 +7,9 @@ dehb/examples/plots/
 dehb/examples/backup
 
 dehb/optimizers/__pycache__/
+dehb/__pycache__/
+dehb/*/__pycache__/
+dehb/*/*/__pycache__/
 
 dehb/examples/slurm*.out
 slurm*.out
