@@ -91,7 +91,7 @@ parser.add_argument('--verbose', default='False', choices=['True', 'False'], nar
                     help='to print progress or not')
 parser.add_argument('--folder', default=None, type=str, nargs='?',
                     help='name of folder where files will be dumped')
-parser.add_argument('--version', default=1, type=str, nargs='?',
+parser.add_argument('--version', default="1", type=str, nargs='?',
                     help='version of DEHB to run')
 
 args = parser.parse_args()

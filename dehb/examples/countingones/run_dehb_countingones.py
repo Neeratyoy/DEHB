@@ -9,7 +9,7 @@ import ConfigSpace
 
 from hpolib.benchmarks.synthetic_functions.counting_ones import CountingOnes
 
-from dehb import DE
+from dehb import DE, DEHBV1, DEHBV2, DEHBV3
 
 
 # Common objective function for DE & DEHB representing SVM Surrogates benchmark
@@ -74,8 +74,8 @@ parser.add_argument('--run_id', default=0, type=int, nargs='?',
 parser.add_argument('--runs', default=None, type=int, nargs='?', help='number of runs to perform')
 parser.add_argument('--run_start', default=0, type=int, nargs='?',
                     help='run index to start with for multiple runs')
-parser.add_argument('--gens', default=100, type=int, nargs='?',
-                    help='(iterations) number of generations for DE to evolve')
+parser.add_argument('--iter', default=20, type=int, nargs='?',
+                    help='number of DEHB iterations')
 parser.add_argument('--output_path', default="./results", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
 parser.add_argument('--pop_size', default=20, type=int, nargs='?', help='population size')
@@ -90,17 +90,30 @@ parser.add_argument('--mutation_factor', default=0.5, type=float, nargs='?',
                     help='mutation factor value')
 parser.add_argument('--crossover_prob', default=0.5, type=float, nargs='?',
                     help='probability of crossover')
+parser.add_argument('--gens', default=1, type=int, nargs='?',
+                    help='DE generations in each DEHB iteration')
+parser.add_argument('--eta', default=3, type=int, nargs='?',
+                    help='SH parameter')
 parser.add_argument('--verbose', default='False', choices=['True', 'False'], nargs='?', type=str,
                     help='to print progress or not')
 parser.add_argument('--folder', default=None, type=str, nargs='?',
                     help='name of folder where files will be dumped')
+parser.add_argument('--version', default="1", type=str, nargs='?',
+                    help='version of DEHB to run')
 
 args = parser.parse_args()
 args.verbose = True if args.verbose == 'True' else False
 args.fix_seed = True if args.fix_seed == 'True' else False
 
 dim_folder = "{}+{}".format(args.n_cont, args.n_cat)
-folder = "{}/de_pop{}".format(dim_folder, args.pop_size) if args.folder is None else args.folder
+
+if args.folder is None:
+    folder = "{}/dehb_v{}_pop{}".format(dim_folder, args.version, args.pop_size)
+else:
+    folder = args.folder
+
+dehbs = {"1": DEHBV1, "2": DEHBV2, "3": DEHBV3}
+DEHB = dehbs[args.version]
 
 output_path = os.path.join(args.output_path, folder)
 os.makedirs(output_path, exist_ok=True)
@@ -118,17 +131,21 @@ max_budget = 93312 / dimensions
 y_star_test = -dimensions  # incorporated in regret_calc as normalized regret: (f(x) + d) / d
 
 
-# Initializing DE object
-de = DE(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size,
-        mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
-        strategy=args.strategy, budget=max_budget)
+# Initializing DEHB object
+dehb = DEHB(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size, strategy=args.strategy,
+            mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
+            eta=args.eta, min_budget=min_budget, max_budget=max_budget,
+            generations=args.gens)
+
+# Helper DE object for vector to config mapping
+de = DE(cs=cs, b=b, f=f)
 
 
 if args.runs is None:  # for a single run
     if not args.fix_seed:
         np.random.seed(0)
     # Running DE iterations
-    traj, runtime, history = de.run(generations=args.gens, verbose=args.verbose)
+    traj, runtime, history = dehb.run(iterations=args.iter, verbose=args.verbose)
     valid_scores, test_scores = calc_regrets(history)
 
     save_json(valid_scores, test_scores, runtime, output_path, args.run_id)
@@ -140,7 +157,7 @@ else:  # for multiple runs
         if args.verbose:
             print("\nRun #{:<3}\n{}".format(run_id + 1, '-' * 8))
         # Running DE iterations
-        traj, runtime, history = de.run(generations=args.gens, verbose=args.verbose)
+        traj, runtime, history = dehb.run(iterations=args.iter, verbose=args.verbose)
         valid_scores, test_scores = calc_regrets(history)
 
         save_json(valid_scores, test_scores, runtime, output_path, run_id)
@@ -149,6 +166,6 @@ else:  # for multiple runs
             print("Run saved. Resetting...")
         # essential step to not accumulate consecutive runs
 
-        de.reset()
+        dehb.reset()
 
 save_configspace(cs, output_path)

@@ -29,10 +29,6 @@ parser.add_argument('--run_id', type=str, default=0)
 parser.add_argument('--runs', type=int, default=None)
 parser.add_argument('--method', type=str, default='randomsearch',
                     help='Possible choices: randomsearch, bohb, hyperband, tpe, smac')
-parser.add_argument('--min_budget', type=int, default=9,
-                    help='Minimum number of draws from each Bernoulli distribution.')
-parser.add_argument('--max_budget', type=int, default=729,
-                    help='Minimum number of draws from each Bernoulli distribution.')
 parser.add_argument('--num_categoricals', type=int, default=4,
                     help='Number of categorical parameters in the search space.')
 parser.add_argument('--num_continuous', type=int, default=4,
@@ -45,6 +41,9 @@ args = parser.parse_args()
 if args.folder is None:
     folder = args.method
 
+d = args.num_continuous + args.num_categoricals
+args.min_budget = 576 / d
+args.max_budget = 93312 / d
 
 # this is a synthetic benchmark, so we will use the run_id to separate the independent runs
 worker = Worker(num_continuous=args.num_continuous, num_categorical=args.num_categoricals,
@@ -52,7 +51,7 @@ worker = Worker(num_continuous=args.num_continuous, num_categorical=args.num_cat
 
 # directory where the results are stored
 dest_dir = os.path.join(args.dest_dir,
-                        "{}_{}".format(args.num_continuous, args.num_categoricals), folder)
+                        "{}+{}".format(args.num_continuous, args.num_categoricals), folder)
 args.working_directory = dest_dir
 
 # SMAC can be informed whether the objective is deterministic or not
