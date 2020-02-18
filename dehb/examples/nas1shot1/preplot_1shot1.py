@@ -4,7 +4,7 @@ import numpy as np
 from scipy import stats
 
 
-def create_plot(plt, methods, path, regret_type, fill_trajectory,
+def create_plot(ssp, plt, methods, path, regret_type, fill_trajectory,
                 colors, linestyles, marker, n_runs=500, limit=1e7):
 
     # plot limits
@@ -21,7 +21,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
         runtimes = []
         for k, i in enumerate(np.arange(n_runs)):
             try:
-                res = json.load(open(os.path.join(path, m, "run_%d.json" % i)))
+                res = json.load(open(os.path.join(path, m, str(ssp), "run_%d.json" % i)))
                 no_runs_found = False
             except Exception as e:
                 print(m, i, e)
