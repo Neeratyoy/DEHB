@@ -13,6 +13,11 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
     min_regret = 1
     max_regret = 0
 
+    # extracting dimensions
+    ## example path expected: 'dehb/examples/countingones/results/4+4/'
+    dim1, dim2 = path.replace('/', ' ').strip().split(' ')[-1].split('+')
+    d = int(dim1) + int(dim2)
+
     no_runs_found = False
     # looping and plotting for all methods
     for index, (m, label) in enumerate(methods):
@@ -21,7 +26,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
         runtimes = []
         for k, i in enumerate(np.arange(n_runs)):
             try:
-                res = pickle.load(open(os.path.join(path, m, "{}_run_{}.pkl".format(m, i), 'rb')))
+                res = pickle.load(open(os.path.join(path, m, "{}_run_{}.pkl".format(m, i)), 'rb'))
                 no_runs_found = False
             except Exception as e:
                 print(m, i, e)
@@ -29,9 +34,11 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                 continue
             regret_key =  "losses" if regret_type == 'validation' else "test_losses"
             runtime_key = "cummulative_budget"
-            _, idx = np.unique(res[regret_key], return_index=True)
+            # calculating normalized regret as ((f(x) + d) / d) since -d is global incumbent
+            regret = (np.array(res[regret_key]) + d) / d
+            _, idx = np.unique(regret, return_index=True)
             idx.sort()
-            regret.append(np.array(res[regret_key])[idx])
+            regret.append(regret[idx])
             runtimes.append(np.array(res[runtime_key])[idx])
 
         if not no_runs_found:
