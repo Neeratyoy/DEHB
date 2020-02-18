@@ -110,12 +110,7 @@ benchmark = args.benchmark
 bench_type = args.bench_type
 
 # Checking benchmark specifications
-if benchmark == '101' and bench_type not in ["cifara", "cifarb", "cifarc",
-                                             "protein", "slice", "naval", "parkinsons"]:
-    print("Specify \'--bench_type\' from {'cifara', 'cifarb', 'cifarc', 'protein', 'slice', "
-          "'naval', 'parkinsons' } for choosing the search space for 101.")
-    sys.exit()
-else:
+if benchmark == '101':
     from dehb.examples.nas101 import create_plot
 
 if benchmark == '1shot1' and bench_type not in ["1", "2", "3"]:
@@ -123,23 +118,16 @@ if benchmark == '1shot1' and bench_type not in ["1", "2", "3"]:
     sys.exit()
 else:
     ssp = bench_type
-    # def create_plot(**kwargs):
     from dehb.examples.nas1shot1 import create_plot
-        # return create_plot(ssp, **kwargs)
 
-if benchmark == 'paramnet' and bench_type not in ["adult", "higgs", "letter", "mnist", "optdigits", "poker"]:
-    print("Specify \'--bench_type\' from {'adult', 'higgs', 'letter', 'mnist', 'optdigits', "
-          "'poker'} for choosing the search space for paramnet.")
-    sys.exit()
-else:
-    # TODO: find best found incumbent
-    # TODO: calculate regrets
-    pass
+if benchmark == 'countingones':
+    from dehb.examples.countingones import create_plot
+
+if benchmark == 'paramnet':
+    from dehb.examples.paramnet import create_plot
 
 if benchmark == 'svm':
-    # TODO: find best found incumbent
-    # TODO: calculate regrets
-    pass
+    from dehb.examples.svm import create_plot
 
 
 # Loading file for algo list
