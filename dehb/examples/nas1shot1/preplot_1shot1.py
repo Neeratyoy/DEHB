@@ -4,8 +4,8 @@ import numpy as np
 from scipy import stats
 
 
-def create_plot(ssp, plt, methods, path, regret_type, fill_trajectory,
-                colors, linestyles, marker, n_runs=500, limit=1e7):
+def create_plot(plt, methods, path, regret_type, fill_trajectory,
+                colors, linestyles, marker, n_runs=500, limit=1e7, ssp=1):
 
     # plot limits
     min_time = np.inf

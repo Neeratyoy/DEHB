@@ -123,9 +123,9 @@ if benchmark == '1shot1' and bench_type not in ["1", "2", "3"]:
     sys.exit()
 else:
     ssp = bench_type
-    def create_plot(**kwargs):
-        from dehb.examples.nas1shot1 import create_plot
-        return create_plot(ssp, **kwargs)
+    # def create_plot(**kwargs):
+    from dehb.examples.nas1shot1 import create_plot
+        # return create_plot(ssp, **kwargs)
 
 if benchmark == 'paramnet' and bench_type not in ["adult", "higgs", "letter", "mnist", "optdigits", "poker"]:
     print("Specify \'--bench_type\' from {'adult', 'higgs', 'letter', 'mnist', 'optdigits', "
@@ -212,9 +212,14 @@ no_runs_found = False
 #         min_regret = min(min_regret, np.mean(te, axis=1)[idx][-1])
 #         max_regret = max(max_regret, np.mean(te, axis=1)[idx][0])
 
-plt, min_time, max_time, min_regret, max_regret = \
-    create_plot(plt, methods, path, regret_type, fill_trajectory,
-                colors, linestyles, marker, n_runs, limit=limit)
+if benchmark == '1shot1':
+    plt, min_time, max_time, min_regret, max_regret = \
+        create_plot(plt, methods, path, regret_type, fill_trajectory,
+                    colors, linestyles, marker, n_runs, limit, ssp)
+else:
+    plt, min_time, max_time, min_regret, max_regret = \
+        create_plot(plt, methods, path, regret_type, fill_trajectory,
+                    colors, linestyles, marker, n_runs, limit)
 
 plt.xscale("log")
 plt.yscale("log")
