@@ -35,10 +35,10 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
             regret_key =  "losses" if regret_type == 'validation' else "test_losses"
             runtime_key = "cummulative_budget"
             # calculating normalized regret as ((f(x) + d) / d) since -d is global incumbent
-            regret = (np.array(res[regret_key]) + d) / d
-            _, idx = np.unique(regret, return_index=True)
+            curr_regret = (np.array(res[regret_key]) + d) / d
+            _, idx = np.unique(curr_regret, return_index=True)
             idx.sort()
-            regret.append(regret[idx])
+            regret.append(curr_regret[idx])
             runtimes.append(np.array(res[runtime_key])[idx])
 
         if not no_runs_found:
