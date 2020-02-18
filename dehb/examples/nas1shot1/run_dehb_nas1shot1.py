@@ -45,7 +45,7 @@ parser.add_argument('--output_path', default="./results", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
 parser.add_argument('--data_dir', type=str, nargs='?',
                     default="../nasbench-1shot1/nasbench_analysis/nasbench_data/"
-                            "108_e/nasbench_only108.tfrecord",
+                            "108_e/nasbench_full.tfrecord",
                     help='specifies the path to the tabular data')
 parser.add_argument('--pop_size', default=20, type=int, nargs='?', help='population size')
 strategy_choices = ['rand1_bin', 'rand2_bin', 'rand2dir_bin', 'best1_bin', 'best2_bin',
