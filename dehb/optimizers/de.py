@@ -45,9 +45,22 @@ class DEBase():
         population = np.random.uniform(low=0.0, high=1.0, size=(pop_size, self.dimensions))
         return population
 
-    def sample_population(self, size=3):
-        selection = np.random.choice(np.arange(len(self.population)), size, replace=False)
-        return self.population[selection]
+    def sample_population(self, size=3, alt_pop=None):
+        if isinstance(alt_pop, list) or isinstance(alt_pop, np.ndarray):
+            idx = [indv is None for indv in alt_pop]
+            if any(idx):
+                selection = np.random.choice(np.arange(len(self.population)), size, replace=False)
+                return self.population[selection]
+            else:
+                selection = np.random.choice(np.arange(len(alt_pop)), size, replace=False)
+                # selection = np.random.choice(np.arange(len(alt_pop) + len(self.population)),
+                #                              size, replace=False)
+                # return np.concatenate((alt_pop, self.population))[selection]
+                alt_pop = np.stack(alt_pop)
+                return alt_pop[selection]
+        else:
+            selection = np.random.choice(np.arange(len(self.population)), size, replace=False)
+            return self.population[selection]
 
     def boundary_check(self, vector, fix_type='random'):
         '''
@@ -183,41 +196,41 @@ class DE(DEBase):
         mutant = r1 + self.mutation_factor * diff / 2
         return mutant
 
-    def mutation(self, current=None, best=None):
+    def mutation(self, current=None, best=None, alt_pop=None):
         '''Performs DE mutation
         '''
         if self.mutation_strategy == 'rand1':
-            r1, r2, r3 = self.sample_population(size=3)
+            r1, r2, r3 = self.sample_population(size=3, alt_pop=alt_pop)
             mutant = self.mutation_rand1(r1, r2, r3)
 
         elif self.mutation_strategy == 'rand2':
-            r1, r2, r3, r4, r5 = self.sample_population(size=5)
+            r1, r2, r3, r4, r5 = self.sample_population(size=5, alt_pop=alt_pop)
             mutant = self.mutation_rand2(r1, r2, r3, r4, r5)
 
         elif self.mutation_strategy == 'rand2dir':
-            r1, r2, r3 = self.sample_population(size=3)
+            r1, r2, r3 = self.sample_population(size=3, alt_pop=alt_pop)
             mutant = self.mutation_rand2dir(r1, r2, r3)
 
         elif self.mutation_strategy == 'best1':
-            r1, r2 = self.sample_population(size=2)
+            r1, r2 = self.sample_population(size=2, alt_pop=alt_pop)
             if best is None:
                 best = self.population[np.argmin(self.fitness)]
             mutant = self.mutation_rand1(best, r1, r2)
 
         elif self.mutation_strategy == 'best2':
-            r1, r2, r3, r4 = self.sample_population(size=4)
+            r1, r2, r3, r4 = self.sample_population(size=4, alt_pop=alt_pop)
             if best is None:
                 best = self.population[np.argmin(self.fitness)]
             mutant = self.mutation_rand2(best, r1, r2, r3, r4)
 
         elif self.mutation_strategy == 'currenttobest1':
-            r1, r2 = self.sample_population(size=2)
+            r1, r2 = self.sample_population(size=2, alt_pop=alt_pop)
             if best is None:
                 best = self.population[np.argmin(self.fitness)]
             mutant = self.mutation_currenttobest1(current, best, r1, r2)
 
         elif self.mutation_strategy == 'randtobest1':
-            r1, r2, r3 = self.sample_population(size=3)
+            r1, r2, r3 = self.sample_population(size=3, alt_pop=alt_pop)
             if best is None:
                 best = self.population[np.argmin(self.fitness)]
             mutant = self.mutation_currenttobest1(r1, best, r2, r3)
@@ -291,8 +304,9 @@ class DE(DEBase):
         history = []
         track = []
         trial_fitness = []
-        # pop_size = len(trials)
+
         for i in range(len(trials)):
+            # evaluating rival population on a higher budget
             fitness, cost = self.f_objective(trials[i], budget)
             trial_fitness.append(fitness)
             if fitness < self.inc_score:
@@ -301,12 +315,18 @@ class DE(DEBase):
             traj.append(self.inc_score)
             runtime.append(cost)
             history.append((trials[i].tolist(), float(fitness), float(budget or 0)))
+
         if debug:
             print("Ranking {} from {} vs. {}".format(pop_size, self.pop_size, len(trials)))
+
+        # Creating a net population of current individuals and rival indivduals evaluated on
+        # the same budget
         tot_pop = np.vstack((self.population, trials))
         tot_fitness = np.hstack((self.fitness, trial_fitness))
         tot_age = np.hstack((self.age, [self.max_age] * len(trials)))
-        rank = np.sort(np.argsort(tot_fitness)[:pop_size])
+
+        # Sorting the net population by fitness to keep only the top individuals from the net
+        rank = np.sort(np.argsort(tot_fitness[:pop_size]))
         self.population = tot_pop[rank]
         self.fitness = tot_fitness[rank]
         self.age = tot_age[rank]
@@ -338,13 +358,13 @@ class DE(DEBase):
                             float(budget or 0)))
         return traj, runtime, history
 
-    def evolve_generation(self, budget=None, best=None):
+    def evolve_generation(self, budget=None, best=None, alt_pop=None):
         '''Performs a complete DE evolution, mutation -> crossover -> selection
         '''
         trials = []
         for j in range(self.pop_size):
             target = self.population[j]
-            donor = self.mutation(current=target, best=best)
+            donor = self.mutation(current=target, best=best, alt_pop=alt_pop)
             trial = self.crossover(target, donor)
             trial = self.boundary_check(trial)
             trials.append(trial)
