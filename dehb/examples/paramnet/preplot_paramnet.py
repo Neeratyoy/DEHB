@@ -30,7 +30,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
             if 'de' in m:
                 regret_key =  "validation_score" if regret_type == 'validation' else "test_score"
             else:
-                regret_key =  "losses" if regret_type == 'validation' else "test_losses"
+                regret_key =  "losses"  # if regret_type == 'validation' else "test_losses"
             curr_inc = np.min(res[regret_key])
             if curr_inc < global_inc:
                 global_inc = curr_inc
