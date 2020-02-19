@@ -1,4 +1,5 @@
 import os
+import json
 import pickle
 import numpy as np
 from scipy import stats
@@ -26,16 +27,24 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
         runtimes = []
         for k, i in enumerate(np.arange(n_runs)):
             try:
-                res = pickle.load(open(os.path.join(path, m, "{}_run_{}.pkl".format(m, i)), 'rb'))
+                if 'de' in m:
+                    res = json.load(open(os.path.join(path, m, "run_{}.json".format(i))))
+                else:
+                    res = pickle.load(open(os.path.join(path, m, "{}_run_{}.pkl".format(m, i)), 'rb'))
                 no_runs_found = False
             except Exception as e:
                 print(m, i, e)
                 no_runs_found = True
                 continue
-            regret_key =  "losses" if regret_type == 'validation' else "test_losses"
-            runtime_key = "cummulative_budget"
-            # calculating normalized regret as ((f(x) + d) / d) since -d is global incumbent
-            curr_regret = (np.array(res[regret_key]) + d) / d
+            if 'de' in m:
+                regret_key = "regret_validation" if regret_type == 'validation' else "regret_test"
+                runtime_key = "runtime"
+                curr_regret = np.array(res[regret_key])
+            else:
+                regret_key =  "losses" if regret_type == 'validation' else "test_losses"
+                runtime_key = "cummulative_budget"
+                # calculating normalized regret as ((f(x) + d) / d) since -d is global incumbent
+                curr_regret = (np.array(res[regret_key]) + d) / d
             _, idx = np.unique(curr_regret, return_index=True)
             idx.sort()
             regret.append(curr_regret[idx])
