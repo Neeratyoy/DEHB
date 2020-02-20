@@ -46,16 +46,22 @@ class DEBase():
         return population
 
     def sample_population(self, size=3, alt_pop=None):
+        '''Samples 'size' individuals
+
+        If alt_pop is None or a list/array of None, sample from own population
+        Else sample from the specified alternate population
+        '''
         if isinstance(alt_pop, list) or isinstance(alt_pop, np.ndarray):
             idx = [indv is None for indv in alt_pop]
             if any(idx):
                 selection = np.random.choice(np.arange(len(self.population)), size, replace=False)
                 return self.population[selection]
             else:
-                selection = np.random.choice(np.arange(len(alt_pop)), size, replace=False)
+                # # Sample from the joint population
                 # selection = np.random.choice(np.arange(len(alt_pop) + len(self.population)),
                 #                              size, replace=False)
                 # return np.concatenate((alt_pop, self.population))[selection]
+                selection = np.random.choice(np.arange(len(alt_pop)), size, replace=False)
                 alt_pop = np.stack(alt_pop)
                 return alt_pop[selection]
         else:
