@@ -1,11 +1,13 @@
 import os
 import sys
 sys.path.append(os.path.join(os.getcwd(), '../HpBandSter/icml_2018_experiments/experiments'))
+sys.path.append(os.path.join(os.getcwd(), 'dehb/examples/paramnet'))
 
 import argparse
 
 import numpy as np
 
+from worker_paramnet_surrogates import ParamNetSurrogateWorker as Worker
 from workers.paramnet_surrogates import ParamNetSurrogateWorker as Worker
 import util
 

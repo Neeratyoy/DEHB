@@ -116,7 +116,7 @@ if benchmark == '101':
 if benchmark == '1shot1' and bench_type not in ["1", "2", "3"]:
     print("Specify \'--bench_type\' from {1, 2, 3} for choosing the search space for 1shot1.")
     sys.exit()
-else:
+elif benchmark == '1shot1' :
     ssp = bench_type
     from dehb.examples.nas1shot1 import create_plot
 
