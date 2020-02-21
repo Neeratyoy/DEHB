@@ -67,7 +67,6 @@ parser.add_argument('--iter', default=20, type=int, nargs='?',
                     help='number of DEHB iterations')
 parser.add_argument('--output_path', default="./results", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
-parser.add_argument('--pop_size', default=20, type=int, nargs='?', help='population size')
 strategy_choices = ['rand1_bin', 'rand2_bin', 'rand2dir_bin', 'best1_bin', 'best2_bin',
                     'currenttobest1_bin', 'randtobest1_bin',
                     'rand1_exp', 'rand2_exp', 'rand2dir_exp', 'best1_exp', 'best2_exp',
@@ -99,7 +98,7 @@ args.verbose = True if args.verbose == 'True' else False
 args.fix_seed = True if args.fix_seed == 'True' else False
 
 if args.folder is None:
-    folder = "dehb_v{}_pop{}".format(args.version, args.pop_size)
+    folder = "dehb_v{}".format(args.version)
 else:
     folder = args.folder
 
@@ -118,7 +117,7 @@ dimensions = len(cs.get_hyperparameters())
 
 
 # Initializing DEHB object
-dehb = DEHB(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size, strategy=args.strategy,
+dehb = DEHB(cs=cs, dimensions=dimensions, f=f, strategy=args.strategy,
             mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
             eta=args.eta, min_budget=args.min_budget, max_budget=args.max_budget,
             generations=args.gens)

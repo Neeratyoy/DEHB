@@ -54,7 +54,6 @@ parser.add_argument('--output_path', default="./results", type=str, nargs='?',
 parser.add_argument('--data_dir', default="../nas_benchmarks-development/"
                                           "tabular_benchmarks/fcnet_tabular_benchmarks/",
                     type=str, nargs='?', help='specifies the path to the tabular data')
-parser.add_argument('--pop_size', default=20, type=int, nargs='?', help='population size')
 strategy_choices = ['rand1_bin', 'rand2_bin', 'rand2dir_bin', 'best1_bin', 'best2_bin',
                     'currenttobest1_bin', 'randtobest1_bin',
                     'rand1_exp', 'rand2_exp', 'rand2dir_exp', 'best1_exp', 'best2_exp',
@@ -132,7 +131,7 @@ cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
 
 if args.folder is None:
-    folder = "dehb_v{}_pop{}".format(args.version, args.pop_size)
+    folder = "dehb_v{}".format(args.version)
 else:
     folder = args.folder
 
@@ -143,7 +142,7 @@ dehbs = {"1": DEHBV1, "2": DEHBV2, "3": DEHBV3}
 DEHB = dehbs[args.version]
 
 # Initializing DEHB object
-dehb = DEHB(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size, strategy=args.strategy,
+dehb = DEHB(cs=cs, dimensions=dimensions, f=f, strategy=args.strategy,
             mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
             eta=args.eta, min_budget=min_budget, max_budget=max_budget,
             generations=args.gens)

@@ -47,7 +47,6 @@ parser.add_argument('--data_dir', type=str, nargs='?',
                     default="../nasbench-1shot1/nasbench_analysis/nasbench_data/"
                             "108_e/nasbench_full.tfrecord",
                     help='specifies the path to the tabular data')
-parser.add_argument('--pop_size', default=20, type=int, nargs='?', help='population size')
 strategy_choices = ['rand1_bin', 'rand2_bin', 'rand2dir_bin', 'best1_bin', 'best2_bin',
                     'currenttobest1_bin', 'randtobest1_bin',
                     'rand1_exp', 'rand2_exp', 'rand2dir_exp', 'best1_exp', 'best2_exp',
@@ -92,7 +91,7 @@ for space in spaces:
     dimensions = len(cs.get_hyperparameters())
 
     if args.folder is None:
-        folder = "dehb_v{}_pop{}".format(args.version, args.pop_size)
+        folder = "dehb_v{}".format(args.version)
     else:
         folder = args.folder
 
@@ -112,7 +111,7 @@ for space in spaces:
     DEHB = dehbs[args.version]
 
     # Initializing DEHB object
-    dehb = DEHB(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size, strategy=args.strategy,
+    dehb = DEHB(cs=cs, dimensions=dimensions, f=f, strategy=args.strategy,
                 mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
                 eta=args.eta, min_budget=min_budget, max_budget=max_budget,
                 generations=args.gens)
