@@ -34,6 +34,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
             curr_inc = np.min(res[regret_key])
             if curr_inc < global_inc:
                 global_inc = curr_inc
+    print("Global incumbent: ", global_inc)
 
     no_runs_found = False
     # looping and plotting for all methods
@@ -60,7 +61,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                 regret_key =  "losses" if regret_type == 'validation' else "test_losses"
                 runtime_key = "cummulative_cost"
             # calculating regret as (f(x) - found global incumbent)
-            curr_regret = np.array(res[regret_key]) - global_inc
+            curr_regret = np.array(res[regret_key]) #- global_inc
             _, idx = np.unique(curr_regret, return_index=True)
             idx.sort()
             regret.append(curr_regret[idx])

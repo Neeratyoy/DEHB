@@ -157,15 +157,23 @@ else:
                     colors, linestyles, marker, n_runs, limit)
 
 plt.xscale("log")
-plt.yscale("log")
+if benchmark != 'svm':
+     plt.yscale("log")
 plt.tick_params(which='both', direction="in")
-plt.legend(loc='lower left', framealpha=1, prop={'size': 25, 'weight': 'bold'})
+if benchmark == 'svm':
+    plt.legend(loc='upper right', framealpha=1, prop={'size': 25, 'weight': 'bold'})
+else:
+    plt.legend(loc='lower left', framealpha=1, prop={'size': 25, 'weight': 'bold'})
 plt.title(args.title)
 if plot_type == "wallclock":
     plt.xlabel("estimated wallclock time $[s]$", fontsize=50)
 elif plot_type == "fevals":
     plt.xlabel("number of function evaluations", fontsize=50)
-plt.ylabel("{} regret".format(regret_type), fontsize=50)
+
+if benchmark == 'svm':
+    plt.ylabel("{} error".format(regret_type), fontsize=50)
+else:
+    plt.ylabel("{} regret".format(regret_type), fontsize=50)
 plt.xlim(max(min_time/10, 1e0), min(max_time*10, 1e7))
 plt.ylim(min_regret, max_regret)
 plt.grid(which='both', alpha=0.5, linewidth=0.5)
