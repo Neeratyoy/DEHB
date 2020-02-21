@@ -9,7 +9,11 @@ import ConfigSpace
 
 from hpolib.benchmarks.surrogates.paramnet import SurrogateReducedParamNetTime
 
-from dehb import DE, DEHBV1, DEHBV2, DEHBV3
+from dehb import DE
+from dehb import DEHBV1, DEHBV1_1
+from dehb import DEHBV2
+from dehb import DEHBV3, DEHBV3_1, DEHBV3_2
+from dehb import DEHBV4, DEHBV4_1, DEHBV4_2
 
 
 # Common objective function for DE & DEHB representing SVM Surrogates benchmark
@@ -98,7 +102,9 @@ args = parser.parse_args()
 args.verbose = True if args.verbose == 'True' else False
 args.fix_seed = True if args.fix_seed == 'True' else False
 
-dehbs = {"1": DEHBV1, "2": DEHBV2, "3": DEHBV3}
+dehbs = {"1": DEHBV1, "1.1": DEHBV1_1, "2": DEHBV2,
+         "3": DEHBV3, "3.1": DEHBV3_1, "3.2": DEHBV3_2,
+         "4": DEHBV4, "4.1": DEHBV3_1, "4.2": DEHBV4_2}
 DEHB = dehbs[args.version]
 
 if args.folder is None:
