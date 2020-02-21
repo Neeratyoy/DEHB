@@ -9,6 +9,7 @@ import numpy as np
 from workers.paramnet_surrogates import ParamNetSurrogateWorker as Worker
 import util
 
+
 # deactivate debug output for faster experiments
 import logging
 logging.basicConfig(level=logging.ERROR)
@@ -34,10 +35,6 @@ parser.add_argument('--dataset', default='mnist', help="name of the dataset used
                     choices=['adult', 'higgs', 'letter', 'mnist', 'optdigits', 'poker'])
 parser.add_argument('--surrogate_path', type=str, default=None,
                     help='path to the pickled surrogate models')
-parser.add_argument('--min_budget', type=int, default=0,
-                    help='Not used! Dataset specific value given in the source.')
-parser.add_argument('--max_budget', type=int, default=0,
-                    help='Not used! Dataset specific value given in the source.')
 parser.add_argument('--folder', type=float, default=None,
                     help='folder to dump output files')
 
