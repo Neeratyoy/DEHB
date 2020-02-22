@@ -1,11 +1,12 @@
 import os
 import sys
 sys.path.append(os.path.join(os.getcwd(), '../HpBandSter/icml_2018_experiments/experiments'))
+sys.path.append(os.path.join(os.getcwd(), 'dehb/examples/'))
 
 import argparse
 
 from workers.svm_surrogate import SVMSurrogateWorker as Worker
-import util
+from utils import util
 
 # deactivate debug output for faster experiments
 import logging
@@ -28,7 +29,7 @@ parser.add_argument('--num_iterations', type=int, default=4,
 parser.add_argument('--run_id', type=str, default=0)
 parser.add_argument('--runs', type=int, default=None)
 parser.add_argument('--method', type=str, default='randomsearch',
-                    help='Possible choices: randomsearch, bohb, hyperband, tpe, smac')
+                    help='Possible choices: randomsearch, bohb, hyperband, tpe, smac, h2bo')
 parser.add_argument('--surrogate_path', type=str, default=None,
                     help='Path to the pickled surrogate models. If None, HPOlib2 will '
                          'automatically download the surrogates to the .hpolib directory '

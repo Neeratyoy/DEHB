@@ -1,11 +1,12 @@
 import os
 import sys
 sys.path.append(os.path.join(os.getcwd(), '../HpBandSter/icml_2018_experiments/experiments'))
+sys.path.append(os.path.join(os.getcwd(), 'dehb/examples/'))
 
 import argparse
 
 from workers.countingones import CountingOnesWorker as Worker
-import util
+from utils import util
 
 # deactivate debug output for faster experiments
 import logging
