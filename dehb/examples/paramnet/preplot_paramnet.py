@@ -58,7 +58,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                 regret_key =  "validation_score" if regret_type == 'validation' else "test_score"
                 runtime_key = "runtime"
             else:
-                regret_key =  "losses"  # if regret_type == 'validation' else "test_losses"
+                regret_key =  "losses"  if regret_type == 'validation' else "test_losses"
                 runtime_key = "cummulative_budget"
             # calculating regret as (f(x) - found global incumbent)
             curr_regret = np.array(res[regret_key]) - global_inc
