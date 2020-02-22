@@ -53,9 +53,10 @@ parser.add_argument('--bandwidth_factor', default=3, type=int, nargs='?',
                     help='factor multiplied to the bandwidth')
 parser.add_argument('--output_path', default="./experiments", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
-parser.add_argument('--data_dir',
-                    default="nasbench_analysis/nasbench_data/108_e/nasbench_full.tfrecord",
-                    type=str, nargs='?', help='specifies the path to the nasbench data')
+parser.add_argument('--data_dir', type=str, nargs='?',
+                    default="../nasbench-1shot1/nasbench_analysis/nasbench_data/"
+                            "108_e/nasbench_full.tfrecord",
+                    help='specifies the path to the nasbench data')
 parser.add_argument('--seed', default=0, type=int,
                     help='random seed')
 parser.add_argument('--n_repetitions', default=500, type=int,

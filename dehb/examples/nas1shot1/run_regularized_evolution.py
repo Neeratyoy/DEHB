@@ -166,9 +166,10 @@ parser.add_argument('--search_space', default=None, type=str, nargs='?', help='s
 parser.add_argument('--n_iters', default=280, type=int, nargs='?', help='number of iterations for optimization method')
 parser.add_argument('--output_path', default="./experiments", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
-parser.add_argument('--data_dir',
-                    default="nasbench_analysis/nasbench_data/108_e/nasbench_only108.tfrecord", type=str,
-                    nargs='?', help='specifies the path to the nasbench data')
+parser.add_argument('--data_dir', type=str, nargs='?',
+                    default="../nasbench-1shot1/nasbench_analysis/nasbench_data/"
+                            "108_e/nasbench_full.tfrecord",
+                    help='specifies the path to the nasbench data')
 parser.add_argument('--pop_size', default=100, type=int, nargs='?', help='population size')
 parser.add_argument('--sample_size', default=10, type=int, nargs='?', help='sample_size')
 parser.add_argument('--seed', default=0, type=int, help='random seed')

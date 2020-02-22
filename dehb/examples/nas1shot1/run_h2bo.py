@@ -18,6 +18,11 @@ from hpbandster.optimizers.h2bo import H2BO as H2BO
 from hpbandster.core.worker import Worker
 from nasbench import api
 
+from nasbench_analysis.search_spaces.search_space_1 import SearchSpace1
+from nasbench_analysis.search_spaces.search_space_2 import SearchSpace2
+from nasbench_analysis.search_spaces.search_space_3 import SearchSpace3
+from nasbench_analysis.utils import INPUT, OUTPUT, CONV1X1, CONV3X3, MAXPOOL3X3
+
 
 class MyWorker(Worker):
     def compute(self, config, budget, *args, **kwargs):
@@ -47,9 +52,10 @@ parser.add_argument('--bandwidth_factor', default=3, type=int, nargs='?',
                     help='factor multiplied to the bandwidth')
 parser.add_argument('--output_path', default="./experiments", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
-parser.add_argument('--data_dir',
-                    default="nasbench_analysis/nasbench_data/108_e/nasbench_full.tfrecord",
-                    type=str, nargs='?', help='specifies the path to the nasbench data')
+parser.add_argument('--data_dir', type=str, nargs='?',
+                    default="../nasbench-1shot1/nasbench_analysis/nasbench_data/"
+                            "108_e/nasbench_full.tfrecord",
+                    help='specifies the path to the nasbench data')
 parser.add_argument('--seed', default=0, type=int,
                     help='random seed')
 parser.add_argument('--n_repetitions', default=500, type=int,
