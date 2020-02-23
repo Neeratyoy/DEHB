@@ -20,6 +20,7 @@ from dehb import DEHBV1, DEHBV1_1
 from dehb import DEHBV2
 from dehb import DEHBV3, DEHBV3_1, DEHBV3_2
 from dehb import DEHBV4, DEHBV4_1, DEHBV4_2
+from dehb import DEHBV5, DEHBV5_2
 
 
 def save_configspace(cs, path, filename='configspace'):
@@ -144,7 +145,8 @@ os.makedirs(output_path, exist_ok=True)
 
 dehbs = {"1": DEHBV1, "1.1": DEHBV1_1, "2": DEHBV2,
          "3": DEHBV3, "3.1": DEHBV3_1, "3.2": DEHBV3_2,
-         "4": DEHBV4, "4.1": DEHBV3_1, "4.2": DEHBV4_2}
+         "4": DEHBV4, "4.1": DEHBV3_1, "4.2": DEHBV4_2,
+         "5": DEHBV5, "5.2": DEHBV5_2}
 DEHB = dehbs[args.version]
 
 # Initializing DEHB object
