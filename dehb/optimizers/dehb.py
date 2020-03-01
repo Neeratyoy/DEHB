@@ -2463,6 +2463,7 @@ class DEHBBOHB_0(DEHBBase):
         super().__init__(**kwargs)
         self.max_age = max_age
         self.min_clip = 0
+        self.randomize = None
 
     def run(self, iterations=1, verbose=False, debug=False, debug2=False):
         # Book-keeping variables
@@ -2621,6 +2622,7 @@ class DEHBBOHB_1(DEHBBase):
         super().__init__(**kwargs)
         self.max_age = max_age
         self.min_clip = 0
+        self.randomize = None
 
     def run(self, iterations=1, verbose=False, debug=False, debug2=False):
         # Book-keeping variables
