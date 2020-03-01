@@ -176,6 +176,31 @@ class DE(DEBase):
 
         return traj, runtime, history
 
+    def eval_pop(self, population=None, budget=None):
+        pop = self.population if population is None else population
+        traj = []
+        runtime = []
+        history = []
+        fitnesses = []
+        costs = []
+        ages = []
+        for i in range(len(pop)):
+            fitness, cost = self.f_objective(pop[i], budget)
+            self.fitness[i] = fitness
+            if fitness <= self.inc_score:
+                self.inc_score = fitness
+            traj.append(self.inc_score)
+            runtime.append(cost)
+            history.append((pop[i].tolist(), float(fitness), float(budget or 0)))
+            fitnesses.append(fitness)
+            costs.append(cost)
+            ages.append(self.max_age)
+        if population is None:
+            self.fitness = np.array(fitnesses)
+            return traj, runtime, history
+        else:
+            return traj, runtime, history, np.array(fitnesses), np.array(ages)
+
     def mutation_rand1(self, r1, r2, r3):
         '''Performs the 'rand1' type of DE mutation
         '''
@@ -275,7 +300,9 @@ class DE(DEBase):
     def selection(self, trials, budget=None):
         '''Carries out a parent-offspring competition given a set of trial population
         '''
-        assert len(self.population) == len(trials)
+        assert len(self.population) == len(trials), \
+            "Pop len ({}) does not match trial population length ({})".format(len(self.population),
+                                                                              len(trials))
         traj = []
         runtime = []
         history = []

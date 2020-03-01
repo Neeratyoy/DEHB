@@ -2102,3 +2102,576 @@ class DEHBV4_2(DEHBBase):
             print("\nRun complete!")
 
         return (np.array(traj), np.array(runtime), np.array(history))
+
+
+class DEHBBOHB_0(DEHBBase):
+    '''Version 1.0 of DEHB as BOHB
+
+    Each DEHB iteration is initialized with a new random population.
+    In each of the DEHB iteration, Successive Halving (SH) takes place where
+        the number of SH iterations, budget spacing, number of configurations,
+        are determined dynamically based on the iteration number.
+        The top performing individuals are carried forward to the next higher budget.
+    If the next higher budget is allocated pop size of less than 3, the forwarded individuals
+        are only evaluated. If pop size is greater than 3, they are evaluated and evolved for
+        the specified generations.
+    '''
+    def __init__(self, max_age=np.inf, **kwargs):
+        super().__init__(**kwargs)
+        self.max_age = max_age
+        self.min_clip = 0
+
+    def run(self, iterations=1, verbose=False, debug=False, debug2=False):
+        # Book-keeping variables
+        traj = []
+        runtime = []
+        history = []
+
+        # Specifying details for the global full budget population
+        global_pop_size = 0
+        for i in range(self.max_SH_iter):
+            num_configs, _ = self.get_next_iteration(iteration=i)
+            global_pop_size += num_configs[-1]
+        self.global_pop = np.array([None] * (global_pop_size))
+        self.global_fitness = np.array([None] * (global_pop_size))
+
+        # Performs DEHB iterations
+        for iteration in range(iterations):
+            # Retrieves SH budgets and number of configurations
+            num_configs, budgets = self.get_next_iteration(iteration=iteration)
+            if verbose:
+                print('Iteration #{:>3}\n{}'.format(iteration, '-' * 15))
+                print(num_configs, budgets, self.inc_score)
+
+            # Sets budget and population size for first SH iteration
+            pop_size = num_configs[0]
+            budget = budgets[0]
+
+            # Number of SH iterations in this DEHB iteration
+            num_SH_iters = len(budgets)
+
+            # Initializing DE object that will be used across this DEHB iteration
+            # The DE object is initialized with the current pop_size and budget
+            de = DE(cs=self.cs, f=self.f, dimensions=self.dimensions, pop_size=pop_size,
+                    mutation_factor=self.mutation_factor, crossover_prob=self.crossover_prob,
+                    strategy=self.strategy, budget=budget, max_age=self.max_age)
+
+            # Warmstarting DE incumbent to be the global incumbent
+            de.inc_score = self.inc_score
+            de.inc_config = self.inc_config
+
+            # Creating new population for current DEHB iteration
+            de_traj, de_runtime, de_history = de.init_eval_pop(budget=budget)
+            traj.extend(de_traj)
+            runtime.extend(de_runtime)
+            history.extend(de_history)
+
+            # Incorporating global incumbent into the new DE population
+            if np.array_equal(de.inc_config, self.inc_config):
+                # if new population has no better individual, randomly
+                # replace an individual with the incumbent so far
+                idx = np.random.choice(np.arange(len(de.population)))
+                de.population[idx] = self.inc_config
+                de.fitness[idx] = self.inc_score
+                de.age[idx] = de.max_age
+            else:
+                # if new population has a better individual, update
+                # the global incumbent and fitness
+                self.inc_score = de.inc_score
+                self.inc_config = de.inc_config
+
+            # Successive Halving iterations
+            for i_sh in range(num_SH_iters):
+                gens = self.generations
+
+                if i_sh > 0:
+                    if debug2:
+                        print("Pre-eval: {} & {}".format(self.inc_score, de.inc_score))
+                    # gens = 0
+                    de_traj, de_runtime, de_history = de.eval_pop(budget=budget)
+                    traj.extend(de_traj)
+                    runtime.extend(de_runtime)
+                    history.extend(de_history)
+                    if debug2:
+                        print("Post-eval: {} & {}".format(self.inc_score, de.inc_score))
+                    if pop_size < 3:
+                        gens = 0
+                    else:
+                        # one round of function evaluation is considered as one generation
+                        gens -= 1
+
+                if debug2:
+                    print("Budget: {}; Pop size: {}; Generations: {}".format(budget, pop_size, gens))
+
+                # Repeating DE over entire population 'generations' times
+                for gen in range(gens):
+                    de_traj, de_runtime, de_history = de.evolve_generation(budget=budget,
+                                                                           best=de.inc_config,
+                                                                           alt_pop=self.global_pop)
+                    traj.extend(de_traj)
+                    runtime.extend(de_runtime)
+                    history.extend(de_history)
+
+                    # killing/replacing parents that have not changed/has aged
+                    # conditional on max_age not being set to inf
+                    if self.max_age < np.inf:
+                        if debug:
+                            print("  Generation #{}: Ages -- {}".format(gen + 1, de.age))
+                        de_traj, de_runtime, de_history = de.kill_aged_pop(budget, debug)
+                        traj.extend(de_traj)
+                        runtime.extend(de_runtime)
+                        history.extend(de_history)
+
+                # Updating global incumbent after each DE evolution step
+                self.inc_score = de.inc_score
+                self.inc_config = de.inc_config
+
+                # Retrieving budget, pop_size, population for the next SH iteration
+                if i_sh < num_SH_iters - 1:  # when not final SH iteration
+                    pop_size = num_configs[i_sh + 1]
+                    budget = budgets[i_sh + 1]
+                    # Selecting top individuals to fit pop_size of next SH iteration
+                    self.rank = np.sort(np.argsort(de.fitness)[:pop_size])
+                    de.population = de.population[self.rank]
+                    de.fitness = de.fitness[self.rank]
+                    de.age = de.age[self.rank]
+                    de.pop_size = pop_size
+                # else:  # final SH iteration with max budget
+                #     pop_size = num_configs[-1]
+                #     idx = [indv is None for indv in self.global_pop]
+                #     if any(idx):  # None exists in global population
+                #         # Initialize global population with positions assigned randomly
+                #         idx = np.where(np.array(idx) == True)[0]
+                #         idx = np.random.choice(idx, pop_size, replace=False)
+                #     else:
+                #         self.global_pop = np.stack(self.global_pop)
+                #         self.global_fitness = np.stack(self.global_fitness)
+                #         # Find the weakest individuals in the global population to replace them
+                #         idx = np.sort(np.argsort(-self.global_fitness)[:pop_size])
+                #     for index, id in enumerate(idx):
+                #         # Updating global pop
+                #         self.global_pop[id] = de.population[index]
+                #         self.global_fitness[id] = de.fitness[index]
+
+        if verbose:
+            print("\nRun complete!")
+
+        return (np.array(traj), np.array(runtime), np.array(history))
+
+
+class DEHBBOHB_1(DEHBBase):
+    '''Version 1.1 of DEHB as BOHB
+
+    Each DEHB iteration is initialized with a new random population.
+    In each of the DEHB iteration, Successive Halving (SH) takes place where
+        the number of SH iterations, budget spacing, number of configurations,
+        are determined dynamically based on the iteration number.
+        The top performing individuals are carried forward to the next higher budget.
+    If the next higher budget is allocated pop size of less than 3, the forwarded individuals
+        are only evaluated. If pop size is greater than 3, they are evaluated and evolved for
+        the specified generations.
+    The population from the highest budget is collected in a global population.
+    After the first such DEHB iteration, individuals for mutation are sampled from
+        the global population.
+    '''
+    def __init__(self, max_age=np.inf, **kwargs):
+        super().__init__(**kwargs)
+        self.max_age = max_age
+        self.min_clip = 0
+
+    def run(self, iterations=1, verbose=False, debug=False, debug2=False):
+        # Book-keeping variables
+        traj = []
+        runtime = []
+        history = []
+
+        # Specifying details for the global full budget population
+        global_pop_size = 0
+        for i in range(self.max_SH_iter):
+            num_configs, _ = self.get_next_iteration(iteration=i)
+            global_pop_size += num_configs[-1]
+        self.global_pop = np.array([None] * (global_pop_size))
+        self.global_fitness = np.array([None] * (global_pop_size))
+
+        # Performs DEHB iterations
+        for iteration in range(iterations):
+            # Retrieves SH budgets and number of configurations
+            num_configs, budgets = self.get_next_iteration(iteration=iteration)
+            if verbose:
+                print('Iteration #{:>3}\n{}'.format(iteration, '-' * 15))
+                print(num_configs, budgets, self.inc_score)
+
+            # Sets budget and population size for first SH iteration
+            pop_size = num_configs[0]
+            budget = budgets[0]
+
+            # Number of SH iterations in this DEHB iteration
+            num_SH_iters = len(budgets)
+
+            # Initializing DE object that will be used across this DEHB iteration
+            # The DE object is initialized with the current pop_size and budget
+            de = DE(cs=self.cs, f=self.f, dimensions=self.dimensions, pop_size=pop_size,
+                    mutation_factor=self.mutation_factor, crossover_prob=self.crossover_prob,
+                    strategy=self.strategy, budget=budget, max_age=self.max_age)
+
+            # Warmstarting DE incumbent to be the global incumbent
+            de.inc_score = self.inc_score
+            de.inc_config = self.inc_config
+
+            # Creating new population for current DEHB iteration
+            de_traj, de_runtime, de_history = de.init_eval_pop(budget=budget)
+            traj.extend(de_traj)
+            runtime.extend(de_runtime)
+            history.extend(de_history)
+
+            # Incorporating global incumbent into the new DE population
+            if np.array_equal(de.inc_config, self.inc_config):
+                # if new population has no better individual, randomly
+                # replace an individual with the incumbent so far
+                idx = np.random.choice(np.arange(len(de.population)))
+                de.population[idx] = self.inc_config
+                de.fitness[idx] = self.inc_score
+                de.age[idx] = de.max_age
+            else:
+                # if new population has a better individual, update
+                # the global incumbent and fitness
+                self.inc_score = de.inc_score
+                self.inc_config = de.inc_config
+
+            # Successive Halving iterations
+            for i_sh in range(num_SH_iters):
+                gens = self.generations
+
+                if i_sh > 0:  # lower budget DE exists
+                    if debug2:
+                        print("Pre-eval: {} & {}".format(self.inc_score, de.inc_score))
+                    de_traj, de_runtime, de_history = de.eval_pop(budget=budget)
+                    traj.extend(de_traj)
+                    runtime.extend(de_runtime)
+                    history.extend(de_history)
+                    if debug2:
+                        print("Post-eval: {} & {}".format(self.inc_score, de.inc_score))
+                    if pop_size < 3:
+                        gens = 0
+                    else:
+                        # one round of function evaluation is considered as one generation
+                        gens -= 1
+
+                if debug2:
+                    print("Budget: {}; Pop size: {}; Generations: {}".format(budget, pop_size, gens))
+
+                # Repeating DE over entire population 'generations' times
+                for gen in range(gens):
+                    de_traj, de_runtime, de_history = de.evolve_generation(budget=budget,
+                                                                           best=de.inc_config,
+                                                                           alt_pop=self.global_pop)
+                    traj.extend(de_traj)
+                    runtime.extend(de_runtime)
+                    history.extend(de_history)
+
+                    # killing/replacing parents that have not changed/has aged
+                    # conditional on max_age not being set to inf
+                    if self.max_age < np.inf:
+                        if debug:
+                            print("  Generation #{}: Ages -- {}".format(gen + 1, de.age))
+                        de_traj, de_runtime, de_history = de.kill_aged_pop(budget, debug)
+                        traj.extend(de_traj)
+                        runtime.extend(de_runtime)
+                        history.extend(de_history)
+
+                # Updating global incumbent after each DE evolution step
+                self.inc_score = de.inc_score
+                self.inc_config = de.inc_config
+
+                # Retrieving budget, pop_size, population for the next SH iteration
+                if i_sh < num_SH_iters - 1:  # when not final SH iteration
+                    pop_size = num_configs[i_sh + 1]
+                    budget = budgets[i_sh + 1]
+                    # Selecting top individuals to fit pop_size of next SH iteration
+                    self.rank = np.sort(np.argsort(de.fitness)[:pop_size])
+                    de.population = de.population[self.rank]
+                    de.fitness = de.fitness[self.rank]
+                    de.age = de.age[self.rank]
+                    de.pop_size = pop_size
+                else:  # final SH iteration with max budget
+                    pop_size = num_configs[-1]
+                    idx = [indv is None for indv in self.global_pop]
+                    if any(idx):  # None exists in global population
+                        # Initialize global population with positions assigned randomly
+                        idx = np.where(np.array(idx) == True)[0]
+                        idx = np.random.choice(idx, pop_size, replace=False)
+                    else:
+                        self.global_pop = np.stack(self.global_pop)
+                        self.global_fitness = np.stack(self.global_fitness)
+                        # Find the weakest individuals in the global population to replace them
+                        idx = np.sort(np.argsort(-self.global_fitness)[:pop_size])
+                    for index, id in enumerate(idx):
+                        # Updating global pop
+                        self.global_pop[id] = de.population[index]
+                        self.global_fitness[id] = de.fitness[index]
+
+        if verbose:
+            print("\nRun complete!")
+
+        return (np.array(traj), np.array(runtime), np.array(history))
+
+
+class DEHBBOHB_2(DEHBBase):
+    '''Version 1.2 of DEHB as BOHB
+
+    In each of the DEHB iteration, Successive Halving (SH) takes place where
+        the number of SH iterations, budget spacing, number of configurations,
+        are determined dynamically based on the iteration number.
+        The top performing individuals are carried forward to the next higher budget.
+    If the next higher budget is allocated pop size of less than 3, the forwarded individuals
+        are only evaluated. If pop size is greater than 3, they are evaluated and evolved for
+        the specified generations.
+    '''
+    def __init__(self, max_age=np.inf, **kwargs):
+        super().__init__(**kwargs)
+        self.max_age = max_age
+        self.min_clip = 0
+        self.randomize = None
+
+    def run(self, iterations=1, verbose=False, debug=False, debug2=False):
+        # Book-keeping variables
+        traj = []
+        runtime = []
+        history = []
+
+        # To retrieve the population and budget ranges
+        num_configs, budgets = self.get_next_iteration(iteration=0)
+        full_budget = budgets[-1]
+        small_budget = budgets[0]
+
+        # List of DE objects corresponding to the populations
+        de = {}
+        for i, b in enumerate(budgets):
+            de[b] = DE(cs=self.cs, f=self.f, dimensions=self.dimensions, pop_size=num_configs[i],
+                       mutation_factor=self.mutation_factor, crossover_prob=self.crossover_prob,
+                       strategy=self.strategy, budget=b, max_age=self.max_age)
+
+        # Performs DEHB iterations
+        for iteration in range(iterations):
+
+            # Retrieves SH budgets and number of configurations
+            num_configs, budgets = self.get_next_iteration(iteration=iteration)
+            if verbose:
+                print('Iteration #{:>3}\n{}'.format(iteration, '-' * 15))
+                print(num_configs, budgets, self.inc_score)
+
+            # Sets budget and population size for first SH iteration
+            pop_size = num_configs[0]
+            budget = budgets[0]
+
+            # Number of SH iterations in this DEHB iteration
+            num_SH_iters = len(budgets)
+
+            # Index determining the population to begin DE with for current iteration number
+            de_idx = iteration % len(de)
+
+            # The first DEHB iteration - only time when a random population is initialized
+            if iteration == 0:
+                # creating new population for DEHB iteration to be used for the next SH steps
+                de_traj, de_runtime, de_history = de[budget].init_eval_pop(budget)
+                # maintaining global copy of random population created
+                self.population = de[budget].population
+                self.fitness = de[budget].fitness
+                # update global incumbent with new population scores
+                self.inc_score = de[budget].inc_score
+                self.inc_config = de[budget].inc_config
+                traj.extend(de_traj)
+                runtime.extend(de_runtime)
+                history.extend(de_history)
+
+            elif budget == small_budget and self.randomize is not None and self.randomize > 0:
+                # executes in the first step of every SH iteration other than first DEHB iteration
+                # also conditional on whether a randomization fraction has been specified
+                num_replace = np.ceil(self.randomize * pop_size).astype(int)
+
+                # fetching the worst performing individuals
+                idxs = np.sort(np.argsort(-de[budget].fitness)[:num_replace])
+                if debug:
+                    print("Replacing {}/{} -- {}".format(num_replace, pop_size, idxs))
+                new_pop = self.init_population(pop_size=num_replace)
+                de[budget].population[idxs] = new_pop
+                de[budget].age[idxs] = de[budget].max_age
+                de[budget].inc_score = self.inc_score
+                de[budget].inc_config = self.inc_config
+
+                # evaluating new individuals
+                for i in idxs:
+                    de[budget].fitness[i], cost = \
+                        de[budget].f_objective(de[budget].population[i], budget)
+                    if self.fitness[i] < self.inc_score:
+                        self.inc_score = de[budget].fitness[i]
+                        self.inc_config = de[budget].population[i]
+                    traj.append(self.inc_score)
+                    runtime.append(cost)
+                    history.append((de[budget].population[i].tolist(),
+                                    float(de[budget].fitness[i]), float(budget or 0)))
+
+            # elif pop_size > de[budget].pop_size:
+            elif pop_size > len(de[budget].population):
+                # compensating for extra individuals if SH pop size is larger
+                filler = pop_size - de[budget].pop_size
+                if debug:
+                    print("pop_size: {}; de_pop_size: {}".format(pop_size, de[budget].pop_size))
+                    print("Adding {} random individuals for budget {}".format(filler, budget))
+                new_pop = self.init_population(pop_size=filler)
+                de[budget].inc_score = self.inc_score
+                de[budget].inc_config = self.inc_config
+                de[budget].age = np.hstack((de[budget].age, [de[budget].max_age] * filler))
+                for i in range(filler):
+                    fitness, cost = de[budget].f_objective(new_pop[i], budget)
+                    de[budget].population = np.vstack((de[budget].population, new_pop[i]))
+                    de[budget].fitness = np.append(de[budget].fitness, fitness)
+                    if fitness < self.inc_score:
+                        self.inc_score = fitness
+                        self.inc_config = new_pop[i]
+                    traj.append(self.inc_score)
+                    runtime.append(cost)
+                    history.append((new_pop[i].tolist(), float(fitness), float(budget or 0)))
+
+                de[budget].inc_score = self.inc_score
+                de[budget].inc_config = self.inc_config
+                de[budget].pop_size = pop_size
+                if debug:
+                    print("Pop size: {}; Len pop: {}".format(de[budget].pop_size,
+                                                             len(de[budget].population)))
+
+            # elif pop_size < de[budget].pop_size:
+            elif pop_size < len(de[budget].population):
+                # compensating for extra individuals if SH pop size is smaller
+                if debug:
+                    print("Reducing population from {} to {} "
+                          "for budget {}".format(de[budget].pop_size, pop_size, budget))
+                # keeping only the top performing individuals/discarding the weak ones
+                rank = np.sort(np.argsort(de[budget].fitness)[:pop_size])
+                de[budget].population = de[budget].population[rank]
+                de[budget].fitness = de[budget].fitness[rank]
+                de[budget].age = de[budget].age[rank]
+                de[budget].pop_size = pop_size
+
+            # Represents the best individuals from the previous lower SH budget
+            # which will serve as the parents for mutation
+            alt_population = None
+
+            # Successive Halving iterations carrying out DE
+            for i_sh in range(num_SH_iters):
+                gens = self.generations
+                de[budget].inc_score = self.inc_score
+                de[budget].inc_config = self.inc_config
+
+                # print("i_sh:{}; shape: ".format(i_sh), de[budget].fitness.shape)
+                if iteration == 0 and i_sh > 0:
+                    if debug2:
+                        print("Pre-eval: {} & {}".format(self.inc_score, de.inc_score))
+                    de_traj, de_runtime, de_history = de[budget].eval_pop(budget=budget)
+                    traj.extend(de_traj)
+                    runtime.extend(de_runtime)
+                    history.extend(de_history)
+                    if pop_size < 3:
+                        gens = 0
+                    if debug2:
+                        print("Post-eval: {} & {}".format(self.inc_score, de.inc_score))
+                elif i_sh > 0 and pop_size < 3:
+                    # Appending to existing pop the lower budget top individuals
+                    de_traj, de_runtime, de_history, fitnesses, ages = \
+                        de[budget].eval_pop(population=alt_population, budget=budget)
+                    traj.extend(de_traj)
+                    runtime.extend(de_runtime)
+                    history.extend(de_history)
+                    de[budget].population = np.vstack((de[budget].population, alt_population))
+                    de[budget].fitness = np.concatenate((de[budget].fitness.flatten(),
+                                                         fitnesses.flatten()))
+                    de[budget].age = np.concatenate((de[budget].age.flatten(), ages.flatten()))
+                    gens = 0
+                elif i_sh > 0:
+                    # Retain the pop_size top individuals
+                    rank = np.sort(np.argsort(de[budget].fitness)[:pop_size])
+                    de[budget].population = de[budget].population[rank]
+                    de[budget].fitness = de[budget].fitness[rank]
+                    de[budget].age = de[budget].age[rank]
+                else:
+                    de[budget].pop_size = pop_size
+
+                self.inc_score = de[budget].inc_score
+                self.inc_config = de[budget].inc_config
+
+                if debug2:
+                    print("Budget: {}; Pop size: {}; "
+                          "Generations: {}".format(budget, pop_size, gens))
+
+                # Warmstarting DE incumbent
+                de[budget].inc_score = self.inc_score
+                de[budget].inc_config = self.inc_config
+                if debug:
+                    print("Pop size: {}; DE budget: {}".format(de[budget].pop_size, budget))
+                best = self.inc_config
+
+                # Repeating DE over entire population 'generations' times
+                for gen in range(gens):
+                    de_traj, de_runtime, de_history = \
+                        de[budget].evolve_generation(budget=budget, best=best,
+                                                     alt_pop=alt_population)
+                    traj.extend(de_traj)
+                    runtime.extend(de_runtime)
+                    history.extend(de_history)
+
+                    # killing/replacing parents that have not changed/has aged
+                    # conditional on max_age not being set to inf
+                    if de[budget].max_age < np.inf:
+                        if debug:
+                            print("  Generation #{}: Ages -- {}".format(gen + 1, de[budget].age))
+                        de_traj, de_runtime, de_history = de[budget].kill_aged_pop(budget, debug)
+                        traj.extend(de_traj)
+                        runtime.extend(de_runtime)
+                        history.extend(de_history)
+
+                # Updating global incumbent after each DE step
+                self.inc_score = de[budget].inc_score
+                self.inc_config = de[budget].inc_config
+
+                # Retrieving budget, pop_size, population for the next SH iteration
+                if i_sh < num_SH_iters - 1:  # when not final SH iteration
+                    pop_size = num_configs[i_sh + 1]
+                    next_budget = budgets[i_sh + 1]
+                    # selecting top ranking individuals from lower budget
+                    # that will be the mutation parents for the next higher budget
+                    rank = np.sort(np.argsort(de[budget].fitness)[:pop_size])
+                    alt_population = de[budget].population[rank]
+
+                    if de[next_budget].population is not None:
+                        # updating DE incumbents to maintain global trajectory
+                        de[next_budget].inc_score = self.inc_score
+                        de[next_budget].inc_config = self.inc_config
+                        de[next_budget].pop_size = pop_size
+                    else:
+                        # equivalent to iteration == 0
+                        # top ranked individuals are selected from the lower budget, assigned as
+                        # the population for the next higher budget, and evaluated on it
+                        if debug:
+                            print("Iteration: ", iteration)
+                        de[next_budget].population = alt_population
+                        de[next_budget].fitness = np.array([None] * pop_size)
+                        de[next_budget].age = np.array([de[next_budget].max_age] * pop_size)
+                        de[next_budget].pop_size = pop_size
+                        # for index, indv in enumerate(de[next_budget].population):
+                        #     fitness, cost = de[next_budget].f_objective(indv, next_budget)
+                        #     de[next_budget].fitness[index] = fitness
+                        #     if fitness < self.inc_score:
+                        #         self.inc_score = fitness
+                        #         self.inc_config = indv
+                        #     traj.append(self.inc_score)
+                        #     runtime.append(cost)
+                        #     history.append((indv.tolist(), float(fitness), float(budget or 0)))
+                        # de[next_budget].inc_config = self.inc_config
+                        # de[next_budget].inc_score = self.inc_score
+                        # de[next_budget].age = np.array([de[next_budget].max_age] * \
+                        #                                de[next_budget].pop_size)
+                    budget = next_budget
+        if verbose:
+            print("\nRun complete!")
+
+        return (np.array(traj), np.array(runtime), np.array(history))
