@@ -186,9 +186,11 @@ class DE(DEBase):
         ages = []
         for i in range(len(pop)):
             fitness, cost = self.f_objective(pop[i], budget)
-            self.fitness[i] = fitness
+            if population is None:
+                self.fitness[i] = fitness
             if fitness <= self.inc_score:
                 self.inc_score = fitness
+                self.inc_config = pop[i]
             traj.append(self.inc_score)
             runtime.append(cost)
             history.append((pop[i].tolist(), float(fitness), float(budget or 0)))
@@ -328,42 +330,29 @@ class DE(DEBase):
             history.append((trials[i].tolist(), float(fitness), float(budget or 0)))
         return traj, runtime, history
 
-    def ranked_selection(self, trials, pop_size, budget=None, debug=False):
+    def ranked_selection(self, trials, final_pop_size=None, budget=None, debug=False):
         '''Returns the fittest individuals from two sets of population
         '''
-        # assert len(self.population) == len(trials)
-        traj = []
-        runtime = []
-        history = []
-        track = []
-        trial_fitness = []
+        final_pop_size = self.pop_size if final_pop_size is None else final_pop_size
 
-        for i in range(len(trials)):
-            # evaluating rival population on a higher budget
-            fitness, cost = self.f_objective(trials[i], budget)
-            trial_fitness.append(fitness)
-            if fitness < self.inc_score:
-                self.inc_score = fitness
-                self.inc_config = trials[i]
-            traj.append(self.inc_score)
-            runtime.append(cost)
-            history.append((trials[i].tolist(), float(fitness), float(budget or 0)))
+        traj, runtime, history, fitnesses, ages = self.eval_pop(population=trials, budget=budget)
 
         if debug:
-            print("Ranking {} from {} vs. {}".format(pop_size, self.pop_size, len(trials)))
+            print("Ranking {} from {} originals + {} rivals".format(final_pop_size, self.pop_size,
+                                                                    len(trials)))
 
-        # Creating a net population of current individuals and rival indivduals evaluated on
+        # Creating a total population of current individuals and rival individuals evaluated on
         # the same budget
         tot_pop = np.vstack((self.population, trials))
-        tot_fitness = np.hstack((self.fitness, trial_fitness))
-        tot_age = np.hstack((self.age, [self.max_age] * len(trials)))
+        tot_fitness = np.hstack((self.fitness, fitnesses))
+        tot_age = np.hstack((self.age, ages))
 
-        # Sorting the net population by fitness to keep only the top individuals from the net
-        rank = np.sort(np.argsort(tot_fitness[:pop_size]))
+        # Sorting the total population by fitness to keep only the top individuals from the pool
+        rank = np.sort(np.argsort(tot_fitness)[:final_pop_size])
         self.population = tot_pop[rank]
         self.fitness = tot_fitness[rank]
         self.age = tot_age[rank]
-        self.pop_size = pop_size
+        self.pop_size = final_pop_size
         return traj, runtime, history
 
     def kill_aged_pop(self, budget=None, debug=False):
