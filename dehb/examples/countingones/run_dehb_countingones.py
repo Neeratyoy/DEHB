@@ -123,7 +123,7 @@ dehbs = {"1": DEHBV1, "1.1": DEHBV1_1, "2": DEHBV2,
          "4": DEHBV4, "4.1": DEHBV3_1, "4.2": DEHBV4_2,
          "5": DEHBV5, "5.2": DEHBV5_2,
          "bohb0": DEHBBOHB_0, "bohb1": DEHBBOHB_1, "bohb2": DEHBBOHB_2,
-         "v6": DEHBV6_0, "v6.1": DEHBV6_1}
+         "6": DEHBV6_0, "6.1": DEHBV6_1}
 DEHB = dehbs[args.version]
 
 output_path = os.path.join(args.output_path, folder)
