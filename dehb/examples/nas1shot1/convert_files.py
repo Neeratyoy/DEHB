@@ -80,7 +80,7 @@ for i in range(n_runs):
         with open(os.path.join(path, '{}/{}/'
                   'algo_{}_None_ssp_{}_seed_{}.obj'.format(algo, ssp, algo, ssp, i)), 'rb') as f:
             res = pickle.load(f)
-    elif 'DEHB' in algo:
+    elif 'dehb' in algo:
         with open(os.path.join(path, '{}/{}/'
                   'DEHB_{}_ssp_{}_seed_{}.obj'.format(algo, ssp, i, ssp, i)), 'rb') as f:
             res = pickle.load(f)
