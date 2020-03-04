@@ -19,7 +19,7 @@ from dehb import DEHBBOHB_0, DEHBBOHB_1, DEHBBOHB_2
 from dehb import DEHBV6_0, DEHBV6_1
 
 
-# Common objective function for DE & DEHB representing SVM Surrogates benchmark
+# Common objective function for DE & DEHB representing Counting Ones benchmark
 def f(config, budget=None):
     global max_budget
     d = len(config.get_array())
