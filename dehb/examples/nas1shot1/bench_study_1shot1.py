@@ -55,6 +55,7 @@ def budget_correlation(sample_size, budgets, compare=False, output=None):
         for j, budget in enumerate(budgets):
             score, _ = b.objective_function(nasbench, config, budget=budget)
             df.iloc[i, j] = score
+        b.run_history = []
     res = corr(df)
     corr_val = res.correlation
 

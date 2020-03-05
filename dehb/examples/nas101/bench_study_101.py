@@ -29,6 +29,7 @@ def final_score_relation(sample_size=1e6, output=None):
         test_score, _ = b.objective_function_test(config)
         x.append(valid_score)
         y.append(test_score)
+        b.reset()
     xlim = (min(x), max(x))
     ylim = (min(y), max(y))
     plt.clf()
@@ -52,6 +53,7 @@ def budget_correlation(sample_size, budgets, compare=False, output=None):
         for j, budget in enumerate(budgets):
             score, _ = b.objective_function(config, budget=budget)
             df.iloc[i, j] = score
+        b.reset()
     res = corr(df)
     corr_val = res.correlation
 
