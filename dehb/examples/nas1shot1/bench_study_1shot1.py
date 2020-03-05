@@ -3,6 +3,7 @@ import sys
 sys.path.append(os.path.join(os.getcwd(), '../nasbench/'))
 sys.path.append(os.path.join(os.getcwd(), '../nasbench-1shot1/'))
 
+import argparse
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -85,6 +86,19 @@ def budget_correlation(sample_size, budgets, compare=False, output=None):
         plt.savefig(output, dpi=300)
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--space', default=1, type=int, nargs='?', choices=[1, 2, 3],
+                    help='Search Space #')
+parser.add_argument('--sample_size', default=1e4, type=float, nargs='?',
+                    help='# samples')
+parser.add_argument('--compare', default='False', type=str, nargs='?',
+                    help='If True, color limits set to [-1, 1], else dynamic')
+args = parser.parse_args()
+space = args.space
+sample_size = args.sample_size
+compare = True if args.compare == 'True' else False
+
+
 ####################
 # NAS-Bench-1shot1 #
 ####################
@@ -93,38 +107,11 @@ data_dir = "../nasbench-1shot1/nasbench_analysis/nasbench_data/108_e/nasbench_fu
 nasbench = api.NASBench(data_dir)
 budgets = [4, 12, 36, 108]
 
-# SS1
-space = 1
 b = eval('SearchSpace{}()'.format(space))
 cs = b.get_configuration_space()
 name = 'ss{}'.format(space)
-final_score_relation(sample_size=1e6,
-                     output='dehb/examples/plots/correlation/{}_test_val.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/{}_true.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/{}_false.png'.format(name))
 
-# SS2
-space = 2
-b = eval('SearchSpace{}()'.format(space))
-cs = b.get_configuration_space()
-name = 'ss{}'.format(space)
-final_score_relation(sample_size=1e6,
+final_score_relation(sample_size,
                      output='dehb/examples/plots/correlation/{}_test_val.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/{}_true.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/{}_false.png'.format(name))
-
-# SS3
-space = 3
-b = eval('SearchSpace{}()'.format(space))
-cs = b.get_configuration_space()
-name = 'ss{}'.format(space)
-final_score_relation(sample_size=1e6,
-                     output='dehb/examples/plots/correlation/{}_test_val.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/{}_true.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/{}_false.png'.format(name))
+budget_correlation(sample_size, budgets=budgets, compare=compare,
+                   output='dehb/examples/plots/correlation/{}_{}.png'.format(name, compare))

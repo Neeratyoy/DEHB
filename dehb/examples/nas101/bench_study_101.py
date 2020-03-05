@@ -3,6 +3,7 @@ import sys
 sys.path.append(os.path.join(os.getcwd(), '../nas_benchmarks/'))
 sys.path.append(os.path.join(os.getcwd(), '../nas_benchmarks-development/'))
 
+import argparse
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -82,6 +83,28 @@ def budget_correlation(sample_size, budgets, compare=False, output=None):
         plt.savefig(output, dpi=300)
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--benchmark', default='nas_cifar10a', type=str, nargs='?',
+                    help='Choice of benchmark')
+parser.add_argument('--sample_size', default=1e4, type=float, nargs='?',
+                    help='# samples')
+parser.add_argument('--compare', default='False', type=str, nargs='?',
+                    help='If True, color limits set to [-1, 1], else dynamic')
+args = parser.parse_args()
+benchmark = args.benchmark
+sample_size = args.sample_size
+compare = True if args.compare == 'True' else False
+
+names = {
+    'nas_cifar10a': 'cifara',
+    'nas_cifar10b': 'cifarb',
+    'nas_cifar10c': 'cifarc',
+    'protein_structure': 'protein',
+    'naval_propulsion': 'naval',
+    'slice_localization': 'slice',
+    'parkinsons_telemonitoring': 'parkinsons'
+}
+
 #################################
 # NAS-Bench-101 + NAS-HPO-Bench #
 #################################
@@ -123,79 +146,11 @@ def get_ready_101(benchmark):
     dimensions = len(cs.get_hyperparameters())
 
 
-# Cifar A
-benchmark = 'nas_cifar10a'
-name = 'cifara'
+name = names[benchmark]
 get_ready_101(benchmark)
-# final_score_relation(sample_size=1e6,
-#                      output='dehb/examples/plots/correlation/{}_test_val.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/{}_true.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/{}_false.png'.format(name))
 
-# Cifar B
-benchmark = 'nas_cifar10b'
-name = 'cifarb'
-get_ready_101(benchmark)
-# final_score_relation(sample_size=1e6,
-#                      output='dehb/examples/plots/correlation/{}_test_val.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/{}_true.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/{}_false.png'.format(name))
-
-# Cifar C
-benchmark = 'nas_cifar10c'
-name = 'cifarc'
-get_ready_101(benchmark)
-# final_score_relation(sample_size=1e6,
-#                      output='dehb/examples/plots/correlation/{}_test_val.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/{}_true.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/{}_false.png'.format(name))
-
-# Protein
-benchmark = 'protein_structure'
-name = 'protein'
-get_ready_101(benchmark)
-final_score_relation(sample_size=1e6,
-                     output='dehb/examples/plots/correlation/{}_test_val.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/{}_true.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/{}_false.png'.format(name))
-
-# Slice
-benchmark = 'slice_localization'
-name = 'slice'
-get_ready_101(benchmark)
-final_score_relation(sample_size=1e6,
-                     output='dehb/examples/plots/correlation/{}_test_val.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/{}_true.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/{}_false.png'.format(name))
-
-# Naval
-benchmark = 'naval_propulsion'
-name = 'naval'
-get_ready_101(benchmark)
-final_score_relation(sample_size=1e6,
-                     output='dehb/examples/plots/correlation/{}_test_val.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/{}_true.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/{}_false.png'.format(name))
-
-# Parkinsons
-benchmark = 'parkinsons_telemonitoring'
-name = 'parkinsons'
-get_ready_101(benchmark)
-final_score_relation(sample_size=1e6,
-                     output='dehb/examples/plots/correlation/{}_test_val.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/{}_true.png'.format(name))
-budget_correlation(sample_size=1e6, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/{}_false.png'.format(name))
+if 'nas' not in benchmark:
+    final_score_relation(sample_size,
+                         output='dehb/examples/plots/correlation/{}_test_val.png'.format(name))
+budget_correlation(sample_size, budgets=budgets, compare=compare,
+                   output='dehb/examples/plots/correlation/{}_{}.png'.format(name, compare))

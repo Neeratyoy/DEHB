@@ -65,7 +65,7 @@ def budget_correlation(sample_size, budgets, compare=False, output=None):
     # Gridlines based on minor ticks
     ax.grid(which='minor', color='w', linestyle='-', linewidth=2)
     if compare:
-        mat.set_clim(0, 1)
+        mat.set_clim(-1, 1)
     else:
         mat.set_clim(np.min(corr_val), np.max(corr_val))
     plt.colorbar(mat)
