@@ -150,7 +150,7 @@ dehbs = {"1": DEHBV1, "1.1": DEHBV1_1, "2": DEHBV2,
          "4": DEHBV4, "4.1": DEHBV3_1, "4.2": DEHBV4_2,
          "6": DEHBV6_0, "6.1": DEHBV6_1, "6.1.2": DEHBV6_1_2,
          "6.2": DEHBV6_2, "6.2.2": DEHBV6_2_2,
-         "6.3": DEHBV6_2, "6.3.2": DEHBV6_3_2}
+         "6.3": DEHBV6_3, "6.3.2": DEHBV6_3_2}
 DEHB = dehbs[args.version]
 
 # Initializing DEHB object
