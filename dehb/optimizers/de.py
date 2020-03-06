@@ -57,6 +57,8 @@ class DEBase():
                 selection = np.random.choice(np.arange(len(self.population)), size, replace=False)
                 return self.population[selection]
             else:
+                if len(alt_pop) < 3:
+                    alt_pop = np.vstack((alt_pop, self.population))
                 # # Sample from the joint population
                 # selection = np.random.choice(np.arange(len(alt_pop) + len(self.population)),
                 #                              size, replace=False)
@@ -154,7 +156,7 @@ class DE(DEBase):
             fitness, cost = self.f(config)
         return fitness, cost
 
-    def init_eval_pop(self, budget=None):
+    def init_eval_pop(self, budget=None, eval=True):
         '''Creates new population of 'pop_size' and evaluates individuals.
         '''
         self.population = self.init_population(self.pop_size)
@@ -164,6 +166,10 @@ class DE(DEBase):
         traj = []
         runtime = []
         history = []
+
+        if not eval:
+            return traj, runtime, history
+
         for i in range(self.pop_size):
             config = self.population[i]
             self.fitness[i], cost = self.f_objective(config, budget)
@@ -178,13 +184,14 @@ class DE(DEBase):
 
     def eval_pop(self, population=None, budget=None):
         pop = self.population if population is None else population
+        pop_size = self.pop_size if population is None else len(pop)
         traj = []
         runtime = []
         history = []
         fitnesses = []
         costs = []
         ages = []
-        for i in range(len(pop)):
+        for i in range(pop_size):
             fitness, cost = self.f_objective(pop[i], budget)
             if population is None:
                 self.fitness[i] = fitness
@@ -302,9 +309,9 @@ class DE(DEBase):
     def selection(self, trials, budget=None):
         '''Carries out a parent-offspring competition given a set of trial population
         '''
-        assert len(self.population) == len(trials), \
-            "Pop len ({}) does not match trial population length ({})".format(len(self.population),
-                                                                              len(trials))
+        # assert len(self.population) == len(trials), \
+        #     "Pop len ({}) does not match trial population length ({})".format(len(self.population),
+        #                                                                       len(trials))
         traj = []
         runtime = []
         history = []
