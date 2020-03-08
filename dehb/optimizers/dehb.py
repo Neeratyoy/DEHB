@@ -3629,6 +3629,7 @@ class DEHBV7_0(DEHBBase):
         self.max_age = np.inf
         self.min_clip = 0
         self.randomize = None
+        self.generations = None
         self.update_budgets0()
 
     def update_budgets0(self):
