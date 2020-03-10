@@ -14,7 +14,8 @@ from dehb import DEHBV1, DEHBV1_1
 from dehb import DEHBV2
 from dehb import DEHBV3, DEHBV3_1, DEHBV3_2
 from dehb import DEHBV4, DEHBV4_1, DEHBV4_2, DEHBV4_2_2, DEHBV4_2_3
-from dehb import DEHBV6_0, DEHBV6_1, DEHBV6_1_2, DEHBV6_2, DEHBV6_2_2, DEHBV6_3, DEHBV6_3_2
+from dehb import DEHBV6_0, DEHBV6_1, DEHBV6_1_2
+from dehb import DEHBV6_2, DEHBV6_2_2, DEHBV6_3, DEHBV6_3_2, DEHBV6_3_3, DEHBV6_3_4
 from dehb import DEHBV7_0, DEHBV7_1
 
 
@@ -114,7 +115,7 @@ dehbs = {"1": DEHBV1, "1.1": DEHBV1_1, "2": DEHBV2,
          "4.2.2": DEHBV4_2_2, "4.2.3": DEHBV4_2_3,
          "6": DEHBV6_0, "6.1": DEHBV6_1, "6.1.2": DEHBV6_1_2,
          "6.2": DEHBV6_2, "6.2.2": DEHBV6_2_2,
-         "6.3": DEHBV6_3, "6.3.2": DEHBV6_3_2,
+         "6.3": DEHBV6_3, "6.3.2": DEHBV6_3_2, "6.3.3": DEHBV6_3_3, "6.3.4": DEHBV6_3_4,
          "7": DEHBV7_0, "7.1": DEHBV7_1}
 DEHB = dehbs[args.version]
 
