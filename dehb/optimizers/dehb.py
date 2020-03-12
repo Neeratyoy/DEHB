@@ -4701,10 +4701,10 @@ class DEHBV6_3_5(DEHBBase):
 
                 if i_sh == 0:  # first iteration in the SH bracket
                     # Repeating DE over entire population 'generations' times
-                    gens = int(np.max((1, gens / self.eta))) * 2 if iteration >= self.max_SH_iter \
-                        else self.generations
-                    # gens = int(np.ceil(gens / 2)) if iteration >= self.max_SH_iter \
+                    # gens = int(np.max((1, gens / self.eta))) * 2 if iteration >= self.max_SH_iter \
                     #     else self.generations
+                    gens = int(np.ceil(gens / 2)) if iteration >= self.max_SH_iter \
+                        else self.generations
                     print("Evolving for {} gens".format(gens))
                     for gen in range(gens):
                         de_traj, de_runtime, de_history = \
