@@ -3,7 +3,6 @@
 
 import os
 import sys
-sys.path.append(os.path.join(os.getcwd(), '../nas_benchmarks/'))
 sys.path.append(os.path.join(os.getcwd(), '../nas_benchmarks-development/'))
 
 import json
@@ -13,7 +12,10 @@ import ConfigSpace
 
 logging.basicConfig(level=logging.ERROR)
 
-from hpbandster.optimizers.h2bo import H2BO as H2BO
+# from hpbandster.optimizers.h2bo import H2BO as H2BO
+sys.path.append(os.path.join(os.getcwd(), 'dehb/examples/nas101/'))
+from h2bo import H2BO as H2BO
+
 import hpbandster.core.nameserver as hpns
 from hpbandster.core.worker import Worker
 
@@ -42,8 +44,11 @@ parser.add_argument('--random_fraction', default=.33, type=float, nargs='?',
                     help='fraction of random configurations')
 parser.add_argument('--bandwidth_factor', default=3, type=int, nargs='?',
                     help='factor multiplied to the bandwidth')
+parser.add_argument('--use_bohb_model', default='True', type=str, nargs='?',
+                    help='use BOHB KDE model')
 
 args = parser.parse_args()
+use_bohb_model = True if args.use_bohb_model is 'True' else False
 
 if args.benchmark == "nas_cifar10a":
     min_budget = 4
@@ -157,7 +162,8 @@ for run_id in range(runs):
                 num_samples=args.num_samples,
                 random_fraction=args.random_fraction, bandwidth_factor=args.bandwidth_factor,
                 ping_interval=10, min_bandwidth=args.min_bandwidth,
-                min_points_in_model=max(6, len(cs.get_hyperparameters())))
+                min_points_in_model=max(6, len(cs.get_hyperparameters())),
+                use_bohb_model=use_bohb_model)
 
     results = h2bo.run(args.n_iters, min_n_workers=num_workers)
 
