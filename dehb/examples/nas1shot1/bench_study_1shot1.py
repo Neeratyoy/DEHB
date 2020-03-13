@@ -6,6 +6,7 @@ sys.path.append(os.path.join(os.getcwd(), '../nasbench-1shot1/'))
 import argparse
 import numpy as np
 import pandas as pd
+from matplotlib import cm as CM
 from matplotlib import pyplot as plt
 from scipy.stats import spearmanr as corr
 
@@ -14,6 +15,11 @@ from nasbench import api
 from nasbench_analysis.search_spaces.search_space_1 import SearchSpace1
 from nasbench_analysis.search_spaces.search_space_2 import SearchSpace2
 from nasbench_analysis.search_spaces.search_space_3 import SearchSpace3
+
+import os
+import sys
+sys.path.append(os.path.join(os.getcwd(), 'dehb/utils'))
+from plot_mds import vector_to_configspace, get_mds
 
 
 ################
@@ -100,6 +106,54 @@ sample_size = args.sample_size
 compare = True if args.compare == 'True' else False
 
 
+def plot_budget_landscape(budgets, sample_size=1000, output=None):
+    print("Initialising...")
+    x = np.random.uniform(size=(sample_size, dimensions))
+    print("MDS conversion...")
+    X = get_mds(x)
+    print("Calculating budget scores...")
+    scores = {}
+    for budget in budgets:
+        print("For budget {}".format(budget))
+        scores[budget] = []
+
+        for i in range(x.shape[0]):
+            print("{:<4}/{:<4}".format(i + 1, x.shape[0]), end='\r')
+            score, _ = f(config=vector_to_configspace(cs, x[i]), budget=budget)
+            # score is error in [0, 1]
+            scores[budget].append(1 - score)   # accuracy
+
+    print("Plotting...")
+    col = CM.plasma
+    fig, axes = plt.subplots(np.ceil(len(budgets) / 2).astype(int), 2)
+    for i, ax in enumerate(axes.flat):
+        if i == len(budgets):
+            break
+        im = ax.hexbin(X[:,0], X[:,1], C=scores[budgets[i]], gridsize=30, cmap=col)
+        ax.set_title(budgets[i])
+        ax.set_xticks([])
+        ax.set_yticks([])
+        plt.colorbar(im, ax=ax)
+
+    plt.suptitle(name)
+    if len(budgets) % 2 != 0:
+        fig.delaxes(axes[np.floor(len(budgets) / 2).astype(int), 1])
+
+    if output is None:
+        plt.show()
+    else:
+        plt.savefig(output, dpi=300)
+
+
+def f(config, budget=None):
+    if budget is not None:
+        fitness, cost = b.objective_function(nasbench, config, budget=int(budget))
+    else:
+        fitness, cost = b.objective_function(nasbench, config)
+    fitness = 1 - fitness
+    return fitness, cost
+
+
 ####################
 # NAS-Bench-1shot1 #
 ####################
@@ -112,7 +166,9 @@ b = eval('SearchSpace{}()'.format(space))
 cs = b.get_configuration_space()
 name = 'ss{}'.format(space)
 
-final_score_relation(sample_size,
-                     output='dehb/examples/plots/correlation/{}_test_val.png'.format(name))
-budget_correlation(sample_size, budgets=budgets, compare=compare,
-                   output='dehb/examples/plots/correlation/{}_{}.png'.format(name, compare))
+plot_budget_landscape(budgets, sample_size=sample_size,
+                      output='dehb/examples/plots/landscape/{}.png'.format(name))
+# final_score_relation(sample_size,
+#                      output='dehb/examples/plots/correlation/{}_test_val.png'.format(name))
+# budget_correlation(sample_size, budgets=budgets, compare=compare,
+#                    output='dehb/examples/plots/correlation/{}_{}.png'.format(name, compare))

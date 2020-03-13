@@ -1,9 +1,22 @@
 import numpy as np
 import pandas as pd
+from matplotlib import cm as CM
 from matplotlib import pyplot as plt
 from scipy.stats import spearmanr as corr
 
 from hpolib.benchmarks.surrogates.svm import SurrogateSVM as surrogate
+
+import os
+import sys
+sys.path.append(os.path.join(os.getcwd(), 'dehb/utils'))
+from plot_mds import vector_to_configspace, get_mds
+
+import os
+import sys
+sys.path.append(os.path.join(os.getcwd(), 'dehb/utils'))
+from plot_mds import vector_to_configspace, get_mds
+sys.path.append(os.path.join(os.getcwd(), 'dehb/examples/svm'))
+from run_dehb_svm import f
 
 
 ################
@@ -75,16 +88,60 @@ def budget_correlation(sample_size, budgets, compare=False, output=None):
         plt.savefig(output, dpi=300)
 
 
+def plot_budget_landscape(budgets, sample_size=1000, output=None):
+    print("Initialising...")
+    x = np.random.uniform(size=(sample_size, dimensions))
+    print("MDS conversion...")
+    X = get_mds(x)
+    print("Calculating budget scores...")
+    scores = {}
+    for budget in budgets:
+        print("For budget {}".format(budget))
+        scores[budget] = []
+
+        for i in range(x.shape[0]):
+            print("{:<4}/{:<4}".format(i + 1, x.shape[0]), end='\r')
+            score, _ = f(config=vector_to_configspace(cs, x[i]), budget=budget)
+            # score is error in [0, 1]
+            scores[budget].append(1 - score)   # accuracy
+
+    print("Plotting...")
+    col = CM.plasma
+    fig, axes = plt.subplots(np.ceil(len(budgets) / 2).astype(int), 2)
+    for i, ax in enumerate(axes.flat):
+        if i == len(budgets):
+            break
+        im = ax.hexbin(X[:,0], X[:,1], C=scores[budgets[i]], gridsize=30, cmap=col)
+        ax.set_title(budgets[i])
+        ax.set_xticks([])
+        ax.set_yticks([])
+        plt.colorbar(im, ax=ax)
+
+    plt.suptitle(name)
+    if len(budgets) % 2 != 0:
+        fig.delaxes(axes[np.floor(len(budgets) / 2).astype(int), 1])
+
+    if output is None:
+        plt.show()
+    else:
+        plt.savefig(output, dpi=300)
+
+
 #######
 # SVM #
 #######
+
+sample_size = 2500
 
 b = surrogate()
 cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
 budgets = [0.00411523, 0.01234568, 0.03703704, 0.11111111, 0.33333333, 1.]
-final_score_relation(sample_size=10000, output='dehb/examples/plots/correlation/svm_test_val.png')
-budget_correlation(sample_size=10000, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/svm_true.png')
-budget_correlation(sample_size=10000, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/svm_false.png')
+
+plot_budget_landscape(budgets, sample_size=sample_size,
+                      output='dehb/examples/plots/landscape/svm.png')
+# final_score_relation(sample_size=10000, output='dehb/examples/plots/correlation/svm_test_val.png')
+# budget_correlation(sample_size=10000, budgets=budgets, compare=True,
+#                    output='dehb/examples/plots/correlation/svm_true.png')
+# budget_correlation(sample_size=10000, budgets=budgets, compare=False,
+#                    output='dehb/examples/plots/correlation/svm_false.png')

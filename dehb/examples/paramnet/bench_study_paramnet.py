@@ -129,9 +129,13 @@ def plot_budget_landscape(budgets, sample_size=1000, output=None):
             break
         im = ax.hexbin(X[:,0], X[:,1], C=scores[budgets[i]], gridsize=30, cmap=col)
         ax.set_title(budgets[i])
+        ax.set_xticks([])
+        ax.set_yticks([])
         plt.colorbar(im, ax=ax)
 
     plt.suptitle(dataset)
+    if len(budgets) % 2 != 0:
+        fig.delaxes(axes[np.floor(len(budgets) / 2).astype(int), 1])
 
     if output is None:
         plt.show()
@@ -139,7 +143,7 @@ def plot_budget_landscape(budgets, sample_size=1000, output=None):
         plt.savefig(output, dpi=300)
 
 
-sample_size = 5000
+sample_size = 2500
 
 # Adult
 dataset = 'adult'
