@@ -164,6 +164,8 @@ budgets = [4, 12, 36, 108]
 
 b = eval('SearchSpace{}()'.format(space))
 cs = b.get_configuration_space()
+dimensions = len(cs.get_hyperparameters())
+
 name = 'ss{}'.format(space)
 
 plot_budget_landscape(budgets, sample_size=sample_size,
