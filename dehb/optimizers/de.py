@@ -401,6 +401,22 @@ class DE(DEBase):
         traj, runtime, history = self.selection(trials, budget)
         return traj, runtime, history
 
+    def sample_mutants(self, size, population=None):
+        if population is None:
+            population = self.population
+        elif len(population) < 3:
+            population = np.vstack((self.population, population))
+
+        old_strategy = self.mutation_strategy
+        self.mutation_strategy = 'rand1'
+        mutants = np.random.uniform(low=0.0, high=1.0, size=(size, self.dimensions))
+        for i in range(size):
+            mutant = self.mutation(current=None, best=None, alt_pop=population)
+            mutants[i] = self.boundary_check(mutant, fix_type='clip')
+        self.mutation_strategy = old_strategy
+
+        return mutants
+
     def run(self, generations=1, verbose=False, budget=None):
         self.traj = []
         self.runtime = []

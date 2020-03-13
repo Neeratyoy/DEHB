@@ -4341,10 +4341,7 @@ class DEHBV6_3_3(DEHBBase):
 class DEHBV6_3_4(DEHBBase):
     '''DEHB-BOHB-Previous
 
-    Maintains a separate population for each budget. Only the very first SH iteration of the very
-        first DEHB iteration is randomly sampled. Top individuals are forwarded to the next higher
-        budget and so on.
-    Uses the next budget population for mutation sampling.
+    Uniform random injections on 6.3.3
     '''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -4352,221 +4349,7 @@ class DEHBV6_3_4(DEHBBase):
         self.min_clip = 0
         self.randomize = None
         self.generations = 1 if self.generations is None else self.generations
-
-    def get_next_iteration(self, iteration, type='original'):
-        '''Computes the Successive Halving spacing
-
-        Given the iteration index, computes the budget spacing to be used and
-        the number of configurations to be used for the SH iterations.
-
-        Parameters
-        ----------
-        iteration : int
-            Iteration index
-        clip : int, {1, 2, 3, ..., None}
-            If not None, clips the minimum number of configurations to 'clip'
-
-        Returns
-        -------
-        ns : array
-        budgets : array
-        '''
-        # number of 'SH runs'
-        s = self.max_SH_iter - 1 - (iteration % self.max_SH_iter)
-        # budget spacing for this iteration
-        budgets = self.budgets[(-s-1):]
-        # number of configurations in that bracket
-        if type == 'original':
-            n0 = int(np.floor((self.max_SH_iter)/(s+1)) * self.eta**s)
-        else:  # type = 'custom'
-            n0 = int(np.floor((self.max_SH_iter)/(s+1)) * self.eta**(s-1))
-        ns = [max(int(n0*(self.eta**(-i))), 1) for i in range(s+1)]
-        if type == 'original':
-            if self.min_clip is not None and self.max_clip is not None:
-                ns = np.clip(ns, a_min=self.min_clip, a_max=self.max_clip)
-            elif self.min_clip is not None:
-                ns = np.clip(ns, a_min=self.min_clip, a_max=np.max(ns))
-
-        return ns, budgets
-
-    def run(self, iterations=1, verbose=False, debug=False):
-        # Book-keeping variables
-        traj = []
-        runtime = []
-        history = []
-
-        # To retrieve the population and budget ranges
-        num_configs, budgets = self.get_next_iteration(iteration=0)
-        full_budget = budgets[-1]
-        small_budget = budgets[0]
-
-        # List of DE objects corresponding to the budgets (fidelities)
-        de = {}
-        for i, b in enumerate(budgets):
-            de[b] = DE(cs=self.cs, f=self.f, dimensions=self.dimensions, pop_size=num_configs[i],
-                       mutation_factor=self.mutation_factor, crossover_prob=self.crossover_prob,
-                       strategy=self.strategy, budget=b, max_age=self.max_age)
-
-        # Performs DEHB iterations
-        for iteration in range(iterations):
-
-            # Retrieves SH budgets and number of configurations
-            num_configs, budgets = self.get_next_iteration(iteration=iteration)
-            num_gens, _ = self.get_next_iteration(iteration=iteration, type='custom')
-            if verbose:
-                print('Iteration #{:>3}\n{}'.format(iteration, '-' * 15))
-                print(num_configs, budgets, self.inc_score)
-
-            # Sets budget, population size, generations for first SH iteration
-            pop_size = num_configs[0]
-            budget = budgets[0]
-            gens = num_gens[0]
-
-            # Number of SH iterations in this DEHB iteration
-            num_SH_iters = len(budgets)
-
-            # The first DEHB iteration - only time when a random population is initialized
-            if iteration == 0:
-                # creating new population for DEHB iteration to be used for the next SH steps
-                de[budget].init_eval_pop(budget, eval=False)
-                # maintaining global copy of random population created
-                self.population = de[budget].population
-                self.fitness = de[budget].fitness
-                # update global incumbent with new population scores
-                self.inc_score = de[budget].inc_score
-                self.inc_config = de[budget].inc_config
-
-            elif pop_size > de[budget].pop_size:
-                # compensating for extra individuals if SH pop size is larger
-                filler = pop_size - de[budget].pop_size
-                if debug:
-                    print("Adding {} random individuals for budget {}".format(filler, budget))
-                # randomly sample to fill the size and set fitness to infinity (no evaluation)
-                new_pop = self.init_population(pop_size=filler)
-                de[budget].inc_score = self.inc_score
-                de[budget].inc_config = self.inc_config
-                de[budget].population = np.vstack((de[budget].population, new_pop))
-                de[budget].age = np.hstack((de[budget].age, [de[budget].max_age] * filler))
-                de[budget].fitness = np.hstack((de[budget].fitness, [np.inf] * filler))
-
-            elif pop_size < de[budget].pop_size:
-                # compensating for extra individuals if SH pop size is smaller
-                if debug:
-                    print("Reducing population from {} to {} "
-                          "for budget {}".format(de[budget].pop_size, pop_size, budget))
-                # reordering to have the top individuals at the beginning of the population
-                ## de[budget].pop_size controls the view over the entire list
-                rank_include = np.sort(np.argsort(de[budget].fitness)[:pop_size])
-                rank_ignore = np.sort(list(set(np.arange(len(de[budget].fitness))) -
-                                           set(rank_include)))
-                de[budget].population = np.vstack((de[budget].population[rank_include],
-                                                   de[budget].population[rank_ignore]))
-                de[budget].fitness = np.vstack((de[budget].fitness[rank_include],
-                                                de[budget].fitness[rank_ignore]))
-                de[budget].age = np.vstack((de[budget].age[rank_include],
-                                                de[budget].age[rank_ignore]))
-
-            # Adjusting pop size parameter
-            de[budget].pop_size = pop_size
-
-            # Successive Halving iterations carrying out DE
-            for i_sh in range(num_SH_iters):
-
-                # Warmstarting DE incumbent
-                de[budget].inc_score = self.inc_score
-                de[budget].inc_config = self.inc_config
-                if debug:
-                    print("Pop size: {}; DE budget: {}".format(de[budget].pop_size, budget))
-                best = self.inc_config
-
-                # Population for mutation sampling
-                ## For the first iteration, the current population itself
-                ## For subsequent iterations, the next higher population
-                ## For the full budget, the current population itself
-                next_budget = budgets[min(i_sh + 1, num_SH_iters - 1)]
-                if de[next_budget].population is not None:
-                    alt_population = np.vstack((de[budget].population, de[next_budget].population))
-                else:
-                    alt_population = None
-
-                if i_sh == 0:  # first iteration in the SH bracket
-                    # Repeating DE over entire population 'generations' times
-                    gens = gens if iteration > 0 else self.generations
-                    for gen in range(gens):
-                        de_traj, de_runtime, de_history = \
-                            de[budget].evolve_generation(budget=budget, best=best,
-                                                         alt_pop=alt_population)
-                        traj.extend(de_traj)
-                        runtime.extend(de_runtime)
-                        history.extend(de_history)
-
-                elif i_sh > 0 and iteration == 0:
-                    de_traj, de_runtime, de_history = de[budget].eval_pop(budget=budget)
-                    traj.extend(de_traj)
-                    runtime.extend(de_runtime)
-                    history.extend(de_history)
-
-                # Updating global incumbent after each DE step for a budget
-                self.inc_score = de[budget].inc_score
-                self.inc_config = de[budget].inc_config
-
-                # Retrieving budget, pop_size, population for the next SH iteration
-                if i_sh < num_SH_iters-1:  # when not final SH iteration
-                    pop_size = num_configs[i_sh + 1]
-                    next_budget = budgets[i_sh + 1]
-                    # selecting top ranking individuals from lower budget
-                    # to be evaluated on higher budget and be eligible for competition
-                    rank = np.sort(np.argsort(de[budget].fitness)[:pop_size])
-                    rival_population = de[budget].population[rank]
-
-                    if iteration > 0:
-                        # warmstarting DE incumbents to maintain global trajectory
-                        de[next_budget].inc_score = self.inc_score
-                        de[next_budget].inc_config = self.inc_config
-                        de[next_budget].pop_size = pop_size
-
-                        # ranking individuals to determine population for next SH step
-                        de_traj, de_runtime, de_history = \
-                            de[next_budget].ranked_selection(rival_population, pop_size,
-                                                             next_budget, debug)
-                        self.inc_score = de[next_budget].inc_score
-                        self.inc_config = de[next_budget].inc_config
-                        traj.extend(de_traj)
-                        runtime.extend(de_runtime)
-                        history.extend(de_history)
-                    else:
-                        # equivalent to iteration == 0
-                        # no ranked selection happens, top ranked individuals are selected
-                        if debug:
-                            print("Iteration: ", iteration)
-                        de[next_budget].population = rival_population
-                        de[next_budget].fitness = de[budget].fitness[rank]
-                        de[next_budget].age = np.array([de[next_budget].max_age] * \
-                                                        de[next_budget].pop_size)
-                        de[next_budget].pop_size = pop_size
-                    budget = next_budget
-
-        if verbose:
-            print("\nRun complete!")
-
-        return (np.array(traj), np.array(runtime), np.array(history))
-
-
-class DEHBV6_3_5(DEHBBase):
-    '''DEHB-BOHB-Previous
-
-    Maintains a separate population for each budget. Only the very first SH iteration of the very
-        first DEHB iteration is randomly sampled. Top individuals are forwarded to the next higher
-        budget and so on.
-    Uses the next budget population for mutation sampling.
-    '''
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.max_age = np.inf
-        self.min_clip = 0
-        self.randomize = None
-        self.eta = 3
-        self.generations = 1 if self.generations is None else self.generations
+        self.min_pop_size = 4
 
     def get_next_iteration(self, iteration, type='original'):
         '''Computes the Successive Halving spacing
@@ -4697,28 +4480,63 @@ class DEHBV6_3_5(DEHBBase):
                 ## For subsequent iterations, the next higher population
                 ## For the full budget, the current population itself
                 # next_budget = budgets[min(i_sh + 1, num_SH_iters - 1)]
-                # alt_population = de[next_budget].population
+                # if de[next_budget].population is not None:
+                #     alt_population = np.vstack((de[budget].population, de[next_budget].population))
+                # else:
+                alt_population = None
 
-                if i_sh == 0:  # first iteration in the SH bracket
-                    # Repeating DE over entire population 'generations' times
-                    # gens = int(np.max((1, gens / self.eta))) * 2 if iteration >= self.max_SH_iter \
-                    #     else self.generations
-                    gens = int(np.ceil(gens / 2)) if iteration >= self.max_SH_iter \
-                        else self.generations
-                    print("Evolving for {} gens".format(gens))
+                if iteration >= self.max_SH_iter:
+                    if pop_size < self.min_pop_size:
+                        # compensating for extra individuals if SH pop size is larger
+                        filler = self.min_pop_size - pop_size
+                        if debug:
+                            print("Adding {} random individuals for "
+                                  "budget {}".format(filler, budget))
+                        # randomly sample to fill the size and set fitness to infinity
+                        new_pop = self.init_population(pop_size=filler)
+                        de[budget].inc_score = self.inc_score
+                        de[budget].inc_config = self.inc_config
+                        de[budget].population = np.vstack((de[budget].population, new_pop))
+                        de[budget].age = np.hstack((de[budget].age, [de[budget].max_age] * filler))
+                        de[budget].fitness = np.hstack((de[budget].fitness, [np.inf] * filler))
+                        de[budget].pop_size = self.min_pop_size
+                        pop_size = self.min_pop_size
+
+                    if debug:
+                        print("Evolving {} individuals on budget {}"
+                              " for {} generations".format(pop_size, budget, gens))
                     for gen in range(gens):
                         de_traj, de_runtime, de_history = \
                             de[budget].evolve_generation(budget=budget, best=best,
-                                                         alt_pop=None)
+                                                         alt_pop=alt_population)
                         traj.extend(de_traj)
                         runtime.extend(de_runtime)
                         history.extend(de_history)
 
-                elif i_sh > 0 and iteration == 0:
+                elif i_sh == 0:  # first iteration in the SH bracket
+                    # Repeating DE over entire population 'generations' times
+                    if debug:
+                        print("Evolving {} individuals on budget {}"
+                              " for {} generations".format(pop_size, budget, gens))
+                    gens = self.generations
+                    for gen in range(gens):
+                        de_traj, de_runtime, de_history = \
+                            de[budget].evolve_generation(budget=budget, best=best,
+                                                         alt_pop=alt_population)
+                        traj.extend(de_traj)
+                        runtime.extend(de_runtime)
+                        history.extend(de_history)
+                elif i_sh > 0:
                     de_traj, de_runtime, de_history = de[budget].eval_pop(budget=budget)
                     traj.extend(de_traj)
                     runtime.extend(de_runtime)
                     history.extend(de_history)
+
+                else:
+                    print("HERE DOING NOTHING -- should never be printed!")
+                    print("iteration: {}; i_sh: {}; "
+                          "max_SH_iter: {}".format(iteration, i_sh, self.max_SH_iter))
+                    print("pop: {}; budget:{}; gen: {}".format(pop_size, budget, gens))
 
                 # Updating global incumbent after each DE step for a budget
                 self.inc_score = de[budget].inc_score
@@ -4728,6 +4546,265 @@ class DEHBV6_3_5(DEHBBase):
                 if i_sh < num_SH_iters-1:  # when not final SH iteration
                     pop_size = num_configs[i_sh + 1]
                     next_budget = budgets[i_sh + 1]
+                    gens = num_gens[i_sh + 1]
+                    # selecting top ranking individuals from lower budget
+                    # to be evaluated on higher budget and be eligible for competition
+                    rank = np.sort(np.argsort(de[budget].fitness)[:pop_size])
+                    rival_population = de[budget].population[rank]
+
+                    if iteration > 0:
+                        # warmstarting DE incumbents to maintain global trajectory
+                        de[next_budget].inc_score = self.inc_score
+                        de[next_budget].inc_config = self.inc_config
+                        de[next_budget].pop_size = pop_size
+
+                        # ranking individuals to determine population for next SH step
+                        de_traj, de_runtime, de_history = \
+                            de[next_budget].ranked_selection(rival_population, pop_size,
+                                                             next_budget, debug)
+                        self.inc_score = de[next_budget].inc_score
+                        self.inc_config = de[next_budget].inc_config
+                        traj.extend(de_traj)
+                        runtime.extend(de_runtime)
+                        history.extend(de_history)
+                    else:
+                        # equivalent to iteration == 0
+                        # no ranked selection happens, top ranked individuals are selected
+                        if debug:
+                            print("Iteration: ", iteration)
+                        de[next_budget].population = rival_population
+                        de[next_budget].fitness = de[budget].fitness[rank]
+                        de[next_budget].age = np.array([de[next_budget].max_age] * \
+                                                        de[next_budget].pop_size)
+                        de[next_budget].pop_size = pop_size
+                    budget = next_budget
+
+        if verbose:
+            print("\nRun complete!")
+
+        return (np.array(traj), np.array(runtime), np.array(history))
+
+
+class DEHBV6_3_5(DEHBBase):
+    '''DEHB-BOHB-Previous
+
+    Uniform random injections on 6.3.3
+    '''
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.max_age = np.inf
+        self.min_clip = 0
+        self.randomize = None
+        self.generations = 1 if self.generations is None else self.generations
+        self.min_pop_size = 4
+
+    def get_next_iteration(self, iteration, type='original'):
+        '''Computes the Successive Halving spacing
+
+        Given the iteration index, computes the budget spacing to be used and
+        the number of configurations to be used for the SH iterations.
+
+        Parameters
+        ----------
+        iteration : int
+            Iteration index
+        clip : int, {1, 2, 3, ..., None}
+            If not None, clips the minimum number of configurations to 'clip'
+
+        Returns
+        -------
+        ns : array
+        budgets : array
+        '''
+        # number of 'SH runs'
+        s = self.max_SH_iter - 1 - (iteration % self.max_SH_iter)
+        # budget spacing for this iteration
+        budgets = self.budgets[(-s-1):]
+        # number of configurations in that bracket
+        if type == 'original':
+            n0 = int(np.floor((self.max_SH_iter)/(s+1)) * self.eta**s)
+        else:  # type = 'custom'
+            n0 = int(np.floor((self.max_SH_iter)/(s+1)) * self.eta**(s-1))
+        ns = [max(int(n0*(self.eta**(-i))), 1) for i in range(s+1)]
+        if type == 'original':
+            if self.min_clip is not None and self.max_clip is not None:
+                ns = np.clip(ns, a_min=self.min_clip, a_max=self.max_clip)
+            elif self.min_clip is not None:
+                ns = np.clip(ns, a_min=self.min_clip, a_max=np.max(ns))
+
+        return ns, budgets
+
+    def concat_pops(self, de, exclude_budget=None):
+        budgets = list(self.budgets)
+        if exclude_budget is not None:
+            budgets.remove(exclude_budget)
+        pop = []
+        for budget in budgets:
+            pop.extend(de[budget].population.tolist())
+        return pop
+
+    def run(self, iterations=1, verbose=False, debug=False):
+        # Book-keeping variables
+        traj = []
+        runtime = []
+        history = []
+
+        # To retrieve the population and budget ranges
+        num_configs, budgets = self.get_next_iteration(iteration=0)
+
+        # List of DE objects corresponding to the budgets (fidelities)
+        de = {}
+        for i, b in enumerate(budgets):
+            de[b] = DE(cs=self.cs, f=self.f, dimensions=self.dimensions, pop_size=num_configs[i],
+                       mutation_factor=self.mutation_factor, crossover_prob=self.crossover_prob,
+                       strategy=self.strategy, budget=b, max_age=self.max_age)
+
+        # Performs DEHB iterations
+        for iteration in range(iterations):
+
+            # Retrieves SH budgets and number of configurations
+            num_configs, budgets = self.get_next_iteration(iteration=iteration)
+            num_gens, _ = self.get_next_iteration(iteration=iteration, type='custom')
+            if verbose:
+                print('Iteration #{:>3}\n{}'.format(iteration, '-' * 15))
+                print(num_configs, budgets, self.inc_score)
+
+            # Sets budget, population size, generations for first SH iteration
+            pop_size = num_configs[0]
+            budget = budgets[0]
+            gens = num_gens[0]
+
+            # Number of SH iterations in this DEHB iteration
+            num_SH_iters = len(budgets)
+
+            # The first DEHB iteration - only time when a random population is initialized
+            if iteration == 0:
+                # creating new population for DEHB iteration to be used for the next SH steps
+                de[budget].init_eval_pop(budget, eval=False)
+                # maintaining global copy of random population created
+                self.population = de[budget].population
+                self.fitness = de[budget].fitness
+                # update global incumbent with new population scores
+                self.inc_score = de[budget].inc_score
+                self.inc_config = de[budget].inc_config
+
+            elif pop_size > de[budget].pop_size:
+                # compensating for extra individuals if SH pop size is larger
+                filler = pop_size - de[budget].pop_size
+                if debug:
+                    print("Adding {} random individuals for budget {}".format(filler, budget))
+                # randomly sample to fill the size and set fitness to infinity (no evaluation)
+                # new_pop = self.init_population(pop_size=filler)
+                new_pop = de[budget].sample_mutants(filler, self.concat_pops(de, budget))
+                de[budget].inc_score = self.inc_score
+                de[budget].inc_config = self.inc_config
+                de[budget].population = np.vstack((de[budget].population, new_pop))
+                de[budget].age = np.hstack((de[budget].age, [de[budget].max_age] * filler))
+                de[budget].fitness = np.hstack((de[budget].fitness, [np.inf] * filler))
+
+            elif pop_size < de[budget].pop_size:
+                # compensating for extra individuals if SH pop size is smaller
+                if debug:
+                    print("Reducing population from {} to {} "
+                          "for budget {}".format(de[budget].pop_size, pop_size, budget))
+                # reordering to have the top individuals at the beginning of the population
+                ## de[budget].pop_size controls the view over the entire list
+                rank_include = np.sort(np.argsort(de[budget].fitness)[:pop_size])
+                rank_ignore = np.sort(list(set(np.arange(len(de[budget].fitness))) -
+                                           set(rank_include)))
+                de[budget].population = np.vstack((de[budget].population[rank_include],
+                                                   de[budget].population[rank_ignore]))
+                de[budget].fitness = np.vstack((de[budget].fitness[rank_include],
+                                                de[budget].fitness[rank_ignore]))
+                de[budget].age = np.vstack((de[budget].age[rank_include],
+                                                de[budget].age[rank_ignore]))
+
+            # Adjusting pop size parameter
+            de[budget].pop_size = pop_size
+
+            # Successive Halving iterations carrying out DE
+            for i_sh in range(num_SH_iters):
+
+                # Warmstarting DE incumbent
+                de[budget].inc_score = self.inc_score
+                de[budget].inc_config = self.inc_config
+                if debug:
+                    print("Pop size: {}; DE budget: {}".format(de[budget].pop_size, budget))
+                best = self.inc_config
+
+                # Population for mutation sampling
+                ## For the first iteration, the current population itself
+                ## For subsequent iterations, the next higher population
+                ## For the full budget, the current population itself
+                # next_budget = budgets[min(i_sh + 1, num_SH_iters - 1)]
+                # if de[next_budget].population is not None:
+                #     alt_population = np.vstack((de[budget].population, de[next_budget].population))
+                # else:
+                alt_population = None
+
+                if iteration >= self.max_SH_iter:
+                    if pop_size < self.min_pop_size:
+                        # compensating for extra individuals if SH pop size is larger
+                        filler = self.min_pop_size - pop_size
+                        if debug:
+                            print("Adding {} random individuals for "
+                                  "budget {}".format(filler, budget))
+                        # randomly sample to fill the size and set fitness to infinity
+                        # new_pop = self.init_population(pop_size=filler)
+                        new_pop = de[budget].sample_mutants(filler, self.concat_pops(de, budget))
+                        de[budget].inc_score = self.inc_score
+                        de[budget].inc_config = self.inc_config
+                        de[budget].population = np.vstack((de[budget].population, new_pop))
+                        de[budget].age = np.hstack((de[budget].age, [de[budget].max_age] * filler))
+                        de[budget].fitness = np.hstack((de[budget].fitness, [np.inf] * filler))
+                        de[budget].pop_size = self.min_pop_size
+                        pop_size = self.min_pop_size
+
+                    if debug:
+                        print("Evolving {} individuals on budget {}"
+                              " for {} generations".format(pop_size, budget, gens))
+                    for gen in range(gens):
+                        de_traj, de_runtime, de_history = \
+                            de[budget].evolve_generation(budget=budget, best=best,
+                                                         alt_pop=alt_population)
+                        traj.extend(de_traj)
+                        runtime.extend(de_runtime)
+                        history.extend(de_history)
+
+                elif i_sh == 0:  # first iteration in the SH bracket
+                    # Repeating DE over entire population 'generations' times
+                    if debug:
+                        print("Evolving {} individuals on budget {}"
+                              " for {} generations".format(pop_size, budget, gens))
+                    gens = self.generations
+                    for gen in range(gens):
+                        de_traj, de_runtime, de_history = \
+                            de[budget].evolve_generation(budget=budget, best=best,
+                                                         alt_pop=alt_population)
+                        traj.extend(de_traj)
+                        runtime.extend(de_runtime)
+                        history.extend(de_history)
+                elif i_sh > 0:
+                    de_traj, de_runtime, de_history = de[budget].eval_pop(budget=budget)
+                    traj.extend(de_traj)
+                    runtime.extend(de_runtime)
+                    history.extend(de_history)
+
+                else:
+                    print("HERE DOING NOTHING -- should never be printed!")
+                    print("iteration: {}; i_sh: {}; "
+                          "max_SH_iter: {}".format(iteration, i_sh, self.max_SH_iter))
+                    print("pop: {}; budget:{}; gen: {}".format(pop_size, budget, gens))
+
+                # Updating global incumbent after each DE step for a budget
+                self.inc_score = de[budget].inc_score
+                self.inc_config = de[budget].inc_config
+
+                # Retrieving budget, pop_size, population for the next SH iteration
+                if i_sh < num_SH_iters-1:  # when not final SH iteration
+                    pop_size = num_configs[i_sh + 1]
+                    next_budget = budgets[i_sh + 1]
+                    gens = num_gens[i_sh + 1]
                     # selecting top ranking individuals from lower budget
                     # to be evaluated on higher budget and be eligible for competition
                     rank = np.sort(np.argsort(de[budget].fitness)[:pop_size])
