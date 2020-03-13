@@ -5,6 +5,13 @@ from scipy.stats import spearmanr as corr
 
 from hpolib.benchmarks.surrogates.paramnet import SurrogateReducedParamNetTime
 
+from .run_dehb_paramnet import f
+
+import os
+import sys
+sys.path.append(os.path.join(os.getcwd(), 'dehb/utils'))
+from plot_mds import vector_to_configspace, get_mds
+
 
 ################
 # Common Utils #
@@ -95,68 +102,104 @@ def get_ready_paramnet(dataset):
     dimensions = len(cs.get_hyperparameters())
     min_budget, max_budget = pn_budgets[dataset]
 
+
+def plot_budget_landscape(budgets, sample_size=1000, output=None):
+    print("Initialising...")
+    x = np.random.uniform(size=(sample_size, dimensions))
+    print("MDS conversion...")
+    X = get_mds(x)
+    print("Calculating budget scores...")
+    scores = {}
+    for budget in budgets:
+        print("For budget {}".format(budget))
+        scores[budget] = []
+
+        for i in range(x.shape[0]):
+            print("{:<4}/{:<4}".format(i + 1, x.shape[0]), end='\r')
+            score, _ = f(config=vector_to_configspace(cs, x[i]), budget=budget)
+            scores[budget].append(score)
+
+    print("Plotting...")
+    fig, axes = plt.subplots(np.ceil(len(budgets) / 2).astype(int), 2)
+    for i, ax in enumerate(axes.flat):
+        if i == len(budgets):
+            break
+        im = ax.hexbin(X[:,0], X[:,1], C=scores[budgets[i]], gridsize=30, cmap=col)
+        ax.set_title(budgets[i])
+
+    fig.subplots_adjust(right=0.8)
+    cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+    fig.colorbar(im, cax=cbar_ax)
+
+    if output is None:
+        plt.show()
+    else:
+        plt.savefig(output, dpi=300)
+
+
 # Adult
 dataset = 'adult'
 get_ready_paramnet(dataset)
 budgets = [9.,  27.,  81., 243.]
-final_score_relation(sample_size=10000,
-                     output='dehb/examples/plots/correlation/{}_test_val.png'.format(dataset))
-budget_correlation(sample_size=10000, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/{}_true.png'.format(dataset))
-budget_correlation(sample_size=10000, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/{}_false.png'.format(dataset))
-
-# Higgs
-dataset = 'higgs'
-get_ready_paramnet(dataset)
-budgets = [9.,  27.,  81., 243.]
-final_score_relation(sample_size=10000,
-                     output='dehb/examples/plots/correlation/{}_test_val.png'.format(dataset))
-budget_correlation(sample_size=10000, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/{}_true.png'.format(dataset))
-budget_correlation(sample_size=10000, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/{}_false.png'.format(dataset))
-
-# Letter
-dataset = 'letter'
-get_ready_paramnet(dataset)
-budgets = [3, 9.,  27.,  81.]
-final_score_relation(sample_size=10000,
-                     output='dehb/examples/plots/correlation/{}_test_val.png'.format(dataset))
-budget_correlation(sample_size=10000, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/{}_true.png'.format(dataset))
-budget_correlation(sample_size=10000, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/{}_false.png'.format(dataset))
-
-# MNIST
-dataset = 'mnist'
-get_ready_paramnet(dataset)
-budgets = [9.,  27.,  81., 243.]
-final_score_relation(sample_size=10000,
-                     output='dehb/examples/plots/correlation/{}_test_val.png'.format(dataset))
-budget_correlation(sample_size=10000, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/{}_true.png'.format(dataset))
-budget_correlation(sample_size=10000, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/{}_false.png'.format(dataset))
-
-# Optdigits
-dataset = 'optdigits'
-get_ready_paramnet(dataset)
-budgets = [1., 3., 9.,  27.]
-final_score_relation(sample_size=10000,
-                     output='dehb/examples/plots/correlation/{}_test_val.png'.format(dataset))
-budget_correlation(sample_size=10000, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/{}_true.png'.format(dataset))
-budget_correlation(sample_size=10000, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/{}_false.png'.format(dataset))
-
-# Poker
-dataset = 'poker'
-get_ready_paramnet(dataset)
-budgets = [81.,  243.,  729., 2187.]
-final_score_relation(sample_size=10000,
-                     output='dehb/examples/plots/correlation/{}_test_val.png'.format(dataset))
-budget_correlation(sample_size=10000, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/{}_true.png'.format(dataset))
-budget_correlation(sample_size=10000, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/{}_false.png'.format(dataset))
+plot_budget_landscape(budgets, sample_size=1000, output='dehb/examples/plots/landscape/{}.png'.format(dataset))
+# final_score_relation(sample_size=10000,
+#                      output='dehb/examples/plots/correlation/{}_test_val.png'.format(dataset))
+# budget_correlation(sample_size=10000, budgets=budgets, compare=True,
+#                    output='dehb/examples/plots/correlation/{}_true.png'.format(dataset))
+# budget_correlation(sample_size=10000, budgets=budgets, compare=False,
+#                    output='dehb/examples/plots/correlation/{}_false.png'.format(dataset))
+#
+# # Higgs
+# dataset = 'higgs'
+# get_ready_paramnet(dataset)
+# budgets = [9.,  27.,  81., 243.]
+# final_score_relation(sample_size=10000,
+#                      output='dehb/examples/plots/correlation/{}_test_val.png'.format(dataset))
+# budget_correlation(sample_size=10000, budgets=budgets, compare=True,
+#                    output='dehb/examples/plots/correlation/{}_true.png'.format(dataset))
+# budget_correlation(sample_size=10000, budgets=budgets, compare=False,
+#                    output='dehb/examples/plots/correlation/{}_false.png'.format(dataset))
+#
+# # Letter
+# dataset = 'letter'
+# get_ready_paramnet(dataset)
+# budgets = [3, 9.,  27.,  81.]
+# final_score_relation(sample_size=10000,
+#                      output='dehb/examples/plots/correlation/{}_test_val.png'.format(dataset))
+# budget_correlation(sample_size=10000, budgets=budgets, compare=True,
+#                    output='dehb/examples/plots/correlation/{}_true.png'.format(dataset))
+# budget_correlation(sample_size=10000, budgets=budgets, compare=False,
+#                    output='dehb/examples/plots/correlation/{}_false.png'.format(dataset))
+#
+# # MNIST
+# dataset = 'mnist'
+# get_ready_paramnet(dataset)
+# budgets = [9.,  27.,  81., 243.]
+# final_score_relation(sample_size=10000,
+#                      output='dehb/examples/plots/correlation/{}_test_val.png'.format(dataset))
+# budget_correlation(sample_size=10000, budgets=budgets, compare=True,
+#                    output='dehb/examples/plots/correlation/{}_true.png'.format(dataset))
+# budget_correlation(sample_size=10000, budgets=budgets, compare=False,
+#                    output='dehb/examples/plots/correlation/{}_false.png'.format(dataset))
+#
+# # Optdigits
+# dataset = 'optdigits'
+# get_ready_paramnet(dataset)
+# budgets = [1., 3., 9.,  27.]
+# final_score_relation(sample_size=10000,
+#                      output='dehb/examples/plots/correlation/{}_test_val.png'.format(dataset))
+# budget_correlation(sample_size=10000, budgets=budgets, compare=True,
+#                    output='dehb/examples/plots/correlation/{}_true.png'.format(dataset))
+# budget_correlation(sample_size=10000, budgets=budgets, compare=False,
+#                    output='dehb/examples/plots/correlation/{}_false.png'.format(dataset))
+#
+# # Poker
+# dataset = 'poker'
+# get_ready_paramnet(dataset)
+# budgets = [81.,  243.,  729., 2187.]
+# final_score_relation(sample_size=10000,
+#                      output='dehb/examples/plots/correlation/{}_test_val.png'.format(dataset))
+# budget_correlation(sample_size=10000, budgets=budgets, compare=True,
+#                    output='dehb/examples/plots/correlation/{}_true.png'.format(dataset))
+# budget_correlation(sample_size=10000, budgets=budgets, compare=False,
+#                    output='dehb/examples/plots/correlation/{}_false.png'.format(dataset))
