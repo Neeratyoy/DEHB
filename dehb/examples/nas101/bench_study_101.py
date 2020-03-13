@@ -18,8 +18,6 @@ import os
 import sys
 sys.path.append(os.path.join(os.getcwd(), 'dehb/utils'))
 from plot_mds import vector_to_configspace, get_mds
-sys.path.append(os.path.join(os.getcwd(), 'dehb/examples/nas101'))
-from run_dehb_nas101 import f
 
 
 ################
@@ -114,6 +112,14 @@ names = {
     'slice_localization': 'slice',
     'parkinsons_telemonitoring': 'parkinsons'
 }
+
+# Common objective function for DE representing NAS-Bench-101 & NAS-HPO-Bench
+def f(config, budget=None):
+    if budget is not None:
+        fitness, cost = b.objective_function(config, budget=int(budget))
+    else:
+        fitness, cost = b.objective_function(config)
+    return fitness, cost
 
 def plot_budget_landscape(budgets, sample_size=1000, output=None):
     print("Initialising...")

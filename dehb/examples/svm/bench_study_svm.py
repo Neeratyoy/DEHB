@@ -132,6 +132,7 @@ def plot_budget_landscape(budgets, sample_size=1000, output=None):
 #######
 
 sample_size = 2500
+name = 'svm'
 
 b = surrogate()
 cs = b.get_configuration_space()
