@@ -5,6 +5,13 @@ from scipy.stats import spearmanr as corr
 
 from hpolib.benchmarks.synthetic_functions.counting_ones import CountingOnes
 
+import os
+import sys
+sys.path.append(os.path.join(os.getcwd(), 'dehb/utils'))
+from plot_mds import vector_to_configspace, get_mds
+sys.path.append(os.path.join(os.getcwd(), 'dehb/examples/countingones'))
+from run_dehb_countingones import f
+
 
 ################
 # Common Utils #
@@ -87,38 +94,87 @@ def get_ready_countingones(n):
     min_budget = 576 / dimensions
     max_budget = 93312 / dimensions
 
+
+def plot_budget_landscape(budgets, sample_size=1000, output=None):
+    print("Initialising...")
+    x = np.random.uniform(size=(sample_size, dimensions))
+    print("MDS conversion...")
+    X = get_mds(x)
+    print("Calculating budget scores...")
+    scores = {}
+    for budget in budgets:
+        print("For budget {}".format(budget))
+        scores[budget] = []
+
+        for i in range(x.shape[0]):
+            print("{:<4}/{:<4}".format(i + 1, x.shape[0]), end='\r')
+            score, _ = f(config=vector_to_configspace(cs, x[i]), budget=budget)
+            scores[budget].append(-np.log10(score/dimensions + 1))   # log-scaled regrets
+
+    print("Plotting...")
+    col = CM.plasma
+    fig, axes = plt.subplots(np.ceil(len(budgets) / 2).astype(int), 2)
+    for i, ax in enumerate(axes.flat):
+        if i == len(budgets):
+            break
+        im = ax.hexbin(X[:,0], X[:,1], C=scores[budgets[i]], gridsize=30, cmap=col)
+        ax.set_title(budgets[i])
+        plt.colorbar(im, ax=ax)
+
+    plt.suptitle(name)
+
+    if output is None:
+        plt.show()
+    else:
+        plt.savefig(output, dpi=300)
+
+
+sample_size = 1500
+
 # 4+4
+name = '4+4'
 get_ready_countingones(4)
 budgets = [144.,   432.,  1296.,  3888., 11664.]
-final_score_relation(sample_size=10000, output='dehb/examples/plots/correlation/4+4_test_val.png')
-budget_correlation(sample_size=10000, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/4+4_true.png')
-budget_correlation(sample_size=10000, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/4+4_false.png')
-
+plot_budget_landscape(budgets, sample_size=sample_size,
+                      output='dehb/examples/plots/landscape/{}.png'.format(name))
+# final_score_relation(sample_size=10000, output='dehb/examples/plots/correlation/4+4_test_val.png')
+# budget_correlation(sample_size=10000, budgets=budgets, compare=True,
+#                    output='dehb/examples/plots/correlation/4+4_true.png')
+# budget_correlation(sample_size=10000, budgets=budgets, compare=False,
+#                    output='dehb/examples/plots/correlation/4+4_false.png')
+#
 # 8+8
+name = '8+8'
 get_ready_countingones(8)
 budgets = [72.,  216.,  648., 1944., 5832.]
-final_score_relation(sample_size=10000, output='dehb/examples/plots/correlation/8+8_test_val.png')
-budget_correlation(sample_size=10000, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/8+8_true.png')
-budget_correlation(sample_size=10000, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/8+8_false.png')
-
+plot_budget_landscape(budgets, sample_size=sample_size,
+                      output='dehb/examples/plots/landscape/{}.png'.format(name))
+# final_score_relation(sample_size=10000, output='dehb/examples/plots/correlation/8+8_test_val.png')
+# budget_correlation(sample_size=10000, budgets=budgets, compare=True,
+#                    output='dehb/examples/plots/correlation/8+8_true.png')
+# budget_correlation(sample_size=10000, budgets=budgets, compare=False,
+#                    output='dehb/examples/plots/correlation/8+8_false.png')
+#
 # 16+16
+name = '16+16'
 get_ready_countingones(16)
 budgets = [36.,  108.,  324.,  972., 2916.]
-final_score_relation(sample_size=10000, output='dehb/examples/plots/correlation/16+16_test_val.png')
-budget_correlation(sample_size=10000, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/16+16_true.png')
-budget_correlation(sample_size=10000, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/16+16_false.png')
-
+plot_budget_landscape(budgets, sample_size=sample_size,
+                      output='dehb/examples/plots/landscape/{}.png'.format(name))
+# final_score_relation(sample_size=10000, output='dehb/examples/plots/correlation/16+16_test_val.png')
+# budget_correlation(sample_size=10000, budgets=budgets, compare=True,
+#                    output='dehb/examples/plots/correlation/16+16_true.png')
+# budget_correlation(sample_size=10000, budgets=budgets, compare=False,
+#                    output='dehb/examples/plots/correlation/16+16_false.png')
+#
 # 32+32
+name = '32+32'
 get_ready_countingones(32)
 budgets = [18.,   54.,  162.,  486., 1458.]
-final_score_relation(sample_size=10000, output='dehb/examples/plots/correlation/32+32_test_val.png')
-budget_correlation(sample_size=10000, budgets=budgets, compare=True,
-                   output='dehb/examples/plots/correlation/32+32_true.png')
-budget_correlation(sample_size=10000, budgets=budgets, compare=False,
-                   output='dehb/examples/plots/correlation/32+32_false.png')
+plot_budget_landscape(budgets, sample_size=sample_size,
+                      output='dehb/examples/plots/landscape/{}.png'.format(name))
+# final_score_relation(sample_size=10000, output='dehb/examples/plots/correlation/32+32_test_val.png')
+# budget_correlation(sample_size=10000, budgets=budgets, compare=True,
+#                    output='dehb/examples/plots/correlation/32+32_true.png')
+# budget_correlation(sample_size=10000, budgets=budgets, compare=False,
+#                    output='dehb/examples/plots/correlation/32+32_false.png')
