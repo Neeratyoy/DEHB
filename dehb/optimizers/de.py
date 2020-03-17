@@ -511,14 +511,10 @@ class AsyncDE(DEBase):
             if any(idx):
                 population = self.population
             else:
-                # if len(alt_pop) < 3:
-                #     population = np.vstack((alt_pop, self.population))
-                # else:
                 population = alt_pop
         else:
             population = self.population
-
-        if target is not None:
+        if target is not None and len(population) > 1:
             # eliminating target from mutation sampling pool
             for i, pop in enumerate(population):
                 if all(target == pop):
