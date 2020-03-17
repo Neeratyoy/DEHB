@@ -769,14 +769,14 @@ class AsyncDE(DEBase):
                             float(budget or 0)))
         return traj, runtime, history
 
-    def evolve_generation(self, budget=None, best=None, alt_pop=None, async='orig'):
+    def evolve_generation(self, budget=None, best=None, alt_pop=None, async_strategy='orig'):
         '''Performs a complete DE evolution, mutation -> crossover -> selection
         '''
         traj = []
         runtime = []
         history = []
 
-        if async == 'orig':
+        if async_strategy == 'orig':
             trials = []
             for j in range(self.pop_size):
                 target = self.population[j]
@@ -788,7 +788,7 @@ class AsyncDE(DEBase):
             traj, runtime, history = self.selection(trials, budget)
             return traj, runtime, history
 
-        elif async == 'basic':
+        elif async_strategy == 'basic':
             for i in range(self.pop_size):
                 target = self.population[i]
                 donor = self.mutation(current=target, best=best, alt_pop=alt_pop)
@@ -806,9 +806,9 @@ class AsyncDE(DEBase):
             return traj, runtime, history
 
         for count in range(self.pop_size):
-            if async == 'random':
+            if async_strategy == 'random':
                 i = np.random.choice(np.arange(self.pop_size))
-            else:  # async == 'worst'
+            else:  # async_strategy == 'worst'
                 i = np.argsort(-self.fitness)[0]
             target = self.population[i]
             donor = self.mutation(current=target, best=best, alt_pop=alt_pop)
@@ -838,7 +838,7 @@ class AsyncDE(DEBase):
 
         return mutants
 
-    def run(self, generations=1, verbose=False, budget=None, async='basic'):
+    def run(self, generations=1, verbose=False, budget=None, async_strategy='basic'):
         self.traj = []
         self.runtime = []
         self.history = []
@@ -852,7 +852,7 @@ class AsyncDE(DEBase):
         for i in range(generations):
             if verbose:
                 print("Generation {:<2}/{:<2} -- {:<0.7}".format(i+1, generations, self.inc_score))
-            traj, runtime, history = self.evolve_generation(budget=budget, async=async)
+            traj, runtime, history = self.evolve_generation(budget=budget, async_strategy=async_strategy)
             self.traj.extend(traj)
             self.runtime.extend(runtime)
             self.history.extend(history)

@@ -5387,12 +5387,12 @@ class DEHBV7_1(DEHBBase):
 class AsyncDEHB_0(DEHBBase):
     '''DEHB with Async. DE
     '''
-    def __init__(self, async='orig', **kwargs):
+    def __init__(self, async_strategy='orig', **kwargs):
         super().__init__(**kwargs)
         self.max_age = np.inf
         self.min_clip = 0
-        self.async = async
-        self.async = 'basic'
+        self.async_strategy = async_strategy
+        self.async_strategy = 'basic'
 
     def run(self, iterations=1, verbose=False, debug=False):
         # Book-keeping variables
@@ -5479,7 +5479,7 @@ class AsyncDEHB_0(DEHBBase):
                         de_traj, de_runtime, de_history = \
                                 self.de[budget].evolve_generation(budget=budget,
                                                                   best=self.inc_config,
-                                                                  async=self.async)
+                                                                  async_strategy=self.async_strategy)
                     else:
                         if alt_population is None:
                             if debug:
@@ -5495,7 +5495,7 @@ class AsyncDEHB_0(DEHBBase):
                                 self.de[budget].evolve_generation(budget=budget,
                                                                   best=self.inc_config,
                                                                   alt_pop=alt_population,
-                                                                  async=self.async)
+                                                                  async=self.async_strategy)
                     traj.extend(de_traj)
                     runtime.extend(de_runtime)
                     history.extend(de_history)
@@ -5538,7 +5538,7 @@ class AsyncDEHB_0(DEHBBase):
                             self.de[budget].evolve_generation(budget=budget,
                                                               best=self.inc_config,
                                                               alt_pop=alt_population,
-                                                              async=self.async)
+                                                              async_strategy=self.async_strategy)
                     traj.extend(de_traj)
                     runtime.extend(de_runtime)
                     history.extend(de_history)
@@ -5557,7 +5557,7 @@ class AsyncDEHB_0(DEHBBase):
 
                         budget = next_budget
 
-                        if self.async in ['orig', 'basic'] and \
+                        if self.async_strategy in ['orig', 'basic'] and \
                                 pop_size < len(self.de[budget].population):
                             # reordering to have the top individuals in front
                             rank_include = np.sort(np.argsort(self.de[budget].fitness)[:pop_size])
@@ -5579,12 +5579,12 @@ class AsyncDEHB_0(DEHBBase):
 class AsyncDEHB_1(DEHBBase):
     '''DEHB with Async. DE
     '''
-    def __init__(self, async='orig', **kwargs):
+    def __init__(self, async_strategy='orig', **kwargs):
         super().__init__(**kwargs)
         self.max_age = np.inf
         self.min_clip = 0
-        self.async = async
-        self.async = 'random'
+        self.async_strategy = async_strategy
+        self.async_strategy = 'random'
 
     def run(self, iterations=1, verbose=False, debug=False):
         # Book-keeping variables
@@ -5671,7 +5671,7 @@ class AsyncDEHB_1(DEHBBase):
                         de_traj, de_runtime, de_history = \
                                 self.de[budget].evolve_generation(budget=budget,
                                                                   best=self.inc_config,
-                                                                  async=self.async)
+                                                                  async_strategy=self.async_strategy)
                     else:
                         if alt_population is None:
                             if debug:
@@ -5687,7 +5687,7 @@ class AsyncDEHB_1(DEHBBase):
                                 self.de[budget].evolve_generation(budget=budget,
                                                                   best=self.inc_config,
                                                                   alt_pop=alt_population,
-                                                                  async=self.async)
+                                                                  async_strategy=self.async_strategy)
                     traj.extend(de_traj)
                     runtime.extend(de_runtime)
                     history.extend(de_history)
@@ -5730,7 +5730,7 @@ class AsyncDEHB_1(DEHBBase):
                             self.de[budget].evolve_generation(budget=budget,
                                                               best=self.inc_config,
                                                               alt_pop=alt_population,
-                                                              async=self.async)
+                                                              async_strategy=self.async_strategy)
                     traj.extend(de_traj)
                     runtime.extend(de_runtime)
                     history.extend(de_history)
@@ -5749,7 +5749,7 @@ class AsyncDEHB_1(DEHBBase):
 
                         budget = next_budget
 
-                        if self.async in ['orig', 'basic'] and \
+                        if self.async_strategy in ['orig', 'basic'] and \
                                 pop_size < len(self.de[budget].population):
                             # reordering to have the top individuals in front
                             rank_include = np.sort(np.argsort(self.de[budget].fitness)[:pop_size])
@@ -5771,12 +5771,12 @@ class AsyncDEHB_1(DEHBBase):
 class AsyncDEHB_2(DEHBBase):
     '''DEHB with Async. DE
     '''
-    def __init__(self, async='orig', **kwargs):
+    def __init__(self, async_strategy='orig', **kwargs):
         super().__init__(**kwargs)
         self.max_age = np.inf
         self.min_clip = 0
-        self.async = async
-        self.async = 'orig'
+        self.async_strategy = async_strategy
+        self.async_strategy = 'orig'
 
     def run(self, iterations=1, verbose=False, debug=False):
         # Book-keeping variables
@@ -5863,7 +5863,7 @@ class AsyncDEHB_2(DEHBBase):
                         de_traj, de_runtime, de_history = \
                                 self.de[budget].evolve_generation(budget=budget,
                                                                   best=self.inc_config,
-                                                                  async=self.async)
+                                                                  async_strategy=self.async_strategy)
                     else:
                         if alt_population is None:
                             if debug:
@@ -5879,7 +5879,7 @@ class AsyncDEHB_2(DEHBBase):
                                 self.de[budget].evolve_generation(budget=budget,
                                                                   best=self.inc_config,
                                                                   alt_pop=alt_population,
-                                                                  async=self.async)
+                                                                  async_strategy=self.async_strategy)
                     traj.extend(de_traj)
                     runtime.extend(de_runtime)
                     history.extend(de_history)
@@ -5922,7 +5922,7 @@ class AsyncDEHB_2(DEHBBase):
                             self.de[budget].evolve_generation(budget=budget,
                                                               best=self.inc_config,
                                                               alt_pop=alt_population,
-                                                              async=self.async)
+                                                              async_strategy=self.async_strategy)
                     traj.extend(de_traj)
                     runtime.extend(de_runtime)
                     history.extend(de_history)
@@ -5941,7 +5941,7 @@ class AsyncDEHB_2(DEHBBase):
 
                         budget = next_budget
 
-                        if self.async in ['orig', 'basic'] and \
+                        if self.async_strategy in ['orig', 'basic'] and \
                                 pop_size < len(self.de[budget].population):
                             # reordering to have the top individuals in front
                             rank_include = np.sort(np.argsort(self.de[budget].fitness)[:pop_size])
