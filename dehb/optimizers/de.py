@@ -789,7 +789,6 @@ class AsyncDE(DEBase):
             return traj, runtime, history
 
         elif async == 'basic':
-            self._shuffle_pop()
             for i in range(self.pop_size):
                 target = self.population[i]
                 donor = self.mutation(current=target, best=best, alt_pop=alt_pop)
