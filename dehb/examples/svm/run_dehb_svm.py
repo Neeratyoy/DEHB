@@ -17,6 +17,7 @@ from dehb import DEHBV4, DEHBV4_1, DEHBV4_2, DEHBV4_2_2, DEHBV4_2_3
 from dehb import DEHBV6_0, DEHBV6_1, DEHBV6_1_2
 from dehb import DEHBV6_2, DEHBV6_2_2, DEHBV6_3, DEHBV6_3_2, DEHBV6_3_3, DEHBV6_3_4, DEHBV6_3_5
 from dehb import DEHBV7_0, DEHBV7_1
+from dehb import AsyncDEHB_0, AsyncDEHB_1
 
 
 # Common objective function for DE & DEHB representing SVM Surrogates benchmark
@@ -116,7 +117,8 @@ dehbs = {"1": DEHBV1, "1.1": DEHBV1_1, "2": DEHBV2,
          "6": DEHBV6_0, "6.1": DEHBV6_1, "6.1.2": DEHBV6_1_2,
          "6.2": DEHBV6_2, "6.2.2": DEHBV6_2_2, "6.3": DEHBV6_3,
          "6.3.2": DEHBV6_3_2, "6.3.3": DEHBV6_3_3, "6.3.4": DEHBV6_3_4, "6.3.5": DEHBV6_3_5,
-         "7": DEHBV7_0, "7.1": DEHBV7_1}
+         "7": DEHBV7_0, "7.1": DEHBV7_1,
+         "a0": AsyncDEHB_0, "a1": AsyncDEHB_1}
 DEHB = dehbs[args.version]
 
 output_path = os.path.join(args.output_path, folder)
