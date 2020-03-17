@@ -5495,7 +5495,7 @@ class AsyncDEHB_0(DEHBBase):
                                 self.de[budget].evolve_generation(budget=budget,
                                                                   best=self.inc_config,
                                                                   alt_pop=alt_population,
-                                                                  async=self.async_strategy)
+                                                                  async_strategy=self.async_strategy)
                     traj.extend(de_traj)
                     runtime.extend(de_runtime)
                     history.extend(de_history)
