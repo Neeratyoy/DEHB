@@ -499,12 +499,53 @@ class AsyncDE(DEBase):
 
         return self._min_pop_size
 
+    def _add_population(self, pop_size, population=None, fitness=[], age=[]):
+        new_pop = self.init_population(pop_size=pop_size)
+        new_fitness = np.array([np.inf] * pop_size)
+        new_age = np.array([self.max_age] * pop_size)
+
+        if population is None:
+            population = self.population
+            fitness = self.fitness
+            age = self.age
+
+        population = np.concatenate((population, new_pop))
+        fitness = np.concatenate((fitness, new_fitness))
+        age = np.concatenate((age, new_age))
+
+        return population, fitness, age
+
+    def _new_sample_population(self, size=3, alt_pop=None, target=None):
+        population = None
+        if isinstance(alt_pop, list) or isinstance(alt_pop, np.ndarray):
+            idx = [indv is None for indv in alt_pop]
+            if any(idx):
+                population = self.population
+            else:
+                population = alt_pop
+        else:
+            population = self.population
+        if target is not None and len(population) > 1:
+            # eliminating target from mutation sampling pool
+            for i, pop in enumerate(population):
+                if all(target == pop):
+                    population = np.concatenate((population[:i], population[i + 1:]))
+                    break
+        if len(population) < self._min_pop_size:
+            filler = self._min_pop_size - len(population)
+            population, _, _ = self._add_population(pop_size=filler, population=population)
+
+        selection = np.random.choice(np.arange(len(population)), size, replace=False)
+        return population[selection]
+
     def sample_population(self, size=3, alt_pop=None, target=None):
         '''Samples 'size' individuals
 
         If alt_pop is None or a list/array of None, sample from own population
         Else sample from the specified alternate population
         '''
+        return self._new_sample_population(size, alt_pop, target)
+
         population = None
         if isinstance(alt_pop, list) or isinstance(alt_pop, np.ndarray):
             idx = [indv is None for indv in alt_pop]
