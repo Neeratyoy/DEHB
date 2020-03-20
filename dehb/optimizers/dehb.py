@@ -5394,19 +5394,30 @@ class AsyncDEHB_0(DEHBBase):
         self.async_strategy = async_strategy
         self.async_strategy = 'basic'
 
+    def concat_pops(self, exclude_budget=None):
+        budgets = list(self.budgets)
+        if exclude_budget is not None:
+            budgets.remove(exclude_budget)
+        pop = []
+        for budget in budgets:
+            pop.extend(self.de[budget].population.tolist())
+        return np.array(pop)
+
     def run(self, iterations=1, verbose=False, debug=False):
         # Book-keeping variables
         traj = []
         runtime = []
         history = []
 
-        # List of DE objects corresponding to the budgets (fidelities)
+        # Determining the maximum pop size for a budget subpopulation as per SH
         self._max_pop_size = {}
         for i in range(self.max_SH_iter):
             n, r = self.get_next_iteration(i)
             for j, r_j in enumerate(r):
                 self._max_pop_size[r_j] = \
                     max(n[j], self._max_pop_size[r_j]) if r_j in self._max_pop_size.keys() else n[j]
+
+        # List of DE objects corresponding to the budgets (fidelities)
         self.de = {}
         for i, b in enumerate(self._max_pop_size.keys()):
             self.de[b] = AsyncDE(cs=self.cs, f=self.f, dimensions=self.dimensions,
@@ -5430,6 +5441,15 @@ class AsyncDEHB_0(DEHBBase):
 
             # Number of SH iterations in this DEHB iteration
             num_SH_iters = len(budgets)
+
+            if iteration > 0 and len(self.de[budget].population) < self._max_pop_size[budget]:
+                # the previous iteration should have filled up the population slots
+                # for certain budget spacings, this slot may be empty by one or two slots
+                filler = self._max_pop_size[budget] - len(self.de[budget].population)
+                if debug:
+                    print("Adding {} individual(s) for the budget {}".format(filler, budget))
+                self.de[budget].population, self.de[budget].fitness, self.de[budget].age = \
+                    self.de[budget]._add_random_population(pop_size=filler)
 
             if iteration == 0:  # first HB bracket, first iteration
                 for i_sh in range(num_SH_iters):
@@ -5523,8 +5543,6 @@ class AsyncDEHB_0(DEHBBase):
                             alt_population = self.de[budget].population[rank]
                         self.de[next_budget].pop_size = pop_size
                         budget = next_budget
-
-
             else:  # second HB bracket onwards
                 alt_population = None
                 for i_sh in range(num_SH_iters):
@@ -5533,6 +5551,20 @@ class AsyncDEHB_0(DEHBBase):
                     self.de[budget].inc_config = self.inc_config
                     if debug:
                         print("Evolving {} for {}".format(self.de[budget].pop_size, budget))
+
+                    if alt_population is not None and \
+                            len(alt_population) < self.de[budget]._min_pop_size:
+                        filler = self.de[budget]._min_pop_size - len(alt_population) + 1
+                        if debug:
+                            print("Adding {} individuals for mutation on "
+                                  "budget {}".format(filler, budget))
+                        new_pop = \
+                            self.de[budget]._init_mutant_population(filler, self.concat_pops(),
+                                                                    target=None,
+                                                                    best=self.inc_config)
+                        alt_population = np.concatenate((alt_population, new_pop))
+                        if debug:
+                            print("Mutation population size: {}".format(filler, budget))
 
                     de_traj, de_runtime, de_history = \
                             self.de[budget].evolve_generation(budget=budget,
@@ -5586,19 +5618,30 @@ class AsyncDEHB_1(DEHBBase):
         self.async_strategy = async_strategy
         self.async_strategy = 'random'
 
+    def concat_pops(self, exclude_budget=None):
+        budgets = list(self.budgets)
+        if exclude_budget is not None:
+            budgets.remove(exclude_budget)
+        pop = []
+        for budget in budgets:
+            pop.extend(self.de[budget].population.tolist())
+        return np.array(pop)
+
     def run(self, iterations=1, verbose=False, debug=False):
         # Book-keeping variables
         traj = []
         runtime = []
         history = []
 
-        # List of DE objects corresponding to the budgets (fidelities)
+        # Determining the maximum pop size for a budget subpopulation as per SH
         self._max_pop_size = {}
         for i in range(self.max_SH_iter):
             n, r = self.get_next_iteration(i)
             for j, r_j in enumerate(r):
                 self._max_pop_size[r_j] = \
                     max(n[j], self._max_pop_size[r_j]) if r_j in self._max_pop_size.keys() else n[j]
+
+        # List of DE objects corresponding to the budgets (fidelities)
         self.de = {}
         for i, b in enumerate(self._max_pop_size.keys()):
             self.de[b] = AsyncDE(cs=self.cs, f=self.f, dimensions=self.dimensions,
@@ -5622,6 +5665,15 @@ class AsyncDEHB_1(DEHBBase):
 
             # Number of SH iterations in this DEHB iteration
             num_SH_iters = len(budgets)
+
+            if iteration > 0 and len(self.de[budget].population) < self._max_pop_size[budget]:
+                # the previous iteration should have filled up the population slots
+                # for certain budget spacings, this slot may be empty by one or two slots
+                filler = self._max_pop_size[budget] - len(self.de[budget].population)
+                if debug:
+                    print("Adding {} individual(s) for the budget {}".format(filler, budget))
+                self.de[budget].population, self.de[budget].fitness, self.de[budget].age = \
+                    self.de[budget]._add_random_population(pop_size=filler)
 
             if iteration == 0:  # first HB bracket, first iteration
                 for i_sh in range(num_SH_iters):
@@ -5725,6 +5777,20 @@ class AsyncDEHB_1(DEHBBase):
                     self.de[budget].inc_config = self.inc_config
                     if debug:
                         print("Evolving {} for {}".format(self.de[budget].pop_size, budget))
+
+                    if alt_population is not None and \
+                            len(alt_population) < self.de[budget]._min_pop_size:
+                        filler = self.de[budget]._min_pop_size - len(alt_population) + 1
+                        if debug:
+                            print("Adding {} individuals for mutation on "
+                                  "budget {}".format(filler, budget))
+                        new_pop = \
+                            self.de[budget]._init_mutant_population(filler, self.concat_pops(),
+                                                                    target=None,
+                                                                    best=self.inc_config)
+                        alt_population = np.concatenate((alt_population, new_pop))
+                        if debug:
+                            print("Mutation population size: {}".format(filler, budget))
 
                     de_traj, de_runtime, de_history = \
                             self.de[budget].evolve_generation(budget=budget,
@@ -5778,19 +5844,30 @@ class AsyncDEHB_2(DEHBBase):
         self.async_strategy = async_strategy
         self.async_strategy = 'orig'
 
+    def concat_pops(self, exclude_budget=None):
+        budgets = list(self.budgets)
+        if exclude_budget is not None:
+            budgets.remove(exclude_budget)
+        pop = []
+        for budget in budgets:
+            pop.extend(self.de[budget].population.tolist())
+        return np.array(pop)
+
     def run(self, iterations=1, verbose=False, debug=False):
         # Book-keeping variables
         traj = []
         runtime = []
         history = []
 
-        # List of DE objects corresponding to the budgets (fidelities)
+        # Determining the maximum pop size for a budget subpopulation as per SH
         self._max_pop_size = {}
         for i in range(self.max_SH_iter):
             n, r = self.get_next_iteration(i)
             for j, r_j in enumerate(r):
                 self._max_pop_size[r_j] = \
                     max(n[j], self._max_pop_size[r_j]) if r_j in self._max_pop_size.keys() else n[j]
+
+        # List of DE objects corresponding to the budgets (fidelities)
         self.de = {}
         for i, b in enumerate(self._max_pop_size.keys()):
             self.de[b] = AsyncDE(cs=self.cs, f=self.f, dimensions=self.dimensions,
@@ -5814,6 +5891,15 @@ class AsyncDEHB_2(DEHBBase):
 
             # Number of SH iterations in this DEHB iteration
             num_SH_iters = len(budgets)
+
+            if iteration > 0 and len(self.de[budget].population) < self._max_pop_size[budget]:
+                # the previous iteration should have filled up the population slots
+                # for certain budget spacings, this slot may be empty by one or two slots
+                filler = self._max_pop_size[budget] - len(self.de[budget].population)
+                if debug:
+                    print("Adding {} individual(s) for the budget {}".format(filler, budget))
+                self.de[budget].population, self.de[budget].fitness, self.de[budget].age = \
+                    self.de[budget]._add_random_population(pop_size=filler)
 
             if iteration == 0:  # first HB bracket, first iteration
                 for i_sh in range(num_SH_iters):
@@ -5917,6 +6003,20 @@ class AsyncDEHB_2(DEHBBase):
                     self.de[budget].inc_config = self.inc_config
                     if debug:
                         print("Evolving {} for {}".format(self.de[budget].pop_size, budget))
+
+                    if alt_population is not None and \
+                            len(alt_population) < self.de[budget]._min_pop_size:
+                        filler = self.de[budget]._min_pop_size - len(alt_population) + 1
+                        if debug:
+                            print("Adding {} individuals for mutation on "
+                                  "budget {}".format(filler, budget))
+                        new_pop = \
+                            self.de[budget]._init_mutant_population(filler, self.concat_pops(),
+                                                                    target=None,
+                                                                    best=self.inc_config)
+                        alt_population = np.concatenate((alt_population, new_pop))
+                        if debug:
+                            print("Mutation population size: {}".format(filler, budget))
 
                     de_traj, de_runtime, de_history = \
                             self.de[budget].evolve_generation(budget=budget,

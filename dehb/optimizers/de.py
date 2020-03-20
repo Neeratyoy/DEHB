@@ -499,7 +499,7 @@ class AsyncDE(DEBase):
 
         return self._min_pop_size
 
-    def _add_population(self, pop_size, population=None, fitness=[], age=[]):
+    def _add_random_population(self, pop_size, population=None, fitness=[], age=[]):
         new_pop = self.init_population(pop_size=pop_size)
         new_fitness = np.array([np.inf] * pop_size)
         new_age = np.array([self.max_age] * pop_size)
@@ -514,6 +514,12 @@ class AsyncDE(DEBase):
         age = np.concatenate((age, new_age))
 
         return population, fitness, age
+
+    def _init_mutant_population(self, pop_size, population, target=None, best=None):
+        mutants = np.random.uniform(low=0.0, high=1.0, size=(pop_size, self.dimensions))
+        for i in range(pop_size):
+            mutants[i] = self.mutation(current=target, best=best, alt_pop=population)
+        return mutants
 
     def _new_sample_population(self, size=3, alt_pop=None, target=None):
         population = None
@@ -532,8 +538,13 @@ class AsyncDE(DEBase):
                     population = np.concatenate((population[:i], population[i + 1:]))
                     break
         if len(population) < self._min_pop_size:
+            print("Am I here?")
             filler = self._min_pop_size - len(population)
-            population, _, _ = self._add_population(pop_size=filler, population=population)
+            # population, _, _ = self._add_random_population(pop_size=filler, population=population)
+            new_pop = self.init_population(pop_size=filler)
+            population = np.concatenate((population, new_pop))
+            # population, _, _ = self._add_mutant_population(pop_size=filler, population=population,
+            #                                                target=target, best=self.inc_config)
 
         selection = np.random.choice(np.arange(len(population)), size, replace=False)
         return population[selection]
