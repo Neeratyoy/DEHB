@@ -99,7 +99,7 @@ args = parser.parse_args()
 args.verbose = True if args.verbose == 'True' else False
 args.fix_seed = True if args.fix_seed == 'True' else False
 
-dehbs = {"v0": DEHB_0}
+dehbs = {"0": DEHB_0}
 DEHB = dehbs[args.version]
 
 if args.folder is None:

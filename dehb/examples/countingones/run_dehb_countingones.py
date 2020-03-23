@@ -112,7 +112,7 @@ if args.folder is None:
 else:
     folder = args.folder
 
-dehbs = {"v0": DEHB_0}
+dehbs = {"0": DEHB_0}
 DEHB = dehbs[args.version]
 
 output_path = os.path.join(args.output_path, folder)

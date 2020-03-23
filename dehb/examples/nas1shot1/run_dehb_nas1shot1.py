@@ -109,7 +109,7 @@ for space in spaces:
         return fitness, cost
 
 
-    dehbs = {"v0": DEHB_0}
+    dehbs = {"0": DEHB_0}
     DEHB = dehbs[args.version]
 
     # Initializing DEHB object
