@@ -15,6 +15,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
     max_regret = 0
 
     # finding best found incumbent to be global incumbent
+    min_max_time = []
     global_inc = np.inf
     for index, (m, label) in enumerate(methods):
         for k, i in enumerate(np.arange(n_runs)):
@@ -29,12 +30,17 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                 continue
             if 'de' in m:
                 regret_key =  "validation_score" if regret_type == 'validation' else "test_score"
+                runtime_key = "runtime"
             else:
-                regret_key =  "losses"  # if regret_type == 'validation' else "test_losses"
+                regret_key =  "losses" if regret_type == 'validation' else "test_losses"
+                runtime_key = "cummulative_budget"
             curr_inc = np.min(res[regret_key])
             if curr_inc < global_inc:
                 global_inc = curr_inc
-    print("Found global incumbent: ", global_inc)
+            runtimes.append(np.array(res[regret_key])[i])
+        min_max_time.append(np.cumsum(runtimes)[-1])
+    limit = np.min((min_max_time, limit))
+    print("Found global incumbent: ", global_inc; "\tMin-max time: ", limit)
 
     no_runs_found = False
     # looping and plotting for all methods
