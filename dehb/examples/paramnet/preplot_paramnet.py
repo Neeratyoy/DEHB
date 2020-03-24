@@ -18,6 +18,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
     min_max_time = []
     global_inc = np.inf
     for index, (m, label) in enumerate(methods):
+        runtimes = []
         for k, i in enumerate(np.arange(n_runs)):
             try:
                 if 'de' in m:
@@ -37,10 +38,10 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
             curr_inc = np.min(res[regret_key])
             if curr_inc < global_inc:
                 global_inc = curr_inc
-            runtimes.append(np.array(res[regret_key])[i])
-        min_max_time.append(np.cumsum(runtimes)[-1])
+            runtimes.append(np.cumsum(res[regret_key])[-1])
+        min_max_time.append(np.mean(runtimes))
     limit = np.min((min_max_time, limit))
-    print("Found global incumbent: ", global_inc; "\tMin-max time: ", limit)
+    print("Found global incumbent: ", global_inc, "\tMin-max time: ", limit)
 
     no_runs_found = False
     # looping and plotting for all methods
