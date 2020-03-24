@@ -28,6 +28,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                                                         "{}_run_{}.pkl".format(m, i)), 'rb'))
             except Exception as e:
                 print(m, i, e)
+                runtimes.append(limit)
                 continue
             if 'de' in m:
                 regret_key =  "validation_score" if regret_type == 'validation' else "test_score"
@@ -40,7 +41,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                 global_inc = curr_inc
             runtimes.append(np.cumsum(res[regret_key])[-1])
         min_max_time.append(np.mean(runtimes))
-    limit = np.min((min_max_time, limit))
+    limit = np.min((np.min(min_max_time), limit))
     print("Found global incumbent: ", global_inc, "\tMin-max time: ", limit)
 
     no_runs_found = False
