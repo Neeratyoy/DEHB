@@ -146,7 +146,7 @@ if args.folder is None:
 else:
     folder = args.folder
 
-output_path = os.path.join(args.output_path, args.dataset, args.folder)
+output_path = os.path.join(args.output_path, args.dataset, folder)
 os.makedirs(output_path, exist_ok=True)
 
 # Loading NAS-201
