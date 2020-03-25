@@ -123,6 +123,18 @@ args = parser.parse_args()
 output_path = os.path.join(args.output_path, "hyperband")
 os.makedirs(os.path.join(output_path), exist_ok=True)
 
+# Loading NAS-201
+api = API(args.data_dir)
+search_space = get_search_spaces('cell', 'nas-bench-201')
+
+# Parameter space to be used by DE
+cs = get_configuration_space(args.max_nodes, search_space)
+dimensions = len(cs.get_hyperparameters())
+config2structure = config2structure_func(args.max_nodes)
+
+y_star_valid, y_star_test = find_nas201_best(api, dataset)
+inc_config = cs.get_default_configuration().get_array().tolist()
+
 class MyWorker(Worker):
     def compute(self, config, budget, **kwargs):
         global dataset, api
