@@ -191,7 +191,10 @@ dehb = DEHB(cs=cs, dimensions=dimensions, f=f, strategy=args.strategy,
             mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
             eta=args.eta, min_budget=min_budget, max_budget=max_budget,
             generations=args.gens)
-
+# Initializing DE object
+de = DE(cs=cs, dimensions=dimensions, f=f, pop_size=10,
+        mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
+        strategy=args.strategy, budget=args.max_budget)
 
 if args.runs is None:  # for a single run
     if not args.fix_seed:
