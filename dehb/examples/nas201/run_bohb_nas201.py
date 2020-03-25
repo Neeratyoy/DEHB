@@ -115,12 +115,20 @@ parser.add_argument('--num_samples', default=64, type=int, nargs='?',
                     help='number of samples for the acquisition function')
 parser.add_argument('--random_fraction', default=.33, type=float, nargs='?',
                     help='fraction of random configurations')
+parser.add_argument('--min_budget', default=11, type=int, nargs='?',
+                    help='minimum budget for NASBench-201')
+parser.add_argument('--max_budget', default=199, type=int, nargs='?',
+                    help='maximum budget for NASBench-201')
+parser.add_argument('--eta', default=3, type=int, nargs='?',
+                    help='HB eta')
 parser.add_argument('--folder', default='bohb', type=str, nargs='?',
                     help='name of folder where files will be dumped')
 parser.add_argument('--bandwidth_factor', default=3, type=int, nargs='?',
                     help='factor multiplied to the bandwidth')
 
 args = parser.parse_args()
+min_budget = args.min_budget
+max_budget = args.max_budget
 
 output_path = os.path.join(args.output_path, args.dataset, args.folder)
 os.makedirs(os.path.join(output_path), exist_ok=True)
@@ -201,7 +209,6 @@ for run_id in range(runs):
     NS.shutdown()
 
     fh = open(os.path.join(output_path, 'bohb_run_%d.pkl' % run_id), 'w')
-    pickle.dump(res, fh)
+    pickle.dump(results, fh)
     fh.close()
     print("Run saved. Resetting...")
-    b.reset_tracker()
