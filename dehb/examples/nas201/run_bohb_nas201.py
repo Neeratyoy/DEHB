@@ -105,8 +105,8 @@ parser.add_argument('--n_iters', default=5, type=int, nargs='?',
 parser.add_argument('--output_path', default="./results", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
 parser.add_argument('--data_dir', type=str, nargs='?',
-                    default="../nas_benchmarks-development/tabular_benchmarks/"
-                    "fcnet_tabular_benchmarks/", help='specifies the path to the tabular data')
+                    default="../nas201/NAS-Bench-201-v1_1-096897.pth",
+                    help='specifies the path to the tabular data')
 parser.add_argument('--strategy', default="sampling", type=str, nargs='?',
                     help='optimization strategy for the acquisition function')
 parser.add_argument('--min_bandwidth', default=.3, type=float, nargs='?',
