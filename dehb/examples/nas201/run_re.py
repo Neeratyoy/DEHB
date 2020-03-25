@@ -87,7 +87,7 @@ def train_and_eval(arch, nas_bench, extra_info, dataname='cifar10-valid', use_co
     # It did return values for cifar100 and ImageNet16-120, but it has some potential issues. (Please email me for more details)
     arch_index, nepoch = nas_bench.query_index_by_arch( arch ), 199
     assert arch_index >= 0, 'can not find this arch : {:}'.format(arch)
-    info = api.get_more_info(arch_index, dataname, iepoch=max_budget,
+    info = nas_bench.get_more_info(arch_index, dataname, iepoch=max_budget,
                              use_12epochs_result=False, is_random=True)
     try:
       valid_acc = info['valid-accuracy']

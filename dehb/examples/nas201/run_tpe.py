@@ -78,7 +78,7 @@ def f(config, budget=199):
     nums = {'ImageNet16-120-train': 151700, 'ImageNet16-120-valid': 3000,
           'cifar10-valid-train' : 25000,  'cifar10-valid-valid' : 25000,
           'cifar100-train'      : 50000,  'cifar100-valid'      : 5000}
-    info = api.get_more_info(arch_index, dataset, iepoch=budget,
+    info = nas_bench.get_more_info(arch_index, dataset, iepoch=budget,
                              use_12epochs_result=False, is_random=True)
     try:
       val_score = info['valid-accuracy']
