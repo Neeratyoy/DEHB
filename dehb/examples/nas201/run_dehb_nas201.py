@@ -120,7 +120,7 @@ parser.add_argument('--mutation_factor', default=0.5, type=float, nargs='?',
                     help='mutation factor value')
 parser.add_argument('--crossover_prob', default=0.5, type=float, nargs='?',
                     help='probability of crossover')
-parser.add_argument('--min_budget', default=0, type=int, nargs='?',
+parser.add_argument('--min_budget', default=1, type=int, nargs='?',
                     help='minimum budget')
 parser.add_argument('--max_budget', default=199, type=int, nargs='?',
                     help='maximum budget')
