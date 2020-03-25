@@ -115,12 +115,14 @@ parser.add_argument('--num_samples', default=64, type=int, nargs='?',
                     help='number of samples for the acquisition function')
 parser.add_argument('--random_fraction', default=.33, type=float, nargs='?',
                     help='fraction of random configurations')
+parser.add_argument('--folder', default='bohb', type=str, nargs='?',
+                    help='name of folder where files will be dumped')
 parser.add_argument('--bandwidth_factor', default=3, type=int, nargs='?',
                     help='factor multiplied to the bandwidth')
 
 args = parser.parse_args()
 
-output_path = os.path.join(args.output_path, "bohb")
+output_path = os.path.join(args.output_path, args.dataset, args.folder)
 os.makedirs(os.path.join(output_path), exist_ok=True)
 
 # Loading NAS-201
