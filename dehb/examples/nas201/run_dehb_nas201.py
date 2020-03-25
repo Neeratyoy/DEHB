@@ -128,7 +128,7 @@ parser.add_argument('--eta', default=3, type=int, nargs='?',
                     help='hyperband eta')
 parser.add_argument('--verbose', default='False', choices=['True', 'False'], nargs='?', type=str,
                     help='to print progress or not')
-parser.add_argument('--folder', default='dehb', type=str, nargs='?',
+parser.add_argument('--folder', default=None, type=str, nargs='?',
                     help='name of folder where files will be dumped')
 parser.add_argument('--version', default="0", type=str, nargs='?',
                     help='DEHB version to run')
@@ -141,6 +141,11 @@ max_budget = args.max_budget
 dataset = args.dataset
 
 # Directory where files will be written
+if args.folder is None:
+    folder = "dehb_v{}".format(args.version)
+else:
+    folder = args.folder
+
 output_path = os.path.join(args.output_path, args.dataset, args.folder)
 os.makedirs(output_path, exist_ok=True)
 
