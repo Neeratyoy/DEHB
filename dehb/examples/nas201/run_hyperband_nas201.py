@@ -100,6 +100,8 @@ parser.add_argument('--runs', default=1, type=int, nargs='?',
 parser.add_argument('--dataset', default='cifar10-valid', type=str, nargs='?',
                     choices=['cifar10-valid', 'cifar100', 'ImageNet16-120'],
                     help='choose the dataset')
+parser.add_argument('--max_nodes', default=4, type=int, nargs='?',
+                    help='maximum number of nodes in the cell')
 parser.add_argument('--n_iters', default=5, type=int, nargs='?',
                     help='number of iterations for optimization method')
 parser.add_argument('--output_path', default="./results", type=str, nargs='?',
