@@ -9,6 +9,7 @@ sys.path.append(os.path.join(os.getcwd(), '../AutoDL-Projects/lib/'))
 
 import json
 import pickle
+import logging
 import argparse
 import numpy as np
 import ConfigSpace
@@ -103,8 +104,9 @@ parser.add_argument('--n_iters', default=5, type=int, nargs='?',
                     help='number of iterations for optimization method')
 parser.add_argument('--output_path', default="./results", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
-parser.add_argument('--data_dir', default="../tabular_benchmarks/fcnet_tabular_benchmarks/",
-                    type=str, nargs='?', help='specifies the path to the tabular data')
+parser.add_argument('--data_dir', type=str, nargs='?',
+                    default="../nas_benchmarks-development/tabular_benchmarks/"
+                    "fcnet_tabular_benchmarks/", help='specifies the path to the tabular data')
 parser.add_argument('--strategy', default="sampling", type=str, nargs='?',
                     help='optimization strategy for the acquisition function')
 parser.add_argument('--min_bandwidth', default=.3, type=float, nargs='?',
