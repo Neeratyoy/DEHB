@@ -131,6 +131,7 @@ parser.add_argument('--bandwidth_factor', default=3, type=int, nargs='?',
 args = parser.parse_args()
 min_budget = args.min_budget
 max_budget = args.max_budget
+dataset = args.dataset
 
 output_path = os.path.join(args.output_path, args.dataset, args.folder)
 os.makedirs(os.path.join(output_path), exist_ok=True)
