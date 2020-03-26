@@ -70,16 +70,8 @@ def f(config, budget=199):
       budget = int(budget)
     # From https://github.com/D-X-Y/AutoDL-Projects/blob/master/exps/algos/R_EA.py
     ## Author: https://github.com/D-X-Y [Xuanyi.Dong@student.uts.edu.au]
-    xoinfo = nas_bench.get_more_info(arch_index, 'cifar10-valid', None, True)
-    xocost = nas_bench.get_cost_info(arch_index, 'cifar10-valid', False)
-    info = nas_bench.get_more_info(arch_index, dataset, budget, False, True)
-    cost = nas_bench.get_cost_info(arch_index, dataset, False)
-
-    nums = {'ImageNet16-120-train': 151700, 'ImageNet16-120-valid': 3000,
-          'cifar10-valid-train' : 25000,  'cifar10-valid-valid' : 25000,
-          'cifar100-train'      : 50000,  'cifar100-valid'      : 5000}
     info = nas_bench.get_more_info(arch_index, dataset, iepoch=budget,
-                             use_12epochs_result=False, is_random=True)
+                                   use_12epochs_result=False, is_random=True)
     try:
       val_score = info['valid-accuracy']
     except:

@@ -74,7 +74,7 @@ def find_nas201_best(api, dataset):
 #       In this case, the LR schedular is converged.
 # For use_converged_LR = False, the architecture is planed to be trained for 200 epochs, but we early stop its procedure.
 #
-def train_and_eval(arch, nas_bench, extra_info, dataname='cifar10-valid', use_converged_LR=False):
+def train_and_eval(arch, nas_bench, extra_info, dataname='cifar10-valid', use_converged_LR=True):
   global max_budget
   if use_converged_LR and nas_bench is not None:
     arch_index = nas_bench.query_index_by_arch( arch )

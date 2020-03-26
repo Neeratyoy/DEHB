@@ -211,7 +211,6 @@ for run_id in range(runs):
     NS.shutdown()
 
     fh = open(os.path.join(output_path, 'hyperband_run_%d.pkl' % run_id), 'w')
-    pickle.dump(res, fh)
+    pickle.dump(results, fh)
     fh.close()
     print("Run saved. Resetting...")
-    b.reset_tracker()

@@ -77,7 +77,7 @@ def find_nas201_best(api, dataset):
 #       In this case, the LR schedular is converged.
 # For use_converged_LR = False, the architecture is planed to be trained for 200 epochs, but we early stop its procedure.
 #
-def train_and_eval(arch, nas_bench, dataname='cifar10-valid', use_converged_LR=False):
+def train_and_eval(arch, nas_bench, dataname='cifar10-valid', use_converged_LR=True):
   global max_budget
   if use_converged_LR and nas_bench is not None:
     arch_index = nas_bench.query_index_by_arch( arch )
@@ -91,19 +91,19 @@ def train_and_eval(arch, nas_bench, dataname='cifar10-valid', use_converged_LR=F
     arch_index, nepoch = nas_bench.query_index_by_arch( arch ), 199
     assert arch_index >= 0, 'can not find this arch : {:}'.format(arch)
     info = nas_bench.get_more_info(arch_index, dataname, iepoch=max_budget,
-                             use_12epochs_result=False, is_random=True)
+                                   use_12epochs_result=False, is_random=True)
     try:
-      fitness = info['valid-accuracy']
+      valid_acc = info['valid-accuracy']
     except:
-      fitness = info['valtest-accuracy']
+      valid_acc = info['valtest-accuracy']
 
-    cost = info['train-all-time']
+    time_cost = info['train-all-time']
     try:
-      cost += info['valid-all-time']
+      time_cost += info['valid-all-time']
     except:
-      cost += info['valtest-all-time']
+      time_cost += info['valtest-all-time']
 
-    fitness = 1 - fitness / 100
+    valid_acc = 1 - valid_acc / 100
   else:
     # train a model from scratch.
     raise ValueError('NOT IMPLEMENT YET')
