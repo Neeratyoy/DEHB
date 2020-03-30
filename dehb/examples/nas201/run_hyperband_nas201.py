@@ -23,6 +23,9 @@ from hpbandster.core.worker import Worker
 from nas_201_api import NASBench201API as API
 from models import CellStructure, get_search_spaces
 
+sys.path.append('dehb/examples/')
+from utils import util
+
 from dehb import DE
 
 
@@ -150,7 +153,7 @@ inc_config = cs.get_default_configuration().get_array().tolist()
 
 class MyWorker(Worker):
     def compute(self, config, budget, **kwargs):
-        global dataset, api
+        global dataset, api, max_budget
         structure = config2structure(config)
         arch_index = api.query_index_by_arch(structure)
         if budget is not None:
@@ -171,9 +174,14 @@ class MyWorker(Worker):
             cost += info['valtest-all-time']
 
         fitness = 1 - fitness / 100
+
+        info = api.get_more_info(arch_index, dataset, iepoch=max_budget,
+                                 use_12epochs_result=False, is_random=False)
+        test_score = 1 - info['test-accuracy'] / 100
         return ({
             'loss': float(fitness),
-            'info': float(cost)})
+            'info': {'cost': float(cost), 'test_loss': float(test_score)}
+        })
 
 
 runs = args.runs
@@ -212,6 +220,6 @@ for run_id in range(runs):
     NS.shutdown()
 
     fh = open(os.path.join(output_path, 'hyperband_run_%d.pkl' % run_id), 'w')
-    pickle.dump(results, fh)
+    pickle.dump(util.extract_results_to_pickle(results), fh)
     fh.close()
     print("Run saved. Resetting...")
