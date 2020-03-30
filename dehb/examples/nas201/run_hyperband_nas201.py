@@ -4,8 +4,6 @@
 
 import os
 import sys
-sys.path.append(os.path.join(os.getcwd(), '../nas201/'))
-sys.path.append(os.path.join(os.getcwd(), '../AutoDL-Projects/lib/'))
 
 import json
 import pickle
@@ -20,11 +18,13 @@ from hpbandster.optimizers.hyperband import HyperBand
 import hpbandster.core.nameserver as hpns
 from hpbandster.core.worker import Worker
 
-from nas_201_api import NASBench201API as API
-from models import CellStructure, get_search_spaces
-
 sys.path.append('dehb/examples/')
 from utils import util
+
+sys.path.append(os.path.join(os.getcwd(), '../nas201/'))
+sys.path.append(os.path.join(os.getcwd(), '../AutoDL-Projects/lib/'))
+from nas_201_api import NASBench201API as API
+from models import CellStructure, get_search_spaces
 
 from dehb import DE
 
