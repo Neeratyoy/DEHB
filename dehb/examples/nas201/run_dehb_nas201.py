@@ -217,7 +217,7 @@ else:  # for multiple runs
         if args.verbose:
             print("\nRun #{:<3}\n{}".format(run_id + 1, '-' * 8))
         # Running DE iterations
-        traj, runtime, history = dehb.run(generations=args.gens, verbose=args.verbose)
+        traj, runtime, history = dehb.run(iterations=args.iter, verbose=args.verbose)
         res = calculate_regrets(history, runtime)
         fh = open(os.path.join(output_path, 'run_{}.json'.format(run_id)), 'w')
         json.dump(res, fh)
