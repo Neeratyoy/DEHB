@@ -216,7 +216,7 @@ for run_id in range(runs):
     HB.shutdown(shutdown_workers=True)
     NS.shutdown()
 
-    fh = open(os.path.join(output_path, 'hyperband_run_%d.pkl' % run_id), 'w')
+    fh = open(os.path.join(output_path, 'hyperband_run_%d.pkl' % run_id), 'wb')
     pickle.dump(util.extract_results_to_pickle(results), fh)
     fh.close()
     print("Run saved. Resetting...")
