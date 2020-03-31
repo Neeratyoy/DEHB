@@ -198,7 +198,7 @@ def config2structure_func(max_nodes):
   return config2structure
 
 
-data_dir = "../nas_benchmarks-development/tabular_benchmarks/fcnet_tabular_benchmarks/"
+data_dir = "../nas201/NAS-Bench-201-v1_1-096897.pth"
 api = API(data_dir)
 search_space = get_search_spaces('cell', 'nas-bench-201')
 
