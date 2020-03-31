@@ -76,7 +76,7 @@ def fill_trajectory(performance_list, time_list, replace_nan=np.NaN):
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--benchmark', default='101', type=str, nargs='?',
-                    choices=['101', '1shot1', 'paramnet', 'svm', 'countingones'],
+                    choices=['101', '1shot1', '201', 'paramnet', 'svm', 'countingones'],
                     help='select benchmark to plot')
 parser.add_argument('--bench_type', default='protein', type=str, nargs='?',
                     help='select subset of benchmark to plot')
@@ -113,21 +113,24 @@ bench_type = args.bench_type
 if benchmark == '101':
     from dehb.examples.nas101 import create_plot
 
-if benchmark == '1shot1' and bench_type not in ["1", "2", "3"]:
+elif benchmark == '1shot1' and bench_type not in ["1", "2", "3"]:
     print("Specify \'--bench_type\' from {1, 2, 3} for choosing the search space for 1shot1.")
     sys.exit()
 elif benchmark == '1shot1' :
     ssp = bench_type
     from dehb.examples.nas1shot1 import create_plot
 
-if benchmark == 'countingones':
+elif benchmark == 'countingones':
     from dehb.examples.countingones import create_plot
 
-if benchmark == 'paramnet':
+elif benchmark == 'paramnet':
     from dehb.examples.paramnet import create_plot
 
-if benchmark == 'svm':
+elif benchmark == 'svm':
     from dehb.examples.svm import create_plot
+
+elif benchmark == '201':
+    from dehb.examples.nas201 import create_plot   
 
 
 # Loading file for algo list
