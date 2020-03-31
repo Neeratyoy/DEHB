@@ -198,7 +198,7 @@ parser.add_argument('--run_id', default=0, type=int, nargs='?',
                     help='unique number to identify this run')
 parser.add_argument('--output_path', default="./results/", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
-parser.add_argument('--data_dir', default="../nas201/NAS-Bench-201-v1_0-e61699.pth",
+parser.add_argument('--data_dir', default="../nas201/NAS-Bench-201-v1_1-096897.pth",
                     type=str, nargs='?', help='specifies the path to the tabular data')
 parser.add_argument('--time_budget', default=1e7, type=float, nargs='?', help='time budget')
 parser.add_argument('--min_budget', default=11, type=int, nargs='?',

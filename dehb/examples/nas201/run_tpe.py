@@ -85,10 +85,12 @@ def f(config, budget=199):
 
     val_score = 1 - val_score / 100
 
-    info = nas_bench.get_more_info(arch_index, dataset, max_budget, False, False)
+    info = nas_bench.get_more_info(arch_index, dataset, iepoch=max_budget,
+                                   use_12epochs_result=False, is_random=False)
     test_score = 1 - info['test-accuracy'] / 100
 
     return val_score, cost, test_score
+
 
 def convert_to_json(results):
     global y_star_valid, y_star_test
@@ -132,7 +134,7 @@ parser.add_argument('--n_iters', default=10, type=int, nargs='?',
                     help='number of iterations for optimization method')
 parser.add_argument('--output_path', default="./results/", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
-parser.add_argument('--data_dir', default="../nas201/NAS-Bench-201-v1_0-e61699.pth",
+parser.add_argument('--data_dir', default="../nas201/NAS-Bench-201-v1_1-096897.pth",
                     type=str, nargs='?', help='specifies the path to the tabular data')
 parser.add_argument('--min_budget', default=11, type=int, nargs='?',
                     help='minimum budget for BOHB')
