@@ -132,7 +132,11 @@ class DEBase():
                 param_value = hyper.choices[np.where((vector[i] < ranges) == False)[0][-1]]
             else:  # handles UniformFloatHyperparameter & UniformIntegerHyperparameter
                 # rescaling continuous values
-                param_value = hyper.lower + (hyper.upper - hyper.lower) * vector[i]
+                if hyper.log:
+                    log_range = np.log(hyper.upper) - np.log(hyper.lower)
+                    param_value = np.exp(np.log(hyper.lower) + vector[i] * log_range)
+                else:
+                    param_value = hyper.lower + (hyper.upper - hyper.lower) * vector[i]
                 if type(hyper) == ConfigSpace.UniformIntegerHyperparameter:
                     param_value = np.round(param_value).astype(int)   # converting to discrete (int)
             new_config[hyper.name] = param_value
