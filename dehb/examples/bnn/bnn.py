@@ -1,6 +1,9 @@
 import os
-import argparse
+import sys
+sys.path.append(os.path.join(os.getcwd(), '../HpBandSter/icml_2018_experiments/experiments'))
+sys.path.append(os.path.join(os.getcwd(), 'dehb/examples/'))
 
+import argparse
 import numpy as np
 
 from workers.bnn import BNNWorker as Worker
