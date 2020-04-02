@@ -11,10 +11,6 @@ import sys
 sys.path.append(os.path.join(os.getcwd(), 'dehb/utils'))
 from plot_mds import vector_to_configspace, get_mds
 
-import os
-import sys
-sys.path.append(os.path.join(os.getcwd(), 'dehb/utils'))
-from plot_mds import vector_to_configspace, get_mds
 sys.path.append(os.path.join(os.getcwd(), 'dehb/examples/svm'))
 from run_dehb_svm import f
 

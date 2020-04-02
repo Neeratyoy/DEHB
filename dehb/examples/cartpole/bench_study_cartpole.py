@@ -4,19 +4,15 @@ from matplotlib import cm as CM
 from matplotlib import pyplot as plt
 from scipy.stats import spearmanr as corr
 
-from hpolib.benchmarks.surrogates.svm import SurrogateSVM as surrogate
+from hpolib.benchmarks.rl.cartpole import CartpoleReduced as surrogate
 
 import os
 import sys
 sys.path.append(os.path.join(os.getcwd(), 'dehb/utils'))
 from plot_mds import vector_to_configspace, get_mds
 
-import os
-import sys
-sys.path.append(os.path.join(os.getcwd(), 'dehb/utils'))
-from plot_mds import vector_to_configspace, get_mds
-sys.path.append(os.path.join(os.getcwd(), 'dehb/examples/svm'))
-from run_dehb_svm import f
+sys.path.append(os.path.join(os.getcwd(), 'dehb/examples/cartpole'))
+from run_dehb_cartpole import f
 
 
 ################
@@ -131,16 +127,16 @@ def plot_budget_landscape(budgets, sample_size=1000, output=None):
 # SVM #
 #######
 
-sample_size = 2500
-name = 'svm'
+sample_size = 100
+name = 'cartpole'
 
 b = surrogate()
 cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
-budgets = [0.00411523, 0.01234568, 0.03703704, 0.11111111, 0.33333333, 1.]
+budgets = [1, 3, 9]
 
 plot_budget_landscape(budgets, sample_size=sample_size,
-                      output='dehb/examples/plots/landscape/svm.png')
+                      output='dehb/examples/plots/landscape/{}.png'.format(name))
 # final_score_relation(sample_size=10000, output='dehb/examples/plots/correlation/svm_test_val.png')
 # budget_correlation(sample_size=10000, budgets=budgets, compare=True,
 #                    output='dehb/examples/plots/correlation/svm_true.png')
