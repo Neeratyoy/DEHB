@@ -100,7 +100,7 @@ max_budget = args.max_budget
 
 # Directory where files will be written
 folder = "de_pop{}".format(args.pop_size) if args.folder is None else args.folder
-output_path = os.path.join(args.output_path, args.dataset, args.folder)
+output_path = os.path.join(args.output_path, args.folder)
 os.makedirs(output_path, exist_ok=True)
 
 # Parameter space to be used by DE
