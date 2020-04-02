@@ -87,7 +87,7 @@ parser.add_argument('--crossover_prob', default=0.5, type=float, nargs='?',
                     help='probability of crossover')
 parser.add_argument('--pop_size', default=20, type=int, nargs='?',
                     help='population size')
-parser.add_argument('--max_budget', default=9, type=int, nargs='?',
+parser.add_argument('--max_budget', default=10000, type=int, nargs='?',
                     help='maximum budget')
 parser.add_argument('--verbose', default='False', choices=['True', 'False'], nargs='?', type=str,
                     help='to print progress or not')
