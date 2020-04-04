@@ -13,7 +13,7 @@ import ConfigSpace
 from hpolib.benchmarks.rl.cartpole import CartpoleReduced as surrogate
 
 from dehb import DE
-from dehb import DEHB_0
+from dehb import DEHB_0, DEHB_1
 
 
 # Common objective function for DE & DEHB representing Cartpole RL surrogates
@@ -124,7 +124,7 @@ b = surrogate()
 cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
 
-dehbs = {"0": DEHB_0}
+dehbs = {"0": DEHB_0, "1": DEHB_1}
 DEHB = dehbs[args.version]
 
 # Initializing DEHB object

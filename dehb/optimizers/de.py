@@ -542,12 +542,10 @@ class AsyncDE(DEBase):
                     population = np.concatenate((population[:i], population[i + 1:]))
                     break
         if len(population) < self._min_pop_size:
+            # compensate if target was part of the population and deleted earlier
             filler = self._min_pop_size - len(population)
-            # population, _, _ = self._add_random_population(pop_size=filler, population=population)
             new_pop = self.init_population(pop_size=filler)
             population = np.concatenate((population, new_pop))
-            # population, _, _ = self._add_mutant_population(pop_size=filler, population=population,
-            #                                                target=target, best=self.inc_config)
 
         selection = np.random.choice(np.arange(len(population)), size, replace=False)
         return population[selection]
