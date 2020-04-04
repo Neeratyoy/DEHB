@@ -11,12 +11,10 @@ try:
 	import tensorforce
 	import gym
 except ImportError:
-	raise ImportError("You need to install 'tensorforce' and the OpenAI 'gym' package for this benchmark!")
+	raise ImportError("You need to install 'tensorforce' and the OpenAI 'gym' package"
+                      " for this benchmark!")
 except:
 	raise
-
-
-
 
 from workers.cartpole import CartpoleReducedWorker as Worker
 import util
@@ -31,14 +29,19 @@ logging.basicConfig(level=logging.DEBUG)
 ################################################################################
 
 
-parser = argparse.ArgumentParser(description='Run different optimizers on the CountingOnes problem.', conflict_handler='resolve')
+parser = argparse.ArgumentParser(conflict_handler='resolve',
+                                 description='Run different optimizers on the '
+                                             'CountingOnes problem.')
 parser = util.standard_parser_args(parser)
 
 
 # add benchmark specific arguments
-parser.add_argument('--min_budget', type=int, help='Minimum number of independent runs to estimate mean loss.', default=1)
-parser.add_argument('--max_budget', type=int, help='Maximum number of independent runs to estimate mean loss.', default=9)
-parser.add_argument('--num_iterations', type=int, help='number of Hyperband iterations performed.', default=16)
+parser.add_argument('--min_budget', type=int, default=1,
+                    help='Minimum number of independent runs to estimate mean loss.')
+parser.add_argument('--max_budget', type=int, default=9,
+                    help='Maximum number of independent runs to estimate mean loss.')
+parser.add_argument('--num_iterations', type=int, default=16,
+                    help='number of Hyperband iterations performed.')
 
 args = parser.parse_args()
 
@@ -46,7 +49,7 @@ args = parser.parse_args()
 worker = Worker(measure_test_loss=False, run_id=args.run_id)
 
 # directory where the results are stored
-dest_dir = os.path.join(args.dest_dir, "cartpole")
+dest_dir = os.path.join(args.dest_dir, args.method)
 
 # SMAC can be informed whether the objective is deterministic or not
 smac_deterministic = True
