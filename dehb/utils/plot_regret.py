@@ -130,7 +130,7 @@ elif benchmark == 'svm':
     from dehb.examples.svm import create_plot
 
 elif benchmark == '201':
-    from dehb.examples.nas201 import create_plot   
+    from dehb.examples.nas201 import create_plot
 
 
 # Loading file for algo list
