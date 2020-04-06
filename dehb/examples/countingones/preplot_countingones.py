@@ -18,6 +18,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
     ## example path expected: 'dehb/examples/countingones/results/4+4/'
     dim1, dim2 = path.replace('/', ' ').strip().split(' ')[-1].split('+')
     d = int(dim1) + int(dim2)
+    max_budget = 93312 / dimensions
 
     no_runs_found = False
     # looping and plotting for all methods
@@ -49,7 +50,8 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
             _, idx = np.unique(curr_regret, return_index=True)
             idx.sort()
             regret.append(curr_regret[idx])
-            runtimes.append(np.array(res[runtime_key])[idx])
+            # runtimes.append(np.array(res[runtime_key])[idx])
+            runtimes.append(np.array(res[runtime_key])[idx] / max_budget)
 
         if not no_runs_found:
             # finds the latest time where the first measurement was made across runs
