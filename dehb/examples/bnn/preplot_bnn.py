@@ -15,26 +15,26 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
     max_regret = 0
 
     # finding best found incumbent to be global incumbent
-    global_inc = np.inf
-    for index, (m, label) in enumerate(methods):
-        for k, i in enumerate(np.arange(n_runs)):
-            try:
-                if 'de' in m:
-                    res = json.load(open(os.path.join(path, m, "run_{}.json".format(i))))
-                else:
-                    res = pickle.load(open(os.path.join(path, m,
-                                                        "{}_run_{}.pkl".format(m, i)), 'rb'))
-            except Exception as e:
-                print(m, i, e)
-                continue
-            if 'de' in m:
-                regret_key =  "regret_validation" if regret_type == 'validation' else "regret_test"
-            else:
-                regret_key =  "losses" if regret_type == 'validation' else "test_losses"
-            curr_inc = np.min(res[regret_key])
-            if curr_inc < global_inc:
-                global_inc = curr_inc
-    print("Global incumbent: ", global_inc)
+    # global_inc = np.inf
+    # for index, (m, label) in enumerate(methods):
+    #     for k, i in enumerate(np.arange(n_runs)):
+    #         try:
+    #             if 'de' in m:
+    #                 res = json.load(open(os.path.join(path, m, "run_{}.json".format(i))))
+    #             else:
+    #                 res = pickle.load(open(os.path.join(path, m,
+    #                                                     "{}_run_{}.pkl".format(m, i)), 'rb'))
+    #         except Exception as e:
+    #             print(m, i, e)
+    #             continue
+    #         if 'de' in m:
+    #             regret_key =  "regret_validation" if regret_type == 'validation' else "regret_test"
+    #         else:
+    #             regret_key =  "losses" if regret_type == 'validation' else "test_losses"
+    #         curr_inc = np.min(res[regret_key])
+    #         if curr_inc < global_inc:
+    #             global_inc = curr_inc
+    # print("Global incumbent: ", global_inc)
 
     no_runs_found = False
     # looping and plotting for all methods
@@ -55,7 +55,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                 no_runs_found = True
                 continue
             if 'de' in m:
-                regret_key =  "validation_score" if regret_type == 'validation' else "test_score"
+                regret_key =  "regret_validation" if regret_type == 'validation' else "regret_test"
                 runtime_key = "runtime"
             else:
                 regret_key =  "losses" if regret_type == 'validation' else "test_losses"
