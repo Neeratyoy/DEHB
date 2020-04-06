@@ -76,7 +76,8 @@ def fill_trajectory(performance_list, time_list, replace_nan=np.NaN):
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--benchmark', default='101', type=str, nargs='?',
-                    choices=['101', '1shot1', '201', 'paramnet', 'svm', 'countingones'],
+                    choices=['101', '1shot1', '201', 'paramnet', 'svm',
+                             'countingones', 'rl', 'bnn'],
                     help='select benchmark to plot')
 parser.add_argument('--bench_type', default='protein', type=str, nargs='?',
                     help='select subset of benchmark to plot')
@@ -131,6 +132,12 @@ elif benchmark == 'svm':
 
 elif benchmark == '201':
     from dehb.examples.nas201 import create_plot
+
+elif benchmark == 'rl':
+    from dehb.examples.cartpole import create_plot
+
+elif benchmark == 'bnn':
+    from dehb.examples.bnn import create_plot
 
 
 # Loading file for algo list
