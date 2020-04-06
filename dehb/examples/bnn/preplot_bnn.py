@@ -28,7 +28,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                 print(m, i, e)
                 continue
             if 'de' in m:
-                regret_key =  "validation_score" if regret_type == 'validation' else "test_score"
+                regret_key =  "regret_validation" if regret_type == 'validation' else "regret_test"
             else:
                 regret_key =  "losses" if regret_type == 'validation' else "test_losses"
             curr_inc = np.min(res[regret_key])
