@@ -39,7 +39,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
             curr_inc = np.min(res[regret_key])
             if curr_inc < global_inc:
                 global_inc = curr_inc
-            runtimes.append(np.min(np.cumsum(res[runtime_key])[-1], limit))
+            runtimes.append(np.min((np.cumsum(res[runtime_key])[-1], limit)))
         min_max_time.append(np.mean(runtimes))
     limit = np.min((np.min(min_max_time), limit))
     print("Found global incumbent: ", global_inc, "\tMin-max time: ", limit)

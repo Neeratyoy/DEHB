@@ -1,1 +1,1 @@
-[('de_pop20', 'DE $pop=20$'), ('dehb_v4.2', 'DEHB $v4.2$'), ('dehb_v6.3.3', 'DEHB $v6.3.3$'), ('dehb_va0', 'Async DEHB $v0$'), ('dehb_va1', 'Async DEHB $v1$'), ('dehb_va2', 'Async DEHB $v2$')]
+[('hyperband', 'HB'), ('bohb', 'BOHB'), ('de_pop20', 'DE $pop=20$'), ('dehb_v0', 'DEHB $v0$'), ('dehb_v1', 'DEHB $v1$')]
