@@ -22,7 +22,6 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
         runtimes = []
         for k, i in enumerate(np.arange(n_runs)):
             try:
-                if 'de' in m:
                 if m in ['bohb', 'hyperband']:
                     res = pickle.load(open(os.path.join(path, m,
                                                         "{}_run_{}.pkl".format(m, i)), 'rb'))
