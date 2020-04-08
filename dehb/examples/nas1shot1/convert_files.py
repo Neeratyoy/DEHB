@@ -88,6 +88,10 @@ for i in range(n_runs):
         with open(os.path.join(path, '{}/{}/'
                   'DE_{}_ssp_{}_seed_{}.obj'.format(algo, ssp, i, ssp, i)), 'rb') as f:
             res = pickle.load(f)
+    elif 'scipy' in algo:
+        with open(os.path.join(path, '{}/{}/'
+                  'DE_{}_ssp_{}_seed_{}.obj'.format(algo, ssp, i, ssp, i)), 'rb') as f:
+            res = pickle.load(f)
 
     all_runs = []
     for j in range(len(res)):
