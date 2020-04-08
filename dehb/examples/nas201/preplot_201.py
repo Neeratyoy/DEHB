@@ -1,5 +1,6 @@
 import os
 import json
+import pickle
 import numpy as np
 from scipy import stats
 
@@ -22,10 +23,11 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
         for k, i in enumerate(np.arange(n_runs)):
             try:
                 if 'de' in m:
-                    res = json.load(open(os.path.join(path, m, "run_{}.json".format(i))))
-                else:
+                if m in ['bohb', 'hyperband']:
                     res = pickle.load(open(os.path.join(path, m,
                                                         "{}_run_{}.pkl".format(m, i)), 'rb'))
+                else:
+                    res = json.load(open(os.path.join(path, m, "run_{}.json".format(i))))
                 no_runs_found = False
             except Exception as e:
                 print(m, i, e)
