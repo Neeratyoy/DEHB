@@ -32,8 +32,8 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                 print(m, i, e)
                 no_runs_found = True
                 continue
-            
-            if m not in ['bohb', 'hyperband']
+
+            if m not in ['bohb', 'hyperband']:
                 regret_key = "regret_validation" if regret_type == 'validation' else "regret_test"
                 runtime_key = "runtime"
                 curr_regret = np.array(res[regret_key])
