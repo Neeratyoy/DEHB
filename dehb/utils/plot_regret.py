@@ -167,7 +167,7 @@ else:
                     colors, linestyles, marker, n_runs, limit)
 
 plt.xscale("log")
-if benchmark != 'svm':
+if benchmark != 'svm' or benchmark != 'rl' or benchmark != 'bnn':
      plt.yscale("log")
 plt.tick_params(which='both', direction="in")
 if benchmark == 'svm':
