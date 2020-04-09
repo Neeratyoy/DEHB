@@ -175,16 +175,32 @@ if benchmark == 'svm':
 else:
     plt.legend(loc='lower left', framealpha=1, prop={'size': 25, 'weight': 'bold'})
 plt.title(args.title)
-if plot_type == "wallclock":
+
+if benchmark == 'rl':
+    plt.xlabel("time $[s]$", fontsize=50)
+elif benchmark == 'bnn':
+    plt.xlabel("MCMC steps", fontsize=50)
+elif plot_type == "wallclock":
     plt.xlabel("estimated wallclock time $[s]$", fontsize=50)
 elif plot_type == "fevals":
     plt.xlabel("number of function evaluations", fontsize=50)
 
 if benchmark == 'svm':
     plt.ylabel("{} error".format(regret_type), fontsize=50)
+elif benchmark == 'rl':
+    plt.ylabel("epochs until convergence", fontsize=50)
+elif benchmark == 'bnn':
+    plt.ylabel("negative log-likelihood", fontsize=50)
 else:
     plt.ylabel("{} regret".format(regret_type), fontsize=50)
-plt.xlim(max(min_time/10, 1e0), min(max_time*10, 1e7))
+
+if benchmark == 'rl':
+    plt.xlim(1e1, 1e5)
+elif benchmark == 'bnn':
+    plt.xlim(1e4, 1e6)
+else:
+    plt.xlim(max(min_time/10, 1e0), min(max_time*10, 1e7))
+
 plt.ylim(min_regret, max_regret)
 plt.grid(which='both', alpha=0.5, linewidth=0.5)
 print(os.path.join(args.output_path, '{}.png'.format(plot_name)))
