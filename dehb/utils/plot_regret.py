@@ -155,17 +155,6 @@ max_regret = 0
 colors = ["C%d" % i for i in range(len(methods))]
 plt.clf()
 
-no_runs_found = False
-
-if benchmark == '1shot1':
-    plt, min_time, max_time, min_regret, max_regret = \
-        create_plot(plt, methods, path, regret_type, fill_trajectory,
-                    colors, linestyles, marker, n_runs, limit, ssp)
-else:
-    plt, min_time, max_time, min_regret, max_regret = \
-        create_plot(plt, methods, path, regret_type, fill_trajectory,
-                    colors, linestyles, marker, n_runs, limit)
-
 plt.xscale("log")
 if benchmark != 'svm' and benchmark != 'rl' and benchmark != 'bnn':
      plt.yscale("log")
@@ -197,11 +186,28 @@ else:
 if benchmark == 'rl':
     plt.xlim(1e1, 1e5)
 elif benchmark == 'bnn':
-    plt.xlim(1e4, 1e6)
+    plt.xlim(1e3, 1e6)
 else:
     plt.xlim(max(min_time/10, 1e0), min(max_time*10, 1e7))
 
-plt.ylim(min_regret, max_regret)
+if benchmark == 'bnn':
+    plt.ylim(3, 9)
+elif benchmark == 'rl':
+    plt.ylim(1e2, 1e4)
+else:
+    plt.ylim(min_regret, max_regret)
+
+no_runs_found = False
+
+if benchmark == '1shot1':
+    plt, min_time, max_time, min_regret, max_regret = \
+        create_plot(plt, methods, path, regret_type, fill_trajectory,
+                    colors, linestyles, marker, n_runs, limit, ssp)
+else:
+    plt, min_time, max_time, min_regret, max_regret = \
+        create_plot(plt, methods, path, regret_type, fill_trajectory,
+                    colors, linestyles, marker, n_runs, limit)
+
 plt.grid(which='both', alpha=0.5, linewidth=0.5)
 print(os.path.join(args.output_path, '{}.png'.format(plot_name)))
 plt.savefig(os.path.join(args.output_path, '{}.png'.format(plot_name)),
