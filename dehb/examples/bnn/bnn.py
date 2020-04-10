@@ -40,6 +40,7 @@ worker = Worker(dataset=args.dataset, measure_test_loss=False, run_id=args.run_i
 
 # directory where the results are stored
 dest_dir = os.path.join(args.dest_dir, args.method)
+args.working_directory = dest_dir
 
 # SMAC can be informed whether the objective is deterministic or not
 smac_deterministic = True
