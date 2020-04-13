@@ -14,29 +14,6 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
     min_regret = 1
     max_regret = 0
 
-    # finding best found incumbent to be global incumbent
-    # global_inc = np.inf
-    # for index, (m, label) in enumerate(methods):
-    #     for k, i in enumerate(np.arange(n_runs)):
-    #         try:
-    #             if 'de' in m:
-    #                 res = json.load(open(os.path.join(path, m, "run_{}.json".format(i))))
-    #             else:
-    #                 res = pickle.load(open(os.path.join(path, m,
-    #                                                     "{}_run_{}.pkl".format(m, i)), 'rb'))
-    #         except Exception as e:
-    #             print(m, i, e)
-    #             continue
-    #         if 'de' in m:
-    #             regret_key =  "regret_validation" if regret_type == 'validation' else "regret_test"
-    #         else:
-    #             regret_key =  "losses" if regret_type == 'validation' else "test_losses"
-    #         curr_inc = np.min(res[regret_key])
-    #         if curr_inc < global_inc:
-    #             global_inc = curr_inc
-    global_inc = 0
-    print("Global incumbent: ", global_inc)
-
     no_runs_found = False
     # looping and plotting for all methods
     for index, (m, label) in enumerate(methods):
@@ -60,7 +37,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                 runtime_key = "runtime"
             else:
                 regret_key =  "losses" if regret_type == 'validation' else "test_losses"
-                runtime_key = "cummulative_cost"
+                runtime_key = "cummulative_budget"
             # calculating regret as (f(x) - found global incumbent)
             curr_regret = np.array(res[regret_key]) #- global_inc
             _, idx = np.unique(curr_regret, return_index=True)
@@ -79,7 +56,8 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
             time = time[idx:]
 
             # Clips off all measurements after 10^7s
-            idx = np.where(time < limit)[0]
+            # idx = np.where(time < limit)[0]
+            idx = np.where((time > 1e4) * (time < limit))[0]
 
             print("{}. Plotting for {}".format(index, m))
             print(len(regret), len(runtimes))
@@ -90,7 +68,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
             # The error band
             plt.fill_between(time[idx],
                              np.mean(te, axis=1)[idx] + 2 * stats.sem(te[idx], axis=1),
-                             np.mean(te[idx], axis=1)[idx] - 2 * stats.sem(te[idx], axis=1),
+                             np.mean(te, axis=1)[idx] - 2 * stats.sem(te[idx], axis=1),
                              color="C%d" % index, alpha=0.2)
 
             # Stats to dynamically impose limits on the axes of the plots

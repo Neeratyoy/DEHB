@@ -81,7 +81,6 @@ parser.add_argument('--benchmark', default='101', type=str, nargs='?',
                     help='select benchmark to plot')
 parser.add_argument('--bench_type', default='protein', type=str, nargs='?',
                     help='select subset of benchmark to plot')
-
 parser.add_argument('--path', default='./', type=str, nargs='?',
                     help='path to encodings or jsons for each algorithm')
 parser.add_argument('--file', default='./', type=str, nargs='?',
@@ -166,8 +165,9 @@ else:
         create_plot(plt, methods, path, regret_type, fill_trajectory,
                     colors, linestyles, marker, n_runs, limit)
 
+
 plt.xscale("log")
-if benchmark != 'svm' and benchmark != 'rl' and benchmark != 'bnn':
+if benchmark != 'svm' and benchmark != 'bnn':
      plt.yscale("log")
 plt.tick_params(which='both', direction="in")
 if benchmark == 'svm':
@@ -197,12 +197,12 @@ else:
 if benchmark == 'rl':
     plt.xlim(1e1, 1e5)
 elif benchmark == 'bnn':
-    plt.xlim(1e3, 1e6)
+    plt.xlim(1e4, 1e6)
 else:
     plt.xlim(max(min_time/10, 1e0), min(max_time*10, 1e7))
 
 if benchmark == 'bnn':
-    plt.ylim(3, 9)
+    plt.ylim(3, 75)
 elif benchmark == 'rl':
     plt.ylim(1e2, 1e4)
 else:
