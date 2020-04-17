@@ -11,6 +11,13 @@ To install HpBandSter:
 SciPy needed: 1.2.1
 
 
+Cartpole needs: Tensorforce 0.4.4
+
+
+BNN needs: https://github.com/automl/sgmcmc.git
+
+
+
 <br/>
 
 Directory structure for the execution of these scripts:

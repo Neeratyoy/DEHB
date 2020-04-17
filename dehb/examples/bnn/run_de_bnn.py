@@ -9,7 +9,8 @@ import argparse
 import numpy as np
 import ConfigSpace
 
-from hpolib.benchmarks.ml.bnn_benchmark import BNNOnBostonHousing
+from hpolib.benchmarks.ml.bnn_benchmark import BNNOnBostonHousing, BNNOnProteinStructure
+from hpolib.benchmarks.ml.bnn_benchmark import BNNOnToyFunction, BNNOnYearPrediction
 
 from dehb import DE
 
@@ -63,6 +64,8 @@ def save_configspace(cs, path, filename='configspace'):
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--dataset', help="name of the dataset used", default='bostonhousing',
+                    choices=['toyfunction', 'bostonhousing', 'proteinstructure', 'yearprediction'])
 parser.add_argument('--fix_seed', default='False', type=str, choices=['True', 'False'],
                     nargs='?', help='seed')
 parser.add_argument('--run_id', default=0, type=int, nargs='?',
@@ -101,11 +104,19 @@ max_budget = args.max_budget
 
 # Directory where files will be written
 folder = "de_pop{}".format(args.pop_size) if args.folder is None else args.folder
-output_path = os.path.join(args.output_path, args.folder)
+output_path = os.path.join(args.output_path, args.dataset, args.folder)
 os.makedirs(output_path, exist_ok=True)
 
 # Parameter space to be used by DE
-b = BNNOnBostonHousing()
+if args.dataset == 'bostonhousing':
+    b = BNNOnBostonHousing()
+elif args.dataset == 'proteinstructure':
+    b = BNNOnProteinStructure()
+elif args.dataset == 'toyfunction':
+    b = BNNOnToyFunction()
+else:
+    b = BNNOnYearPrediction()
+
 cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
 

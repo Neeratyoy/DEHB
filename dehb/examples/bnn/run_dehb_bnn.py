@@ -7,10 +7,10 @@ import json
 import pickle
 import argparse
 import numpy as np
-
 import ConfigSpace
 
-from hpolib.benchmarks.ml.bnn_benchmark import BNNOnBostonHousing
+from hpolib.benchmarks.ml.bnn_benchmark import BNNOnBostonHousing, BNNOnProteinStructure
+from hpolib.benchmarks.ml.bnn_benchmark import BNNOnToyFunction, BNNOnYearPrediction
 
 from dehb import DE
 from dehb import DEHB_0, DEHB_1
@@ -65,6 +65,8 @@ def save_configspace(cs, path, filename='configspace'):
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--dataset', help="name of the dataset used", default='bostonhousing',
+                    choices=['toyfunction', 'bostonhousing', 'proteinstructure', 'yearprediction'])
 parser.add_argument('--fix_seed', default='False', type=str, choices=['True', 'False'],
                     nargs='?', help='seed')
 parser.add_argument('--run_id', default=0, type=int, nargs='?',
@@ -107,6 +109,7 @@ args.verbose = True if args.verbose == 'True' else False
 args.fix_seed = True if args.fix_seed == 'True' else False
 min_budget = args.min_budget
 max_budget = args.max_budget
+dataset = args.dataset
 
 # Directory where files will be written
 if args.folder is None:
@@ -114,11 +117,19 @@ if args.folder is None:
 else:
     folder = args.folder
 
-output_path = os.path.join(args.output_path, folder)
+output_path = os.path.join(args.output_path, args.dataset, folder)
 os.makedirs(output_path, exist_ok=True)
 
 # Parameter space to be used by DE
-b = BNNOnBostonHousing()
+if args.dataset == 'bostonhousing':
+    b = BNNOnBostonHousing()
+elif args.dataset == 'proteinstructure':
+    b = BNNOnProteinStructure()
+elif args.dataset == 'toyfunction':
+    b = BNNOnToyFunction()
+else:
+    b = BNNOnYearPrediction()
+
 cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
 
