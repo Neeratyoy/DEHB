@@ -72,6 +72,8 @@ parser.add_argument('--strategy', default="sampling", type=str, nargs='?',
                     help='optimization strategy for the acquisition function')
 parser.add_argument('--min_bandwidth', default=.3, type=float, nargs='?',
                     help='minimum bandwidth for KDE')
+parser.add_argument('--bandwidth_factor', default=3, type=int, nargs='?',
+                    help='factor multiplied to the bandwidth')
 parser.add_argument('--num_samples', default=64, type=int, nargs='?',
                     help='number of samples for the acquisition function')
 parser.add_argument('--random_fraction', default=.33, type=float, nargs='?',
