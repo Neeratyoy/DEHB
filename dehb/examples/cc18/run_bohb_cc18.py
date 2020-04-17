@@ -60,7 +60,7 @@ parser.add_argument('--run_id', default=0, type=int, nargs='?',
 parser.add_argument('--runs', default=None, type=int, nargs='?', help='number of runs to perform')
 parser.add_argument('--run_start', default=0, type=int, nargs='?',
                     help='run index to start with for multiple runs')
-parser.add_argument('--task_id', default=167149, type=int,
+parser.add_argument('--task_id', default=task_ids[0], type=int,
                     help="specify the OpenML task id to run on from among {}".format(task_ids))
 parser.add_argument('--n_estimators', default=64, type=int,
                     help="specify the number of estimators XGBoost will be trained with")
@@ -103,7 +103,7 @@ b = Benchmark(task_id=args.task_id)
 cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
 
-output_path = os.path.join(args.output_path, args.task_id, args.folder)
+output_path = os.path.join(args.output_path, str(args.task_id), args.folder)
 os.makedirs(output_path, exist_ok=True)
 
 runs = args.runs

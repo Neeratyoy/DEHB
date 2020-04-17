@@ -88,7 +88,7 @@ parser.add_argument('--run_id', default=0, type=int, nargs='?',
 parser.add_argument('--runs', default=None, type=int, nargs='?', help='number of runs to perform')
 parser.add_argument('--run_start', default=0, type=int, nargs='?',
                     help='run index to start with for multiple runs')
-parser.add_argument('--task_id', default=167149, type=int,
+parser.add_argument('--task_id', default=task_ids[0], type=int,
                     help="specify the OpenML task id to run on from among {}".format(task_ids))
 parser.add_argument('--n_estimators', default=64, type=int,
                     help="specify the number of estimators XGBoost will be trained with")
@@ -102,7 +102,7 @@ parser.add_argument('--verbose', default='False', choices=['True', 'False'], nar
                     help='to print progress or not')
 parser.add_argument('--folder', default='tpe', type=str, nargs='?',
                     help='name of folder where files will be dumped')
-                    
+
 args = parser.parse_args()
 args.verbose = True if args.verbose == 'True' else False
 args.fix_seed = True if args.fix_seed == 'True' else False
@@ -129,7 +129,7 @@ for h in cs.get_hyperparameters():
     elif type(h) == ConfigSpace.hyperparameters.UniformFloatHyperparameter:
         space[h.name] = hp.uniform(h.name, h.lower, h.upper)
 
-output_path = os.path.join(args.output_path, args.task_id, args.folder)
+output_path = os.path.join(args.output_path, str(args.task_id), args.folder)
 os.makedirs(output_path, exist_ok=True)
 
 
