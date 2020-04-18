@@ -57,31 +57,12 @@ def config2structure_func(max_nodes):
   return config2structure
 
 
-def calculate_regrets(history, runtime):
-    assert len(runtime) == len(history)
-    global dataset, api, de, max_budget
-
-    regret_test = []
-    regret_validation = []
-    inc = np.inf
-    test_regret = 1
-    validation_regret = 1
-    for i in range(len(history)):
-        config, valid_regret, budget = history[i]
-        valid_regret = valid_regret - y_star_valid
-        if valid_regret <= inc:
-            inc = valid_regret
-            config = de.vector_to_configspace(config)
-            structure = config2structure(config)
-            arch_index = api.query_index_by_arch(structure)
-            info = api.get_more_info(arch_index, dataset, max_budget, False, False)
-            test_regret = (1 - (info['test-accuracy'] / 100)) - y_star_test
-        regret_validation.append(inc)
-        regret_test.append(test_regret)
+def convert_to_json(results):
+    global y_star_valid, y_star_test
     res = {}
-    res['regret_test'] = regret_test
-    res['regret_validation'] = regret_validation
-    res['runtime'] = np.cumsum(runtime).tolist()
+    res['regret_validation'] = results['losses'] - y_star_valid
+    res['regret_test'] = results['test_losses'] - y_star_test
+    res['runtime'] = results['cummulative_cost']
     return res
 
 
@@ -216,7 +197,9 @@ for run_id in range(runs):
     HB.shutdown(shutdown_workers=True)
     NS.shutdown()
 
-    fh = open(os.path.join(output_path, 'hyperband_run_%d.pkl' % run_id), 'wb')
-    pickle.dump(util.extract_results_to_pickle(results), fh)
+    # fh = open(os.path.join(output_path, 'hyperband_run_%d.pkl' % run_id), 'wb')
+    # pickle.dump(util.extract_results_to_pickle(results), fh)
+    fh = open(os.path.join(output_path, 'run_{}.json'.format(run_id)), 'w')
+    json.dump(convert_to_json(results))
     fh.close()
     print("Run saved. Resetting...")
