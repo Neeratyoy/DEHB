@@ -60,9 +60,9 @@ def config2structure_func(max_nodes):
 def convert_to_json(results):
     global y_star_valid, y_star_test
     res = {}
-    res['regret_validation'] = results['losses'] - y_star_valid
-    res['regret_test'] = results['test_losses'] - y_star_test
-    res['runtime'] = results['cummulative_cost']
+    res['regret_validation'] = np.array(results['losses'] - y_star_valid).tolist()
+    res['regret_test'] = np.array(results['test_losses'] - y_star_test).tolist()
+    res['runtime'] = np.array(results['cummulative_cost']).tolist()
     return res
 
 
@@ -204,6 +204,6 @@ for run_id in range(runs):
     # pickle.dump(util.extract_results_to_pickle(results), fh)
 
     fh = open(os.path.join(output_path, 'run_{}.json'.format(run_id)), 'w')
-    json.dump(convert_to_json(util.extract_results_to_pickle(results)))
+    json.dump(convert_to_json(util.extract_results_to_pickle(results)), fh)
     fh.close()
     print("Run saved. Resetting...")
