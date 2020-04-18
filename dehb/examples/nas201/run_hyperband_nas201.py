@@ -200,6 +200,6 @@ for run_id in range(runs):
     # fh = open(os.path.join(output_path, 'hyperband_run_%d.pkl' % run_id), 'wb')
     # pickle.dump(util.extract_results_to_pickle(results), fh)
     fh = open(os.path.join(output_path, 'run_{}.json'.format(run_id)), 'w')
-    json.dump(convert_to_json(results))
+    json.dump(convert_to_json(util.extract_results_to_pickle(results)))
     fh.close()
     print("Run saved. Resetting...")
