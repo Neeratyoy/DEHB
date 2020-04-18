@@ -1,2 +1,2 @@
 from .optimizers import DE, AsyncDE
-from .optimizers import DEHB_0, DEHB_1
+from .optimizers import DEHB_0, DEHB_1, DEHB_2

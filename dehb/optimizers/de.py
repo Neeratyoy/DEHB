@@ -48,6 +48,13 @@ class DEBase():
         self.fitness = self.fitness[pop_order]
         self.age = self.age[pop_order]
 
+    def _sort_pop(self):
+        pop_order = np.argsort(self.fitness)
+        np.random.shuffle(pop_order)
+        self.population = self.population[pop_order]
+        self.fitness = self.fitness[pop_order]
+        self.age = self.age[pop_order]
+
     def _set_min_pop_size(self):
         if self.mutation_strategy in ['rand1', 'rand2dir', 'randtobest1']:
             self._min_pop_size = 3
@@ -482,13 +489,6 @@ class AsyncDE(DEBase):
         self._set_min_pop_size()
         self.async_strategy = async_strategy
 
-    def _shuffle_pop(self):
-        pop_order = np.arange(len(self.population))
-        np.random.shuffle(pop_order)
-        self.population = self.population[pop_order]
-        self.fitness = self.fitness[pop_order]
-        self.age = self.age[pop_order]
-
     def _set_min_pop_size(self):
         if self.mutation_strategy in ['rand1', 'rand2dir', 'randtobest1']:
             self._min_pop_size = 3
@@ -504,6 +504,8 @@ class AsyncDE(DEBase):
         return self._min_pop_size
 
     def _add_random_population(self, pop_size, population=None, fitness=[], age=[]):
+        '''Adds random individuals to the population
+        '''
         new_pop = self.init_population(pop_size=pop_size)
         new_fitness = np.array([np.inf] * pop_size)
         new_age = np.array([self.max_age] * pop_size)
@@ -525,18 +527,28 @@ class AsyncDE(DEBase):
             mutants[i] = self.mutation(current=target, best=best, alt_pop=population)
         return mutants
 
-    def _new_sample_population(self, size=3, alt_pop=None, target=None):
+    def _sample_population(self, size=3, alt_pop=None, target=None):
+        '''Samples 'size' individuals
+
+        If alt_pop is None or a list/array of None, sample from own population
+        Else sample from the specified alternate population
+        '''
         population = None
         if isinstance(alt_pop, list) or isinstance(alt_pop, np.ndarray):
-            idx = [indv is None for indv in alt_pop]
+            idx = [indv is None for indv in alt_pop]  # checks if all individuals are valid
             if any(idx):
+                # default to the object's initialized population
                 population = self.population
             else:
+                # choose the passed population
                 population = alt_pop
         else:
+            # default to the object's initialized population
             population = self.population
+
         if target is not None and len(population) > 1:
             # eliminating target from mutation sampling pool
+            # the target individual should not be a part of the candidates for mutation
             for i, pop in enumerate(population):
                 if all(target == pop):
                     population = np.concatenate((population[:i], population[i + 1:]))
@@ -544,39 +556,10 @@ class AsyncDE(DEBase):
         if len(population) < self._min_pop_size:
             # compensate if target was part of the population and deleted earlier
             filler = self._min_pop_size - len(population)
-            new_pop = self.init_population(pop_size=filler)
+            new_pop = self.init_population(pop_size=filler)  # chosen in a uniformly random manner
             population = np.concatenate((population, new_pop))
 
         selection = np.random.choice(np.arange(len(population)), size, replace=False)
-        return population[selection]
-
-    def sample_population(self, size=3, alt_pop=None, target=None):
-        '''Samples 'size' individuals
-
-        If alt_pop is None or a list/array of None, sample from own population
-        Else sample from the specified alternate population
-        '''
-        return self._new_sample_population(size, alt_pop, target)
-
-        population = None
-        if isinstance(alt_pop, list) or isinstance(alt_pop, np.ndarray):
-            idx = [indv is None for indv in alt_pop]
-            if any(idx):
-                population = self.population
-            else:
-                population = alt_pop
-        else:
-            population = self.population
-        if target is not None and len(population) > 1:
-            # eliminating target from mutation sampling pool
-            for i, pop in enumerate(population):
-                if all(target == pop):
-                    population = np.concatenate((population[:i], population[i+1:]))
-                    break
-        if len(population) < self._min_pop_size:
-            selection = np.random.choice(np.arange(len(population)), size, replace=True)
-        else:
-            selection = np.random.choice(np.arange(len(population)), size, replace=False)
         return population[selection]
 
     def f_objective(self, x, budget=None):
@@ -673,37 +656,37 @@ class AsyncDE(DEBase):
         '''Performs DE mutation
         '''
         if self.mutation_strategy == 'rand1':
-            r1, r2, r3 = self.sample_population(size=3, alt_pop=alt_pop, target=current)
+            r1, r2, r3 = self._sample_population(size=3, alt_pop=alt_pop, target=current)
             mutant = self.mutation_rand1(r1, r2, r3)
 
         elif self.mutation_strategy == 'rand2':
-            r1, r2, r3, r4, r5 = self.sample_population(size=5, alt_pop=alt_pop, target=current)
+            r1, r2, r3, r4, r5 = self._sample_population(size=5, alt_pop=alt_pop, target=current)
             mutant = self.mutation_rand2(r1, r2, r3, r4, r5)
 
         elif self.mutation_strategy == 'rand2dir':
-            r1, r2, r3 = self.sample_population(size=3, alt_pop=alt_pop, target=current)
+            r1, r2, r3 = self._sample_population(size=3, alt_pop=alt_pop, target=current)
             mutant = self.mutation_rand2dir(r1, r2, r3)
 
         elif self.mutation_strategy == 'best1':
-            r1, r2 = self.sample_population(size=2, alt_pop=alt_pop, target=current)
+            r1, r2 = self._sample_population(size=2, alt_pop=alt_pop, target=current)
             if best is None:
                 best = self.population[np.argmin(self.fitness)]
             mutant = self.mutation_rand1(best, r1, r2)
 
         elif self.mutation_strategy == 'best2':
-            r1, r2, r3, r4 = self.sample_population(size=4, alt_pop=alt_pop, target=current)
+            r1, r2, r3, r4 = self._sample_population(size=4, alt_pop=alt_pop, target=current)
             if best is None:
                 best = self.population[np.argmin(self.fitness)]
             mutant = self.mutation_rand2(best, r1, r2, r3, r4)
 
         elif self.mutation_strategy == 'currenttobest1':
-            r1, r2 = self.sample_population(size=2, alt_pop=alt_pop, target=current)
+            r1, r2 = self._sample_population(size=2, alt_pop=alt_pop, target=current)
             if best is None:
                 best = self.population[np.argmin(self.fitness)]
             mutant = self.mutation_currenttobest1(current, best, r1, r2)
 
         elif self.mutation_strategy == 'randtobest1':
-            r1, r2, r3 = self.sample_population(size=3, alt_pop=alt_pop, target=current)
+            r1, r2, r3 = self._sample_population(size=3, alt_pop=alt_pop, target=current)
             if best is None:
                 best = self.population[np.argmin(self.fitness)]
             mutant = self.mutation_currenttobest1(r1, best, r2, r3)
@@ -766,56 +749,6 @@ class AsyncDE(DEBase):
             traj.append(self.inc_score)
             runtime.append(cost)
             history.append((trials[i].tolist(), float(fitness), float(budget or 0)))
-        return traj, runtime, history
-
-    def ranked_selection(self, trials, final_pop_size=None, budget=None, debug=False):
-        '''Returns the fittest individuals from two sets of population
-        '''
-        final_pop_size = self.pop_size if final_pop_size is None else final_pop_size
-
-        traj, runtime, history, fitnesses, ages = self.eval_pop(population=trials, budget=budget)
-
-        if debug:
-            print("Ranking {} from {} originals + {} rivals".format(final_pop_size, self.pop_size,
-                                                                    len(trials)))
-
-        # Creating a total population of current individuals and rival individuals evaluated on
-        # the same budget
-        tot_pop = np.vstack((self.population, trials))
-        tot_fitness = np.hstack((self.fitness, fitnesses))
-        tot_age = np.hstack((self.age, ages))
-
-        # Sorting the total population by fitness to keep only the top individuals from the pool
-        rank = np.sort(np.argsort(tot_fitness)[:final_pop_size])
-        self.population = tot_pop[rank]
-        self.fitness = tot_fitness[rank]
-        self.age = tot_age[rank]
-        self.pop_size = final_pop_size
-        return traj, runtime, history
-
-    def kill_aged_pop(self, budget=None, debug=False):
-        '''Replaces individuals with age older than max_age
-        '''
-        traj = []
-        runtime = []
-        history = []
-        idxs = np.where(self.age <= 0)[0]
-        if len(idxs) == 0:
-            return traj, runtime, history
-        if debug:
-            print("Killing {} individual(s) for budget {}: {}".format(len(idxs), budget, self.age[idxs]))
-        new_pop = self.init_population(pop_size=len(idxs))
-        for i, index in enumerate(idxs):
-            self.population[index] = new_pop[i]
-            self.fitness[index], cost = self.f_objective(self.population[index], budget)
-            self.age[index] = self.max_age
-            if self.fitness[index] < self.inc_score:
-                self.inc_score = self.fitness[index]
-                self.inc_config = self.population[index]
-            traj.append(self.inc_score)
-            runtime.append(cost)
-            history.append((self.population[index].tolist(), float(self.fitness[index]),
-                            float(budget or 0)))
         return traj, runtime, history
 
     def evolve_generation(self, budget=None, best=None, alt_pop=None, async_strategy='orig'):
