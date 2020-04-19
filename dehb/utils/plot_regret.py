@@ -181,7 +181,7 @@ if benchmark == 'rl':
 elif benchmark == 'bnn':
     plt.xlabel("MCMC steps", fontsize=50)
 elif benchmark == 'countingones':
-    plt.xlabel("cummulative budget / b_{max}", fontsize=50)
+    plt.xlabel("cummulative budget / $b_{max}$", fontsize=50)
 elif plot_type == "wallclock":
     plt.xlabel("estimated wallclock time $[s]$", fontsize=50)
 elif plot_type == "fevals":
