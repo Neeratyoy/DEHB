@@ -10,6 +10,7 @@ import logging
 import argparse
 import numpy as np
 import ConfigSpace
+from copy import deepcopy
 
 logging.basicConfig(level=logging.ERROR)
 
@@ -36,14 +37,18 @@ def save_configspace(cs, path, filename='configspace'):
 
 
 def objective(x):
-    global b, de
+    global b, de, max_budget
     config = deepcopy(x)
     for h in cs.get_hyperparameters():
         if type(h) == ConfigSpace.hyperparameters.OrdinalHyperparameter:
             config[h.name] = h.sequence[int(x[h.name])]
         elif type(h) == ConfigSpace.hyperparameters.UniformIntegerHyperparameter:
             config[h.name] = int(x[h.name])
-    res = b.objective_function(config, n_estimators=n_estimators)
+    print(config)
+    temp = cs.sample_configuration()
+    temp._values = config
+    config = temp
+    res = b.objective_function(config, n_estimators=n_estimators, subsample=max_budget)
     fitness = res['function_value']
     cost = res['cost']
     y_test = b.objective_function_test(config, n_estimators=n_estimators)['function_value']
@@ -65,10 +70,10 @@ def convert_to_json(results):
     validation_regret = 1
 
     for i in range(len(results)):
-        validation_regret = results[i]['loss'] - y_star_valid
+        validation_regret = results[i]['loss']
         if validation_regret <= inc:
             inc = validation_regret
-            test_regret = results[i]['test'] - y_star_test
+            test_regret = results[i]['test']
         regret_validation.append(inc)
         regret_test.append(test_regret)
         runtime.append(results[i]['cost'])
