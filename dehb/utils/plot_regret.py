@@ -10,8 +10,8 @@ import collections
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn
-seaborn.set_style("ticks")
+#import seaborn
+#seaborn.set_style("ticks")
 
 from matplotlib import rcParams
 rcParams["font.size"] = "30"
@@ -168,7 +168,7 @@ else:
                     colors, linestyles, marker, n_runs, limit)
 
 
-if benchmark != 'cc18':
+if True: #benchmark != 'cc18':
     plt.xscale("log")
 if benchmark != 'svm' and benchmark != 'bnn':
      plt.yscale("log")
@@ -207,6 +207,8 @@ elif benchmark == 'bnn':
     plt.xlim(1e4, 1e6)
 elif benchmark == 'countingones':
     plt.xlim(max(min_time/10, 1e-1), min(max_time*10, 1e7))
+elif benchmark == 'cc18':
+    plt.xlim(0, max_time)
 else:
     plt.xlim(max(min_time/10, 1e0), min(max_time*10, 1e7))
 
