@@ -18,7 +18,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
     ## example path expected: 'dehb/examples/countingones/results/4+4/'
     dim1, dim2 = path.replace('/', ' ').strip().split(' ')[-1].split('+')
     d = int(dim1) + int(dim2)
-    max_budget = 93312 / dimensions
+    max_budget = 93312 / d
 
     no_runs_found = False
     # looping and plotting for all methods
