@@ -77,7 +77,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--benchmark', default='101', type=str, nargs='?',
                     choices=['101', '1shot1', '201', 'paramnet', 'svm',
-                             'countingones', 'rl', 'bnn'],
+                             'countingones', 'rl', 'bnn', 'cc18'],
                     help='select benchmark to plot')
 parser.add_argument('--bench_type', default='protein', type=str, nargs='?',
                     help='select subset of benchmark to plot')
@@ -138,6 +138,8 @@ elif benchmark == 'rl':
 elif benchmark == 'bnn':
     from dehb.examples.bnn import create_plot
 
+elif benchmark == 'cc18':
+    from dehb.examples.cc18 import create_plot
 
 # Loading file for algo list
 with open(args.file, 'r') as f:
@@ -166,7 +168,8 @@ else:
                     colors, linestyles, marker, n_runs, limit)
 
 
-plt.xscale("log")
+if benchmark != 'cc18':
+    plt.xscale("log")
 if benchmark != 'svm' and benchmark != 'bnn':
      plt.yscale("log")
 plt.tick_params(which='both', direction="in")
