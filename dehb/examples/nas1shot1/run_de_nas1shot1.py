@@ -18,7 +18,7 @@ from nasbench_analysis.search_spaces.search_space_2 import SearchSpace2
 from nasbench_analysis.search_spaces.search_space_3 import SearchSpace3
 from nasbench_analysis.utils import INPUT, OUTPUT, CONV1X1, CONV3X3, MAXPOOL3X3
 
-from denas import DE
+from denas import DE, AsyncDE
 
 
 def save_configspace(cs, path, filename='configspace'):
@@ -63,6 +63,9 @@ parser.add_argument('--verbose', default='True', choices=['True', 'False'], narg
                     help='to print progress or not')
 parser.add_argument('--folder', default=None, type=str, nargs='?',
                     help='name of folder where files will be dumped')
+parser.add_argument('--async', default=None, type=str, nargs='?',
+                    choices=['deferred', 'immediate', 'random', 'worst'],
+                    help='type of Asynchronous DE')
 
 args = parser.parse_args()
 args.verbose = True if args.verbose == 'True' else False
@@ -84,7 +87,10 @@ for space in spaces:
     cs = search_space.get_configuration_space()
     dimensions = len(cs.get_hyperparameters())
 
-    folder = "de_pop{}".format(args.pop_size) if args.folder is None else args.folder
+    if args.async is None:
+        folder = "de_pop{}".format(args.pop_size)
+    else:
+        folder = "ade_{}_pop{}".format(args.async, args.pop_size)
     output_path = os.path.join(args.output_path, folder)
     os.makedirs(output_path, exist_ok=True)
 
@@ -98,9 +104,14 @@ for space in spaces:
         return fitness, cost
 
     # Initializing DE object
-    de = DE(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size,
-            mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
-            strategy=args.strategy, budget=args.max_budget)
+    if args.async is None:
+        de = DE(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size,
+                mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
+                strategy=args.strategy, budget=args.max_budget)
+    else:
+        de = AsyncDE(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size,
+                     mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
+                     strategy=args.strategy, budget=args.max_budget, async_strategy=args.async)
 
     if args.runs is None:  # for a single run
         if not args.fix_seed:

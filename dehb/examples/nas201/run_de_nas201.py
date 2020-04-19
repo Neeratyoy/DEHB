@@ -15,7 +15,7 @@ import ConfigSpace
 from nas_201_api import NASBench201API as API
 from models import CellStructure, get_search_spaces
 
-from dehb import DE
+from dehb import DE, AsyncDE
 
 
 # From https://github.com/D-X-Y/AutoDL-Projects/blob/master/exps/algos/BOHB.py
@@ -122,8 +122,11 @@ parser.add_argument('--max_budget', default=199, type=int, nargs='?',
                     help='maximum wallclock time to run DE for')
 parser.add_argument('--verbose', default='False', choices=['True', 'False'], nargs='?', type=str,
                     help='to print progress or not')
-parser.add_argument('--folder', default='de', type=str, nargs='?',
+parser.add_argument('--folder', default=None, type=str, nargs='?',
                     help='name of folder where files will be dumped')
+parser.add_argument('--async', default=None, type=str, nargs='?',
+                    choices=['deferred', 'immediate', 'random', 'worst'],
+                    help='type of Asynchronous DE')
 
 args = parser.parse_args()
 args.verbose = True if args.verbose == 'True' else False
@@ -132,7 +135,11 @@ max_budget = args.max_budget
 dataset = args.dataset
 
 # Directory where files will be written
-output_path = os.path.join(args.output_path, args.dataset, args.folder)
+if args.async is None:
+    folder = "de_pop{}".format(args.pop_size)
+else:
+    folder = "ade_{}_pop{}".format(args.async, args.pop_size)
+output_path = os.path.join(args.output_path, args.dataset, folder)
 os.makedirs(output_path, exist_ok=True)
 
 # Loading NAS-201
@@ -175,9 +182,14 @@ def f(config, budget=max_budget):
 
 
 # Initializing DE object
-de = DE(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size,
-        mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
-        strategy=args.strategy, budget=args.max_budget)
+if args.async is None:
+    de = DE(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size,
+            mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
+            strategy=args.strategy, budget=args.max_budget)
+else:
+    de = AsyncDE(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size,
+                 mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
+                 strategy=args.strategy, budget=args.max_budget, async_strategy=args.async)
 
 
 if args.runs is None:  # for a single run

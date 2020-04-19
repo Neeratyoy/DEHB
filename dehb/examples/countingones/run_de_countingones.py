@@ -9,7 +9,7 @@ import ConfigSpace
 
 from hpolib.benchmarks.synthetic_functions.counting_ones import CountingOnes
 
-from dehb import DE
+from dehb import DE, AsyncDE
 
 
 # Common objective function for DE & DEHB representing SVM Surrogates benchmark
@@ -94,13 +94,19 @@ parser.add_argument('--verbose', default='False', choices=['True', 'False'], nar
                     help='to print progress or not')
 parser.add_argument('--folder', default=None, type=str, nargs='?',
                     help='name of folder where files will be dumped')
+parser.add_argument('--async', default=None, type=str, nargs='?',
+                    choices=['deferred', 'immediate', 'random', 'worst'],
+                    help='type of Asynchronous DE')
 
 args = parser.parse_args()
 args.verbose = True if args.verbose == 'True' else False
 args.fix_seed = True if args.fix_seed == 'True' else False
 
 dim_folder = "{}+{}".format(args.n_cont, args.n_cat)
-folder = "{}/de_pop{}".format(dim_folder, args.pop_size) if args.folder is None else args.folder
+if args.async is None:
+    folder = "{}/de_pop{}".format(dim_folder, args.pop_size)
+else:
+    folder = "{}/ade_{}_pop{}".format(dim_folder, args.async, args.pop_size)
 
 output_path = os.path.join(args.output_path, folder)
 os.makedirs(output_path, exist_ok=True)
@@ -119,9 +125,14 @@ y_star_test = -dimensions  # incorporated in regret_calc as normalized regret: (
 
 
 # Initializing DE object
-de = DE(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size,
-        mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
-        strategy=args.strategy, budget=max_budget)
+if args.async is None:
+    de = DE(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size,
+            mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
+            strategy=args.strategy, budget=max_budget)
+else:
+    de = AsyncDE(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size,
+                 mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
+                 strategy=args.strategy, budget=max_budget, async_strategy=args.async)
 
 
 if args.runs is None:  # for a single run

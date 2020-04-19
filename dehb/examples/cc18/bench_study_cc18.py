@@ -100,7 +100,7 @@ def get_ready_cc18(task_id):
     min_budget, max_budget = (0.1, 1)
 
 
-def plot_budget_landscape(budgets, sample_size=1000, output=None):
+def plot_budget_landscape(task_id, budgets, sample_size=1000, output=None):
     print("Initialising...")
     x = np.random.uniform(size=(sample_size, dimensions))
     print("MDS conversion...")
@@ -129,7 +129,7 @@ def plot_budget_landscape(budgets, sample_size=1000, output=None):
         ax.set_yticks([])
         plt.colorbar(im, ax=ax)
 
-    plt.suptitle(dataset)
+    plt.suptitle("Task ID: ", task_id)
     if len(budgets) % 2 != 0:
         fig.delaxes(axes[np.floor(len(budgets) / 2).astype(int), 1])
 
@@ -145,7 +145,7 @@ task_id = 189906
 get_ready_cc18(task_id)
 budgets = [0.1111, 0.33333, 1.0]
 
-plot_budget_landscape(budgets, sample_size=sample_size,
+plot_budget_landscape(task_id, budgets, sample_size=sample_size,
                       output='dehb/examples/plots/landscape/{}.png'.format(task_id))
 # final_score_relation(sample_size=10000,
 #                      output='dehb/examples/plots/correlation/{}_test_val.png'.format(dataset))

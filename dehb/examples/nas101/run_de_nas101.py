@@ -15,7 +15,7 @@ from tabular_benchmarks import FCNetProteinStructureBenchmark, FCNetSliceLocaliz
     FCNetNavalPropulsionBenchmark, FCNetParkinsonsTelemonitoringBenchmark
 from tabular_benchmarks import NASCifar10A, NASCifar10B, NASCifar10C
 
-from dehb import DE
+from dehb import DE, AsyncDE
 
 
 def save_configspace(cs, path, filename='configspace'):
@@ -68,6 +68,9 @@ parser.add_argument('--verbose', default='False', choices=['True', 'False'], nar
                     help='to print progress or not')
 parser.add_argument('--folder', default=None, type=str, nargs='?',
                     help='name of folder where files will be dumped')
+parser.add_argument('--async', default=None, type=str, nargs='?',
+                    choices=['deferred', 'immediate', 'random', 'worst'],
+                    help='type of Asynchronous DE')
 
 args = parser.parse_args()
 args.verbose = True if args.verbose == 'True' else False
@@ -75,21 +78,21 @@ args.fix_seed = True if args.fix_seed == 'True' else False
 
 if args.benchmark == "nas_cifar10a": # NAS-Bench-101
     max_budget = 108
-    b = NASCifar10A(data_dir=args.data_dir, multi_fidelity=True)
+    b = NASCifar10A(data_dir=args.data_dir, multi_fidelity=False)
     y_star_valid = b.y_star_valid
     y_star_test = b.y_star_test
     inc_config = None
 
 elif args.benchmark == "nas_cifar10b": # NAS-Bench-101
     max_budget = 108
-    b = NASCifar10B(data_dir=args.data_dir, multi_fidelity=True)
+    b = NASCifar10B(data_dir=args.data_dir, multi_fidelity=False)
     y_star_valid = b.y_star_valid
     y_star_test = b.y_star_test
     inc_config = None
 
 elif args.benchmark == "nas_cifar10c": # NAS-Bench-101
     max_budget = 108
-    b = NASCifar10C(data_dir=args.data_dir, multi_fidelity=True)
+    b = NASCifar10C(data_dir=args.data_dir, multi_fidelity=False)
     y_star_valid = b.y_star_valid
     y_star_test = b.y_star_test
     inc_config = None
@@ -118,14 +121,22 @@ elif args.benchmark == "parkinsons_telemonitoring": # NAS-HPO-Bench
 cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
 
-folder = "de_pop{}".format(args.pop_size) if args.folder is None else args.folder
+if args.async is None:
+    folder = "de_pop{}".format(args.pop_size)
+else:
+    folder = "ade_{}_pop{}".format(args.async, args.pop_size)
 output_path = os.path.join(args.output_path, folder)
 os.makedirs(output_path, exist_ok=True)
 
 # Initializing DE object
-de = DE(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size,
-        mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
-        strategy=args.strategy, budget=max_budget)
+if args.async is None:
+    de = DE(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size,
+            mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
+            strategy=args.strategy, budget=max_budget)
+else:
+    de = AsyncDE(cs=cs, dimensions=dimensions, f=f, pop_size=args.pop_size,
+                 mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
+                 strategy=args.strategy, budget=max_budget, async_strategy=args.async)
 
 if args.runs is None:  # for a single run
     if not args.fix_seed:
