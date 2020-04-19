@@ -94,6 +94,7 @@ b = Benchmark(task_id=args.task_id)
 # Parameter space to be used by DE
 cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
+y_star_valid = y_star_test = 0
 
 output_path = os.path.join(args.output_path, str(args.task_id), args.folder)
 os.makedirs(output_path, exist_ok=True)
