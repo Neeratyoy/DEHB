@@ -71,7 +71,7 @@ parser.add_argument('--random_fraction', default=.33, type=float, nargs='?',
                     help='fraction of random configurations')
 parser.add_argument('--eta', default=3, type=int,
                     help='aggressive stopping rate (eta) for Hyperband')
-parser.add_argument('--min_budget', default=1, type=float,
+parser.add_argument('--min_budget', default=0.1, type=float,
                     help='the minimum budget for the benchmark')
 parser.add_argument('--max_budget', default=1, type=float,
                     help='the maximum budget for the benchmark')
