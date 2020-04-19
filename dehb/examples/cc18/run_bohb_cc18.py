@@ -24,8 +24,6 @@ sys.path.append(os.path.join(os.getcwd(), '../HPOlib3/'))
 from hpolib.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
 from hpolib.util.openml_data_manager import get_openmlcc18_taskids
 
-from dehb import DE, DEHB_0, DEHB_1
-
 
 # task_ids = get_openmlcc18_taskids()
 task_ids = [126031, 189906, 167155]  # as suggested by Philip
@@ -35,6 +33,15 @@ def save_configspace(cs, path, filename='configspace'):
     fh = open(os.path.join(path, '{}.pkl'.format(filename)), 'wb')
     pickle.dump(cs, fh)
     fh.close()
+
+
+def convert_to_json(results):
+    global y_star_valid, y_star_test
+    res = {}
+    res['regret_validation'] = np.array(results['losses'] - y_star_valid).tolist()
+    res['regret_test'] = np.array(results['test_losses'] - y_star_test).tolist()
+    res['runtime'] = np.array(results['cummulative_cost']).tolist()
+    return res
 
 
 class MyWorker(Worker):
@@ -143,7 +150,9 @@ for run_id in range(runs):
     bohb.shutdown(shutdown_workers=True)
     NS.shutdown()
 
-    fh = open(os.path.join(output_path, 'bohb_run_%d.pkl' % run_id), 'wb')
-    pickle.dump(util.extract_results_to_pickle(results), fh)
+    # fh = open(os.path.join(output_path, 'bohb_run_%d.pkl' % run_id), 'wb')
+    # pickle.dump(util.extract_results_to_pickle(results), fh)
+    fh = open(os.path.join(output_path, 'run_{}.json'.format(run_id)), 'w')
+    json.dump(convert_to_json(util.extract_results_to_pickle(results)), fh)
     fh.close()
     print("Run saved. Resetting...")
