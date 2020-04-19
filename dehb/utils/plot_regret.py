@@ -171,15 +171,17 @@ if benchmark != 'svm' and benchmark != 'bnn':
      plt.yscale("log")
 plt.tick_params(which='both', direction="in")
 if benchmark == 'svm':
-    plt.legend(loc='upper right', framealpha=1, prop={'size': 25, 'weight': 'bold'})
+    plt.legend(loc='upper right', framealpha=1, prop={'size': 30, 'weight': 'bold'})
 else:
-    plt.legend(loc='lower left', framealpha=1, prop={'size': 25, 'weight': 'bold'})
+    plt.legend(loc='lower left', framealpha=1, prop={'size': 30, 'weight': 'bold'})
 plt.title(args.title)
 
 if benchmark == 'rl':
     plt.xlabel("time $[s]$", fontsize=50)
 elif benchmark == 'bnn':
     plt.xlabel("MCMC steps", fontsize=50)
+elif benchmark == 'countingones':
+    plt.xlabel("cummulative budget / b_{max}", fontsize=50)
 elif plot_type == "wallclock":
     plt.xlabel("estimated wallclock time $[s]$", fontsize=50)
 elif plot_type == "fevals":
@@ -191,6 +193,8 @@ elif benchmark == 'rl':
     plt.ylabel("epochs until convergence", fontsize=50)
 elif benchmark == 'bnn':
     plt.ylabel("negative log-likelihood", fontsize=50)
+elif benchmark == 'countingones':
+    plt.ylabel("normalized regret")
 else:
     plt.ylabel("{} regret".format(regret_type), fontsize=50)
 
@@ -198,6 +202,8 @@ if benchmark == 'rl':
     plt.xlim(1e1, 1e5)
 elif benchmark == 'bnn':
     plt.xlim(1e4, 1e6)
+elif benchmark == 'countingones':
+    plt.xlim(max(min_time/10, 1e-1), min(max_time*10, 1e7))
 else:
     plt.xlim(max(min_time/10, 1e0), min(max_time*10, 1e7))
 
