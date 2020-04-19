@@ -88,22 +88,6 @@ n_estimators = args.n_estimators
 min_budget = args.min_budget
 max_budget = args.max_budget
 
-
-class MyWorker(Worker):
-    def compute(self, config, budget, **kwargs):
-        global n_estimators, max_budget
-        if budget is None:
-            budget = max_budget
-        res = b.objective_function(config, n_estimators=n_estimators, subsample=budget)
-        fitness = res['function_value']
-        cost = res['cost']
-        res = b.objective_function_test(config, n_estimators=n_estimators)
-        return ({
-            'loss': float(fitness),
-            'info': {'cost': float(cost), 'test_loss': float(res['function_value'])}
-        })
-
-
 task_ids = get_openmlcc18_taskids()
 if args.task_id not in task_ids:
     raise "Incorrect task ID. Choose from: {}".format(task_ids)
@@ -115,6 +99,24 @@ dimensions = len(cs.get_hyperparameters())
 
 output_path = os.path.join(args.output_path, str(args.task_id), args.folder)
 os.makedirs(output_path, exist_ok=True)
+
+
+class MyWorker(Worker):
+    def compute(self, config, budget, **kwargs):
+        global n_estimators, max_budget, b, cs
+        temp = cs.sample_configuration()
+        temp._values = config
+        config = temp
+        if budget is None:
+            budget = max_budget
+        res = b.objective_function(config, n_estimators=n_estimators, subsample=budget)
+        fitness = res['function_value']
+        cost = res['cost']
+        res = b.objective_function_test(config, n_estimators=n_estimators)
+        return ({
+            'loss': float(fitness),
+            'info': {'cost': float(cost), 'test_loss': float(res['function_value'])}
+        })
 
 
 runs = args.runs
