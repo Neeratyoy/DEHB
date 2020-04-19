@@ -36,10 +36,9 @@ def save_configspace(cs, path, filename='configspace'):
 
 
 def convert_to_json(results):
-    global y_star_valid, y_star_test
     res = {}
-    res['regret_validation'] = np.array(results['losses'] - y_star_valid).tolist()
-    res['regret_test'] = np.array(results['test_losses'] - y_star_test).tolist()
+    res['regret_validation'] = np.array(results['losses']).tolist()
+    res['regret_test'] = np.array(results['test_losses']).tolist()
     res['runtime'] = np.array(results['cummulative_cost']).tolist()
     return res
 
@@ -94,7 +93,6 @@ b = Benchmark(task_id=args.task_id)
 # Parameter space to be used by DE
 cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
-y_star_valid = y_star_test = 0
 
 output_path = os.path.join(args.output_path, str(args.task_id), args.folder)
 os.makedirs(output_path, exist_ok=True)
