@@ -194,7 +194,7 @@ elif benchmark == 'rl':
 elif benchmark == 'bnn':
     plt.ylabel("negative log-likelihood", fontsize=50)
 elif benchmark == 'countingones':
-    plt.ylabel("normalized regret")
+    plt.ylabel("normalized {} regret".format(regret_type))
 else:
     plt.ylabel("{} regret".format(regret_type), fontsize=50)
 
