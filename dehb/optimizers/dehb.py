@@ -183,14 +183,14 @@ class DEHB_0(DEHBBase):
             # Number of SH iterations in this DEHB iteration
             num_SH_iters = len(budgets)
 
-            if iteration > 0 and len(self.de[budget].population) < self._max_pop_size[budget]:
-                # the previous iteration should have filled up the population slots
-                # for certain budget spacings, this slot may be empty by one or two slots
-                filler = self._max_pop_size[budget] - len(self.de[budget].population)
-                if debug:
-                    print("Adding {} individual(s) for the budget {}".format(filler, budget))
-                self.de[budget].population, self.de[budget].fitness, self.de[budget].age = \
-                    self.de[budget]._add_random_population(pop_size=filler)
+            # if iteration > 0 and len(self.de[budget].population) < self._max_pop_size[budget]:
+            #     # the previous iteration should have filled up the population slots
+            #     # for certain budget spacings, this slot may be empty by one or two slots
+            #     filler = self._max_pop_size[budget] - len(self.de[budget].population)
+            #     if debug:
+            #         print("Adding {} individual(s) for the budget {}".format(filler, budget))
+            #     self.de[budget].population, self.de[budget].fitness, self.de[budget].age = \
+            #         self.de[budget]._add_random_population(pop_size=filler)
 
             if iteration == 0:  # first HB bracket's first iteration (first SH bracket)
                 for i_sh in range(num_SH_iters):
@@ -265,13 +265,26 @@ class DEHB_0(DEHBBase):
                         next_budget = budgets[i_sh + 1]
                         # finding the top individuals for the pop_size required
                         rank = np.sort(np.argsort(self.de[budget].fitness)[:pop_size])
-                        # the higher budgets during the first HB bracket may deal with pop_size
-                        ## that is lesser than the max_pop_size determined
-                        prelen = len(self.de[next_budget].population)
+                        # checking if slots available
                         if len(self.de[next_budget].population) < self._max_pop_size[next_budget]:
                             # appending top individuals from the lower budget as part of next_budget
                             ## population of pop_size is appended to the front so they are evaluated
-                            ## in the next iteration
+                            ## in the next iteration -- if size exceeds, weakest individuals
+                            ## are dropped from the current population
+                            required = self._max_pop_size[next_budget] - \
+                                len(self.de[next_budget].population)
+                            extra = required - pop_size
+                            if extra < 0:
+                                # removing weakest individuals from current population
+                                extra = np.abs(extra)
+                                top_rank = \
+                                    np.sort(np.argsort(self.de[next_budget].fitness)[:-extra])
+                                self.de[next_budget].population = \
+                                    self.de[next_budget].population[top_rank]
+                                self.de[next_budget].fitness = \
+                                    self.de[next_budget].fitness[top_rank]
+                                self.de[next_budget].age = \
+                                    self.de[next_budget].age[top_rank]
                             self.de[next_budget].population = \
                                 np.concatenate((self.de[budget].population[rank],
                                                 self.de[next_budget].population))
@@ -293,8 +306,6 @@ class DEHB_0(DEHBBase):
                             ## mutation in the next higher budget
                             alt_population = self.de[budget].population[rank]
                         postlen = len(self.de[next_budget].population)
-                        if debug:
-                            print("Pre-post lengths: ({}, {}) - {}".format(prelen, postlen, self._max_pop_size[next_budget]))
                         self.de[next_budget].pop_size = pop_size
                         budget = next_budget
 
@@ -347,7 +358,7 @@ class DEHB_0(DEHBBase):
 
                         budget = next_budget
 
-                        if self.async_strategy in ['orig', 'basic'] and \
+                        if self.async_strategy in ['deferred', 'immediate'] and \
                                 pop_size < len(self.de[budget].population):
                             # reordering to have the top individuals in front
                             rank_include = np.sort(np.argsort(self.de[budget].fitness)[:pop_size])
