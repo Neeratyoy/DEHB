@@ -22,24 +22,15 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
         runtimes = []
         for k, i in enumerate(np.arange(n_runs)):
             try:
-                if m in ['bohb', 'hyperband']:
-                    res = pickle.load(open(os.path.join(path, m,
-                                                        "{}_run_{}.pkl".format(m, i)), 'rb'))
-                else:
-                    res = json.load(open(os.path.join(path, m, "run_{}.json".format(i))))
+                res = json.load(open(os.path.join(path, m, "run_{}.json".format(i))))
                 no_runs_found = False
             except Exception as e:
                 print(m, i, e)
                 no_runs_found = True
                 continue
-
-            if m not in ['bohb', 'hyperband']:
-                regret_key = "regret_validation" if regret_type == 'validation' else "regret_test"
-                runtime_key = "runtime"
-                curr_regret = np.array(res[regret_key])
-            else:
-                regret_key =  "losses" if regret_type == 'validation' else "test_losses"
-                runtime_key = "cummulative_cost"
+            regret_key = "regret_validation" if regret_type == 'validation' else "regret_test"
+            runtime_key = "runtime"
+            curr_regret = np.array(res[regret_key])
             _, idx = np.unique(res[regret_key], return_index=True)
             idx.sort()
             regret.append(np.array(res[regret_key])[idx])
