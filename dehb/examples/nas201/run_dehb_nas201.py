@@ -16,7 +16,7 @@ from nas_201_api import NASBench201API as API
 from models import CellStructure, get_search_spaces
 
 from dehb import DE
-from dehb import DEHB_0, DEHB_1, DEHB_2
+from dehb import DEHB_0, DEHB_1, DEHB_2, DEHB_3
 
 
 # From https://github.com/D-X-Y/AutoDL-Projects/blob/master/exps/algos/BOHB.py
@@ -188,7 +188,7 @@ def f(config, budget=max_budget):
     return fitness, cost
 
 
-dehbs = {"0": DEHB_0, "1": DEHB_1, "2": DEHB_2}
+dehbs = {"0": DEHB_0, "1": DEHB_1, "2": DEHB_2, "3": DEHB_3}
 DEHB = dehbs[args.version]
 
 # Initializing DEHB object

@@ -13,7 +13,7 @@ import numpy as np
 from hpolib.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
 from hpolib.util.openml_data_manager import get_openmlcc18_taskids
 
-from dehb import DE, DEHB_0, DEHB_1, DEHB_2
+from dehb import DE, DEHB_0, DEHB_1, DEHB_2, DEHB_3
 
 
 # task_ids = get_openmlcc18_taskids()
@@ -127,7 +127,7 @@ else:
 output_path = os.path.join(args.output_path, str(args.task_id), folder)
 os.makedirs(output_path, exist_ok=True)
 
-dehbs = {"0": DEHB_0, "1": DEHB_1, "2": DEHB_2}
+dehbs = {"0": DEHB_0, "1": DEHB_1, "2": DEHB_2, "3": DEHB_3}
 DEHB = dehbs[args.version]
 
 # Initializing DEHB object

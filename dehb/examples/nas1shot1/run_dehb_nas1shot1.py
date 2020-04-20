@@ -19,7 +19,7 @@ from nasbench_analysis.search_spaces.search_space_3 import SearchSpace3
 from nasbench_analysis.utils import INPUT, OUTPUT, CONV1X1, CONV3X3, MAXPOOL3X3
 
 from dehb import DE
-from dehb import DEHB_0, DEHB_1, DEHB_2
+from dehb import DEHB_0, DEHB_1, DEHB_2, DEHB_3
 
 
 def save_configspace(cs, path, filename='configspace'):
@@ -109,7 +109,7 @@ for space in spaces:
         return fitness, cost
 
 
-    dehbs = {"0": DEHB_0, "1": DEHB_1, "2": DEHB_2}
+    dehbs = {"0": DEHB_0, "1": DEHB_1, "2": DEHB_2, "3": DEHB_3}
     DEHB = dehbs[args.version]
 
     # Initializing DEHB object

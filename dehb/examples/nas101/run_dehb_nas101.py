@@ -16,7 +16,7 @@ from tabular_benchmarks import FCNetProteinStructureBenchmark, FCNetSliceLocaliz
 from tabular_benchmarks import NASCifar10A, NASCifar10B, NASCifar10C
 
 from dehb import DE
-from dehb import DEHB_0, DEHB_1, DEHB_2
+from dehb import DEHB_0, DEHB_1, DEHB_2, DEHB_3
 
 
 def save_configspace(cs, path, filename='configspace'):
@@ -139,7 +139,7 @@ else:
 output_path = os.path.join(args.output_path, folder)
 os.makedirs(output_path, exist_ok=True)
 
-dehbs = {"0": DEHB_0, "1": DEHB_1, "2": DEHB_2}
+dehbs = {"0": DEHB_0, "1": DEHB_1, "2": DEHB_2, "3": DEHB_3}
 DEHB = dehbs[args.version]
 
 # Initializing DEHB object

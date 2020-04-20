@@ -13,7 +13,7 @@ from hpolib.benchmarks.ml.bnn_benchmark import BNNOnBostonHousing, BNNOnProteinS
 from hpolib.benchmarks.ml.bnn_benchmark import BNNOnToyFunction, BNNOnYearPrediction
 
 from dehb import DE
-from dehb import DEHB_0, DEHB_1, DEHB_2
+from dehb import DEHB_0, DEHB_1, DEHB_2, DEHB_3
 
 
 # Common objective function for DE & DEHB representing Cartpole RL surrogates
@@ -133,7 +133,7 @@ else:
 cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
 
-dehbs = {"0": DEHB_0, "1": DEHB_1, "2": DEHB_2}
+dehbs = {"0": DEHB_0, "1": DEHB_1, "2": DEHB_2, "3": DEHB_3}
 DEHB = dehbs[args.version]
 
 # Initializing DEHB object
