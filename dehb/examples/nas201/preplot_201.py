@@ -24,7 +24,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
     # else:
     #     raise Exception("dataset needs to be known to find global incumbent")
     #
-    # if regret_type == 'validation'
+    # if regret_type == 'validation':
     #     global_inc = y_star_valid
     # else:
     #     global_inc = y_star_test

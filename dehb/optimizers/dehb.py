@@ -183,14 +183,15 @@ class DEHB_0(DEHBBase):
             # Number of SH iterations in this DEHB iteration
             num_SH_iters = len(budgets)
 
-            # if iteration > 0 and len(self.de[budget].population) < self._max_pop_size[budget]:
-            #     # the previous iteration should have filled up the population slots
-            #     # for certain budget spacings, this slot may be empty by one or two slots
-            #     filler = self._max_pop_size[budget] - len(self.de[budget].population)
-            #     if debug:
-            #         print("Adding {} individual(s) for the budget {}".format(filler, budget))
-            #     self.de[budget].population, self.de[budget].fitness, self.de[budget].age = \
-            #         self.de[budget]._add_random_population(pop_size=filler)
+            if iteration > 0 and iteration < self.max_SH_iter and \
+                    len(self.de[budget].population) < self._max_pop_size[budget]:
+                # the previous iteration should have filled up the population slots
+                # for certain budget spacings, this slot may be empty by one or two slots
+                filler = self._max_pop_size[budget] - len(self.de[budget].population)
+                if debug:
+                    print("Adding {} individual(s) for the budget {}".format(filler, budget))
+                self.de[budget].population, self.de[budget].fitness, self.de[budget].age = \
+                    self.de[budget]._add_random_population(pop_size=filler)
 
             if iteration == 0:  # first HB bracket's first iteration (first SH bracket)
                 for i_sh in range(num_SH_iters):
