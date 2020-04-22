@@ -77,17 +77,9 @@ def find_nas201_best(api, dataset):
 #       In this case, the LR schedular is converged.
 # For use_converged_LR = False, the architecture is planed to be trained for 200 epochs, but we early stop its procedure.
 #
-def train_and_eval(arch, nas_bench, dataname='cifar10-valid', use_converged_LR=True):
+def train_and_eval(arch, nas_bench, dataname='cifar10-valid', use_converged_LR=False):
   global max_budget
-  if use_converged_LR and nas_bench is not None:
-    arch_index = nas_bench.query_index_by_arch( arch )
-    assert arch_index >= 0, 'can not find this arch : {:}'.format(arch)
-    info = nas_bench.get_more_info(arch_index, dataname, None, True)
-    valid_acc, time_cost = info['valid-accuracy'], info['train-all-time'] + info['valid-per-time']
-    #_, valid_acc = info.get_metrics('cifar10-valid', 'x-valid' , 25, True) # use the validation accuracy after 25 training epochs
-  elif not use_converged_LR and nas_bench is not None:
-    # Please use `use_converged_LR=False` for cifar10 only.
-    # It did return values for cifar100 and ImageNet16-120, but it has some potential issues. (Please email me for more details)
+  if nas_bench is not None:
     arch_index, nepoch = nas_bench.query_index_by_arch( arch ), 199
     assert arch_index >= 0, 'can not find this arch : {:}'.format(arch)
     info = nas_bench.get_more_info(arch_index, dataname, iepoch=max_budget,
@@ -166,7 +158,8 @@ def convert_to_json(history):
 
     for i in range(len(history)):
         architecture, cost = history[i]
-        validation_regret = (1 - (architecture.accuracy / 100)) - y_star_valid
+        # validation_regret = (1 - (architecture.accuracy / 100)) - y_star_valid
+        validation_regret = architecture.accuracy - y_star_valid
         if validation_regret <= inc:
             inc = validation_regret
             arch_index = nas_bench.query_index_by_arch(architecture.arch)
