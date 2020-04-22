@@ -139,6 +139,8 @@ os.makedirs(output_path, exist_ok=True)
 
 
 if args.runs is None:
+    if not args.fix_seed:
+        np.random.seed(args.run_id)
     trials = Trials()
     best = fmin(objective,
                 space=space,

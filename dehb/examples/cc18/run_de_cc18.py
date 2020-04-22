@@ -132,7 +132,7 @@ else:
 
 if args.runs is None:  # for a single run
     if not args.fix_seed:
-        np.random.seed(0)
+        np.random.seed(args.run_id)
     # Running DE iterations
     traj, runtime, history = de.run(generations=args.gens, verbose=args.verbose)
     fh = open(os.path.join(output_path, 'run_{}.json'.format(args.run_id)), 'w')

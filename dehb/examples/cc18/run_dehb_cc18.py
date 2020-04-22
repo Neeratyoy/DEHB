@@ -142,7 +142,7 @@ de = DE(cs=cs, dimensions=dimensions, f=f, pop_size=10,
 
 if args.runs is None:  # for a single run
     if not args.fix_seed:
-        np.random.seed(0)
+        np.random.seed(args.run_id)
     # Running DE iterations
     traj, runtime, history = dehb.run(iterations=args.iter, verbose=args.verbose)
     fh = open(os.path.join(output_path, 'run_{}.json'.format(args.run_id)), 'w')

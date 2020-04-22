@@ -14,6 +14,21 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
     min_regret = 1
     max_regret = 0
 
+    dataset = path.split('/')[-1]
+    if dataset == 'cifar10-valid':
+        y_star_valid, y_star_test = (0.08393333349609367, 0.08476666666666677)
+    elif dataset == 'cifar100':
+        y_star_valid, y_star_test = (0.26506666642252596, 0.2649666666666667)
+    elif dataset == 'ImageNet16-120':
+        y_star_valid, y_star_test = (0.5326666672770182, 0.531555555352105)
+    else:
+        raise Exception("dataset needs to be known to find global incumbent")
+
+    if regret_type == 'validation'
+        global_inc = y_star_valid
+    else:
+        global_inc = y_star_test
+
     no_runs_found = False
     # looping and plotting for all methods
     for index, (m, label) in enumerate(methods):
@@ -22,15 +37,24 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
         runtimes = []
         for k, i in enumerate(np.arange(n_runs)):
             try:
-                res = json.load(open(os.path.join(path, m, "run_{}.json".format(i))))
+                if m in ['bohb', 'hyperband']:
+                    res = pickle.load(open(os.path.join(path, m,
+                                                        "{}_run_{}.pkl".format(m, i)), 'rb'))
+                else:
+                    res = json.load(open(os.path.join(path, m, "run_{}.json".format(i))))
                 no_runs_found = False
             except Exception as e:
                 print(m, i, e)
                 no_runs_found = True
                 continue
-            regret_key = "regret_validation" if regret_type == 'validation' else "regret_test"
-            runtime_key = "runtime"
-            curr_regret = np.array(res[regret_key])
+            if m in ['bohb', 'hyperband']:
+                regret_key = "losses" if regret_type == 'validation' else "test_losses"
+                runtime_key = "cummulative_cost"
+                curr_regret = np.array(res[regret_key]) - global_inc
+            else:
+                regret_key = "regret_validation" if regret_type == 'validation' else "regret_test"
+                runtime_key = "runtime"
+                curr_regret = np.array(res[regret_key])
             _, idx = np.unique(res[regret_key], return_index=True)
             idx.sort()
             regret.append(np.array(res[regret_key])[idx])

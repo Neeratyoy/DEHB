@@ -117,8 +117,17 @@ class MyWorker(Worker):
 
 
 runs = args.runs
-for run_id in range(runs):
-    print("Run {:>3}/{:>3}".format(run_id+1, runs))
+start = 0
+if runs is None and args.run_id is not None:
+    runs = run_id + 1
+    start = run_id
+else:
+    raise Exception("Need valid runs or run_id.")
+
+for run_id in range(start, runs):
+    print("Run {:>3}/{:>3}".format(run_id+1-start, runs-start))
+    if not args.fix_seed:
+        np.random.seed(run_id)
 
     # hb_run_id = '0'
     hb_run_id = run_id
