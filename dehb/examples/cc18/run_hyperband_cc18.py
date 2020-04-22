@@ -117,6 +117,7 @@ class MyWorker(Worker):
 
 
 runs = args.runs
+run_id = args.run_id
 start = 0
 if runs is None and args.run_id is not None:
     runs = run_id + 1

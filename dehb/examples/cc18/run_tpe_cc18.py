@@ -23,8 +23,6 @@ sys.path.append(os.path.join(os.getcwd(), '../HPOlib3/'))
 from hpolib.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
 from hpolib.util.openml_data_manager import get_openmlcc18_taskids
 
-from dehb import DE, DEHB_0, DEHB_1
-
 
 # task_ids = get_openmlcc18_taskids()
 task_ids = [126031, 189906, 167155]  # as suggested by Philip

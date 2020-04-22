@@ -86,6 +86,7 @@ args.fix_seed = True if args.fix_seed == 'True' else False
 n_estimators = args.n_estimators
 min_budget = args.min_budget
 max_budget = args.max_budget
+run_id = args.run_id
 
 task_ids = get_openmlcc18_taskids()
 if args.task_id not in task_ids:
