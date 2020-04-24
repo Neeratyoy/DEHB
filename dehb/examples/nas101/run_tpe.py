@@ -55,23 +55,7 @@ elif args.benchmark == "parkinsons_telemonitoring":
 output_path = os.path.join(args.output_path, "tpe")
 os.makedirs(os.path.join(output_path), exist_ok=True)
 
-if args.benchmark == "protein_structure" or \
-        args.benchmark == "slice_localization" or args.benchmark == "naval_propulsion" \
-        or args.benchmark == "parkinsons_telemonitoring":
-    cs = ConfigSpace.ConfigurationSpace()
-
-    cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("n_units_1", lower=0, upper=5))
-    cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("n_units_2", lower=0, upper=5))
-    cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("dropout_1", lower=0, upper=2))
-    cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("dropout_2", lower=0, upper=2))
-    cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("activation_fn_1", ["tanh", "relu"]))
-    cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("activation_fn_2", ["tanh", "relu"]))
-    cs.add_hyperparameter(
-        ConfigSpace.UniformIntegerHyperparameter("init_lr", lower=0, upper=5))
-    cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("lr_schedule", ["cosine", "const"]))
-    cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("batch_size", lower=0, upper=3))
-else:
-    cs = b.get_configuration_space()
+cs = b.get_configuration_space()
 
 space = {}
 for h in cs.get_hyperparameters():
