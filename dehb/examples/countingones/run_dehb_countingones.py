@@ -112,7 +112,7 @@ if args.folder is None:
     if args.version is not None:
         folder = "{}/dehb_v{}".format(dim_folder, args.version)
 else:
-    folder = args.folder
+    folder = "{}/{}".format(dim_folder, args.folder)
 
 dehbs = {None: DEHB, "0": DEHB_0, "1": DEHB_1, "2": DEHB_2, "3": DEHB_3}
 DEHB = dehbs[args.version]
