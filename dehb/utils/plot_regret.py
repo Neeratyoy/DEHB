@@ -206,7 +206,8 @@ if benchmark == 'rl':
 elif benchmark == 'bnn':
     plt.xlim(1e4, 1e6)
 elif benchmark == 'countingones':
-    plt.xlim(max(min_time/10, 1e-1), min(max_time*10, 1e7))
+    # plt.xlim(max(min_time/10, 1e-1), min(max_time*10, 1e7))
+    plt.xlim(0.1, 1e4)
 elif benchmark == 'cc18':
     plt.xlim(0.01, max_time)
 else:
