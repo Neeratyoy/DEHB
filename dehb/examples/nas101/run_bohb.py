@@ -84,46 +84,46 @@ elif args.benchmark == "parkinsons_telemonitoring":
 output_path = os.path.join(args.output_path, "bohb")
 os.makedirs(os.path.join(output_path), exist_ok=True)
 
-# if args.benchmark == "protein_structure" or \
-#         args.benchmark == "slice_localization" or args.benchmark == "naval_propulsion" \
-#         or args.benchmark == "parkinsons_telemonitoring":
-#     cs = ConfigSpace.ConfigurationSpace()
-#
-#     cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("n_units_1", lower=0, upper=5))
-#     cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("n_units_2", lower=0, upper=5))
-#     cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("dropout_1", lower=0, upper=2))
-#     cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("dropout_2", lower=0, upper=2))
-#     cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("activation_fn_1", ["tanh", "relu"]))
-#     cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("activation_fn_2", ["tanh", "relu"]))
-#     cs.add_hyperparameter(
-#         ConfigSpace.UniformIntegerHyperparameter("init_lr", lower=0, upper=5))
-#     cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("lr_schedule", ["cosine", "const"]))
-#     cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("batch_size", lower=0, upper=3))
-# else:
-cs = b.get_configuration_space()
+if args.benchmark == "protein_structure" or \
+        args.benchmark == "slice_localization" or args.benchmark == "naval_propulsion" \
+        or args.benchmark == "parkinsons_telemonitoring":
+    cs = ConfigSpace.ConfigurationSpace()
+
+    cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("n_units_1", lower=0, upper=5))
+    cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("n_units_2", lower=0, upper=5))
+    cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("dropout_1", lower=0, upper=2))
+    cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("dropout_2", lower=0, upper=2))
+    cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("activation_fn_1", ["tanh", "relu"]))
+    cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("activation_fn_2", ["tanh", "relu"]))
+    cs.add_hyperparameter(
+        ConfigSpace.UniformIntegerHyperparameter("init_lr", lower=0, upper=5))
+    cs.add_hyperparameter(ConfigSpace.CategoricalHyperparameter("lr_schedule", ["cosine", "const"]))
+    cs.add_hyperparameter(ConfigSpace.UniformIntegerHyperparameter("batch_size", lower=0, upper=3))
+else:
+    cs = b.get_configuration_space()
 
 
 class MyWorker(Worker):
     def compute(self, config, budget, **kwargs):
-        # if args.benchmark == "protein_structure" \
-        #         or args.benchmark == "slice_localization" or args.benchmark == "naval_propulsion" \
-        #         or args.benchmark == "parkinsons_telemonitoring":
-        #
-        #     original_cs = b.get_configuration_space()
-        #     c = original_cs.sample_configuration()
-        #     c["n_units_1"] = original_cs.get_hyperparameter("n_units_1").sequence[config["n_units_1"]]
-        #     c["n_units_2"] = original_cs.get_hyperparameter("n_units_2").sequence[config["n_units_2"]]
-        #     c["dropout_1"] = original_cs.get_hyperparameter("dropout_1").sequence[config["dropout_1"]]
-        #     c["dropout_2"] = original_cs.get_hyperparameter("dropout_2").sequence[config["dropout_2"]]
-        #     c["init_lr"] = original_cs.get_hyperparameter("init_lr").sequence[config["init_lr"]]
-        #     c["batch_size"] = original_cs.get_hyperparameter("batch_size").sequence[config["batch_size"]]
-        #     c["activation_fn_1"] = config["activation_fn_1"]
-        #     c["activation_fn_2"] = config["activation_fn_2"]
-        #     c["lr_schedule"] = config["lr_schedule"]
-        #     y, cost = b.objective_function(c, budget=int(budget))
-        #
-        # else:
-        y, cost = b.objective_function(config, budget=int(budget))
+        if args.benchmark == "protein_structure" \
+                or args.benchmark == "slice_localization" or args.benchmark == "naval_propulsion" \
+                or args.benchmark == "parkinsons_telemonitoring":
+
+            original_cs = b.get_configuration_space()
+            c = original_cs.sample_configuration()
+            c["n_units_1"] = original_cs.get_hyperparameter("n_units_1").sequence[config["n_units_1"]]
+            c["n_units_2"] = original_cs.get_hyperparameter("n_units_2").sequence[config["n_units_2"]]
+            c["dropout_1"] = original_cs.get_hyperparameter("dropout_1").sequence[config["dropout_1"]]
+            c["dropout_2"] = original_cs.get_hyperparameter("dropout_2").sequence[config["dropout_2"]]
+            c["init_lr"] = original_cs.get_hyperparameter("init_lr").sequence[config["init_lr"]]
+            c["batch_size"] = original_cs.get_hyperparameter("batch_size").sequence[config["batch_size"]]
+            c["activation_fn_1"] = config["activation_fn_1"]
+            c["activation_fn_2"] = config["activation_fn_2"]
+            c["lr_schedule"] = config["lr_schedule"]
+            y, cost = b.objective_function(c, budget=int(budget))
+
+        else:
+            y, cost = b.objective_function(config, budget=int(budget))
 
         return ({
             'loss': float(y),
