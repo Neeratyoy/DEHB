@@ -26,7 +26,7 @@ from hpolib.util.openml_data_manager import get_openmlcc18_taskids
 
 
 # task_ids = get_openmlcc18_taskids()
-task_ids = [126031, 189906, 167155]  # as suggested by Philip
+task_ids = [189906, 126031, 167155]  # as suggested by Philip
 
 
 def save_configspace(cs, path, filename='configspace'):
