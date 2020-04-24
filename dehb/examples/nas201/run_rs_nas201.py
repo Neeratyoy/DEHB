@@ -198,7 +198,7 @@ parser.add_argument('--min_budget', default=11, type=int, nargs='?',
                     help='minimum budget for NASBench-201')
 parser.add_argument('--max_budget', default=199, type=int, nargs='?',
                     help='maximum budget for NASBench-201')
-parser.add_argument('--folder', default='random_search', type=str, nargs='?',
+parser.add_argument('--folder', default='randomsearch', type=str, nargs='?',
                     help='name of folder where files will be dumped')
 parser.add_argument('--verbose', default='False', choices=['True', 'False'], nargs='?', type=str,
                     help='to print progress or not')

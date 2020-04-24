@@ -1,4 +1,3 @@
-
 import numpy as np
 import ConfigSpace
 
@@ -379,57 +378,6 @@ class DE(DEBase):
             history.append((trials[i].tolist(), float(fitness), float(budget or 0)))
         return traj, runtime, history
 
-    def ranked_selection(self, trials, final_pop_size=None, budget=None, debug=False):
-        '''Returns the fittest individuals from two sets of population
-        '''
-        final_pop_size = self.pop_size if final_pop_size is None else final_pop_size
-
-        traj, runtime, history, fitnesses, ages = self.eval_pop(population=trials, budget=budget)
-
-        if debug:
-            print("Ranking {} from {} originals + {} rivals".format(final_pop_size, self.pop_size,
-                                                                    len(trials)))
-
-        # Creating a total population of current individuals and rival individuals evaluated on
-        # the same budget
-        tot_pop = np.vstack((self.population, trials))
-        tot_fitness = np.hstack((self.fitness, fitnesses))
-        tot_age = np.hstack((self.age, ages))
-
-        # Sorting the total population by fitness to keep only the top individuals from the pool
-        rank = np.sort(np.argsort(tot_fitness)[:final_pop_size])
-        self.population = tot_pop[rank]
-        self.fitness = tot_fitness[rank]
-        self.age = tot_age[rank]
-        self.pop_size = final_pop_size
-        return traj, runtime, history
-
-    def kill_aged_pop(self, budget=None, debug=False):
-        '''Replaces individuals with age older than max_age
-        '''
-        traj = []
-        runtime = []
-        history = []
-        idxs = np.where(self.age <= 0)[0]
-        if len(idxs) == 0:
-            return traj, runtime, history
-        if debug:
-            print("Killing {} individual(s) for budget {}: {}".format(len(idxs), budget,
-                                                                      self.age[idxs]))
-        new_pop = self.init_population(pop_size=len(idxs))
-        for i, index in enumerate(idxs):
-            self.population[index] = new_pop[i]
-            self.fitness[index], cost = self.f_objective(self.population[index], budget)
-            self.age[index] = self.max_age
-            if self.fitness[index] < self.inc_score:
-                self.inc_score = self.fitness[index]
-                self.inc_config = self.population[index]
-            traj.append(self.inc_score)
-            runtime.append(cost)
-            history.append((self.population[index].tolist(), float(self.fitness[index]),
-                            float(budget or 0)))
-        return traj, runtime, history
-
     def evolve_generation(self, budget=None, best=None, alt_pop=None):
         '''Performs a complete DE evolution: mutation -> crossover -> selection
         '''
@@ -518,7 +466,6 @@ class AsyncDE(DE):
         assert self.async_strategy in ['immediate', 'random', 'worst', 'deferred'], \
                 "{} is not a valid choice for type of DE".format(self.async_strategy)
         self._set_min_pop_size()
-
 
     def _set_min_pop_size(self):
         if self.mutation_strategy in ['rand1', 'rand2dir', 'randtobest1']:

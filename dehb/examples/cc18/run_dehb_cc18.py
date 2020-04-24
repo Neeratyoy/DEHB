@@ -13,7 +13,7 @@ import numpy as np
 from hpolib.benchmarks.ml.xgboost_benchmark import XGBoostBenchmark as Benchmark
 from hpolib.util.openml_data_manager import get_openmlcc18_taskids
 
-from dehb import DE, DEHB_0, DEHB_1, DEHB_2, DEHB_3
+from dehb import DE, DEHB, DEHB_0, DEHB_1, DEHB_2, DEHB_3
 
 
 # task_ids = get_openmlcc18_taskids()
@@ -99,7 +99,7 @@ parser.add_argument('--verbose', default='False', choices=['True', 'False'], nar
                     help='to print progress or not')
 parser.add_argument('--folder', default=None, type=str, nargs='?',
                     help='name of folder where files will be dumped')
-parser.add_argument('--version', default="0", type=str, nargs='?',
+parser.add_argument('--version', default=None, type=str, nargs='?',
                     help='DEHB version to run')
 
 args = parser.parse_args()
@@ -120,14 +120,16 @@ dimensions = len(cs.get_hyperparameters())
 
 # Directory where files will be written
 if args.folder is None:
-    folder = "dehb_v{}".format(args.version)
+    folder = "dehb"
+    if args.version is not None:
+        folder = "dehb_v{}".format(args.version)
 else:
     folder = args.folder
 
 output_path = os.path.join(args.output_path, str(args.task_id), folder)
 os.makedirs(output_path, exist_ok=True)
 
-dehbs = {"0": DEHB_0, "1": DEHB_1, "2": DEHB_2, "3": DEHB_3}
+dehbs = {None: DEHB, "0": DEHB_0, "1": DEHB_1, "2": DEHB_2, "3": DEHB_3}
 DEHB = dehbs[args.version]
 
 # Initializing DEHB object

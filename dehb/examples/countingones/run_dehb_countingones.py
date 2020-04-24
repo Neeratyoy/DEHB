@@ -10,7 +10,7 @@ import ConfigSpace
 from hpolib.benchmarks.synthetic_functions.counting_ones import CountingOnes
 
 from dehb import DE
-from dehb import DEHB_0, DEHB_1, DEHB_2, DEHB_3
+from dehb import DEHB, DEHB_0, DEHB_1, DEHB_2, DEHB_3
 
 
 # Common objective function for DE & DEHB representing Counting Ones benchmark
@@ -98,7 +98,7 @@ parser.add_argument('--verbose', default='False', choices=['True', 'False'], nar
                     help='to print progress or not')
 parser.add_argument('--folder', default=None, type=str, nargs='?',
                     help='name of folder where files will be dumped')
-parser.add_argument('--version', default="1", type=str, nargs='?',
+parser.add_argument('--version', default=None, type=str, nargs='?',
                     help='version of DEHB to run')
 
 args = parser.parse_args()
@@ -108,11 +108,13 @@ args.fix_seed = True if args.fix_seed == 'True' else False
 dim_folder = "{}+{}".format(args.n_cont, args.n_cat)
 
 if args.folder is None:
-    folder = "{}/dehb_v{}".format(dim_folder, args.version)
+    folder = "{}/dehb".format(dim_folder)
+    if args.version is not None:
+        folder = "{}/dehb_v{}".format(dim_folder, args.version)
 else:
     folder = args.folder
 
-dehbs = {"0": DEHB_0, "1": DEHB_1, "2": DEHB_2, "3": DEHB_3}
+dehbs = {None: DEHB, "0": DEHB_0, "1": DEHB_1, "2": DEHB_2, "3": DEHB_3}
 DEHB = dehbs[args.version]
 
 output_path = os.path.join(args.output_path, folder)

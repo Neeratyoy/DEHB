@@ -13,7 +13,7 @@ from hpolib.benchmarks.ml.bnn_benchmark import BNNOnBostonHousing, BNNOnProteinS
 from hpolib.benchmarks.ml.bnn_benchmark import BNNOnToyFunction, BNNOnYearPrediction
 
 from dehb import DE
-from dehb import DEHB_0, DEHB_1, DEHB_2, DEHB_3
+from dehb import DEHB, DEHB_0, DEHB_1, DEHB_2, DEHB_3
 
 
 # Common objective function for DE & DEHB representing Cartpole RL surrogates
@@ -101,7 +101,7 @@ parser.add_argument('--verbose', default='False', choices=['True', 'False'], nar
                     help='to print progress or not')
 parser.add_argument('--folder', default=None, type=str, nargs='?',
                     help='name of folder where files will be dumped')
-parser.add_argument('--version', default="0", type=str, nargs='?',
+parser.add_argument('--version', default=None, type=str, nargs='?',
                     help='DEHB version to run')
 
 args = parser.parse_args()
@@ -113,7 +113,10 @@ dataset = args.dataset
 
 # Directory where files will be written
 if args.folder is None:
-    folder = "dehb_v{}".format(args.version)
+    if args.version is None:
+        folder = "dehb"
+    else:
+        folder = "dehb_v{}".format(args.version)
 else:
     folder = args.folder
 
@@ -133,7 +136,7 @@ else:
 cs = b.get_configuration_space()
 dimensions = len(cs.get_hyperparameters())
 
-dehbs = {"0": DEHB_0, "1": DEHB_1, "2": DEHB_2, "3": DEHB_3}
+dehbs = {None: DEHB, "0": DEHB_0, "1": DEHB_1, "2": DEHB_2, "3": DEHB_3}
 DEHB = dehbs[args.version]
 
 # Initializing DEHB object

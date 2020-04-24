@@ -19,7 +19,7 @@ from nasbench_analysis.search_spaces.search_space_3 import SearchSpace3
 from nasbench_analysis.utils import INPUT, OUTPUT, CONV1X1, CONV3X3, MAXPOOL3X3
 
 from dehb import DE
-from dehb import DEHB_0, DEHB_1, DEHB_2, DEHB_3
+from dehb import DEHB, DEHB_0, DEHB_1, DEHB_2, DEHB_3
 
 
 def save_configspace(cs, path, filename='configspace'):
@@ -65,7 +65,7 @@ parser.add_argument('--verbose', default='True', choices=['True', 'False'], narg
                     help='to print progress or not')
 parser.add_argument('--folder', default=None, type=str, nargs='?',
                     help='name of folder where files will be dumped')
-parser.add_argument('--version', default="1", type=str, nargs='?',
+parser.add_argument('--version', default=None, type=str, nargs='?',
                     help='version of DEHB to run')
 
 args = parser.parse_args()
@@ -92,7 +92,9 @@ for space in spaces:
     dimensions = len(cs.get_hyperparameters())
 
     if args.folder is None:
-        folder = "dehb_v{}".format(args.version)
+        folder = "dehb"
+        if args.version is not None:
+            folder = "dehb_v{}".format(args.version)
     else:
         folder = args.folder
 
@@ -109,7 +111,7 @@ for space in spaces:
         return fitness, cost
 
 
-    dehbs = {"0": DEHB_0, "1": DEHB_1, "2": DEHB_2, "3": DEHB_3}
+    dehbs = {None: DEHB, "0": DEHB_0, "1": DEHB_1, "2": DEHB_2, "3": DEHB_3}
     DEHB = dehbs[args.version]
 
     # Initializing DEHB object
