@@ -30,7 +30,8 @@ parser.add_argument('--n_iters', default=5, type=int, nargs='?',
                     help='number of iterations for optimization method')
 parser.add_argument('--output_path', default="./results", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
-parser.add_argument('--data_dir', default="../tabular_benchmarks/fcnet_tabular_benchmarks/",
+parser.add_argument('--data_dir', default="../nas_benchmarks-development/"
+                                          "tabular_benchmarks/fcnet_tabular_benchmarks/",
                     type=str, nargs='?', help='specifies the path to the tabular data')
 parser.add_argument('--strategy', default="sampling", type=str, nargs='?',
                     help='optimization strategy for the acquisition function')
