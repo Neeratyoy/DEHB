@@ -108,7 +108,7 @@ if args.folder is None:
     else:
         folder = "{}/dehb_v{}".format(args.dataset, args.version)
 else:
-    args.folder
+    folder = args.folder
 
 output_path = os.path.join(args.output_path, folder)
 os.makedirs(output_path, exist_ok=True)
