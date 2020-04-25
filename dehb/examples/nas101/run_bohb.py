@@ -127,7 +127,8 @@ class MyWorker(Worker):
 
         return ({
             'loss': float(y),
-            'info': float(cost)})
+            'info': float(cost)
+        })
 
 runs = args.runs
 for run_id in range(runs):
