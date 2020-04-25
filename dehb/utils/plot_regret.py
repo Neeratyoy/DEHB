@@ -77,7 +77,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--benchmark', default='101', type=str, nargs='?',
                     choices=['101', '1shot1', '201', 'paramnet', 'svm',
-                             'countingones', 'rl', 'bnn', 'cc18'],
+                             'countingones', 'rl', 'bnn', 'cc18', 'speed'],
                     help='select benchmark to plot')
 parser.add_argument('--bench_type', default='protein', type=str, nargs='?',
                     help='select subset of benchmark to plot')
@@ -129,7 +129,7 @@ elif benchmark == 'paramnet':
 elif benchmark == 'svm':
     from dehb.examples.svm import create_plot
 
-elif benchmark == '201':
+elif benchmark == '201' or benchmark == 'speed':
     from dehb.examples.nas201 import create_plot
 
 elif benchmark == 'rl':
@@ -185,6 +185,8 @@ elif benchmark == 'bnn':
     plt.xlabel("MCMC steps", fontsize=50)
 elif benchmark == 'countingones':
     plt.xlabel("cummulative budget / $b_{max}$", fontsize=50)
+elif benchmark == 'speed':
+    plt.xlabel("Runtime sans function evalution")
 elif plot_type == "wallclock":
     plt.xlabel("estimated wallclock time $[s]$", fontsize=50)
 elif plot_type == "fevals":
@@ -198,6 +200,8 @@ elif benchmark == 'bnn':
     plt.ylabel("negative log-likelihood", fontsize=50)
 elif benchmark == 'countingones':
     plt.ylabel("normalized {} regret".format(regret_type))
+elif benchmark == 'countingones':
+    plt.ylabel("number of function evaluations")
 else:
     plt.ylabel("{} regret".format(regret_type), fontsize=50)
 
