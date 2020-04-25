@@ -142,7 +142,9 @@ dataset = args.dataset
 
 # Directory where files will be written
 if args.folder is None:
-    folder = "dehb_v{}".format(args.version)
+    folder = "dehb"
+    if args.version is not None:
+        folder = "dehb_v{}".format(args.version)
 else:
     folder = args.folder
 
