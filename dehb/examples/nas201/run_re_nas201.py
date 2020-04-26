@@ -80,7 +80,7 @@ def train_and_eval(arch, nas_bench, extra_info, dataname='cifar10-valid', use_co
     arch_index, nepoch = nas_bench.query_index_by_arch( arch ), 199
     assert arch_index >= 0, 'can not find this arch : {:}'.format(arch)
     info = nas_bench.get_more_info(arch_index, dataname, iepoch=max_budget,
-                             use_12epochs_result=False, is_random=True)
+                                   use_12epochs_result=False, is_random=True)
     try:
       valid_acc = info['valid-accuracy']
     except:
@@ -91,8 +91,6 @@ def train_and_eval(arch, nas_bench, extra_info, dataname='cifar10-valid', use_co
       time_cost += info['valid-all-time']
     except:
       time_cost += info['valtest-all-time']
-
-    valid_acc = 1 - valid_acc / 100
   else:
     # train a model from scratch.
     raise ValueError('NOT IMPLEMENT YET')
@@ -205,8 +203,8 @@ def convert_to_json(history):
 
     for i in range(len(history)):
         architecture, cost = history[i]
-        # validation_regret = (1 - (architecture.accuracy / 100)) - y_star_valid
-        validation_regret = architecture.accuracy - y_star_valid
+        validation_regret = (1 - (architecture.accuracy / 100)) - y_star_valid
+        # validation_regret = architecture.accuracy - y_star_valid
         if validation_regret <= inc:
             inc = validation_regret
             arch_index = nas_bench.query_index_by_arch(architecture.arch)

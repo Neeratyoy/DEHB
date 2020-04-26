@@ -74,7 +74,9 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
             idx = np.where(time < limit)[0]
 
             print("{}. Plotting for {}".format(index, m))
-            print(len(regret), len(runtimes))
+            print(len(regret), len(runtimes), len(idx))
+            print(time[idx])
+            print(np.mean(te, axis=1)[idx])
             # The mean plot
             plt.plot(time[idx], np.mean(te, axis=1)[idx], color=colors[index],
                      linewidth=4, label=label, linestyle=linestyles[index % len(linestyles)],
