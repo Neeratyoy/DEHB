@@ -168,7 +168,7 @@ else:
                     colors, linestyles, marker, n_runs, limit)
 
 
-if True: #benchmark != 'cc18':
+if benchmark != 'cc18':
     plt.xscale("log")
 if benchmark != 'svm' and benchmark != 'bnn':
      plt.yscale("log")
@@ -206,7 +206,7 @@ else:
     plt.ylabel("{} regret".format(regret_type), fontsize=50)
 
 if benchmark == 'rl':
-    plt.xlim(1e1, 1e5)
+    plt.xlim(1e2, 1e5)
 elif benchmark == 'bnn':
     plt.xlim(1e4, 1e6)
 elif benchmark == 'countingones':
