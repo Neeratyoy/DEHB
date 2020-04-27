@@ -223,6 +223,8 @@ elif benchmark == 'rl':
     plt.ylim(1e2, 1e4)
 elif benchmark == 'cc18':
     plt.ylim(0.1, max_regret)
+elif benchmark == 'svm':
+    plt.ylim(min_regret, 0.2)
 else:
     plt.ylim(min_regret, max_regret)
 
