@@ -224,7 +224,7 @@ elif benchmark == 'rl':
 elif benchmark == 'cc18':
     plt.ylim(0.1, max_regret)
 elif benchmark == 'svm':
-    plt.ylim(min_regret, 0.2)
+    plt.ylim(min_regret, 0.5)
 else:
     plt.ylim(min_regret, max_regret)
 
