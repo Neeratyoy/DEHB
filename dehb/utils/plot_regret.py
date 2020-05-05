@@ -168,8 +168,8 @@ else:
                     colors, linestyles, marker, n_runs, limit)
 
 
-# if benchmark != 'cc18':
-plt.xscale("log")
+if benchmark != 'cc18':
+    plt.xscale("log")
 if benchmark != 'svm' and benchmark != 'bnn':
      plt.yscale("log")
 plt.tick_params(which='both', direction="in")
@@ -199,9 +199,9 @@ elif benchmark == 'rl':
 elif benchmark == 'bnn':
     plt.ylabel("negative log-likelihood", fontsize=50)
 elif benchmark == 'countingones':
-    plt.ylabel("normalized {} regret".format(regret_type))
+    plt.ylabel("normalized {} regret".format(regret_type), fontsize=50)
 elif benchmark == 'countingones':
-    plt.ylabel("number of function evaluations")
+    plt.ylabel("number of function evaluations", fontsize=50)
 else:
     plt.ylabel("{} regret".format(regret_type), fontsize=50)
 
@@ -219,7 +219,7 @@ else:
     plt.xlim(max(min_time/10, 1e0), min(max_time*10, 1e7))
 
 if benchmark == 'bnn':
-    plt.ylim(3, 200)
+    plt.ylim(3, 75)
 elif benchmark == 'rl':
     plt.ylim(1e2, 1e4)
 elif benchmark == 'cc18':
