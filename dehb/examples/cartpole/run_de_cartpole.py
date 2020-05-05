@@ -128,7 +128,7 @@ else:
 
 if args.runs is None:  # for a single run
     if not args.fix_seed:
-        np.random.seed(0)
+        np.random.seed(args.run_id)
     # Running DE iterations
     traj, runtime, history = de.run(generations=args.gens, verbose=args.verbose)
     valid_scores, test_scores = calc_regrets(history)
