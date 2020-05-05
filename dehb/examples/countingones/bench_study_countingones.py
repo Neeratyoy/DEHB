@@ -97,6 +97,7 @@ def get_ready_countingones(n):
 
 
 def plot_budget_landscape(budgets, sample_size=1000, output=None):
+    budgets = budgets[1:]
     print("Initialising...")
     x = np.random.uniform(size=(sample_size, dimensions))
     print("MDS conversion...")

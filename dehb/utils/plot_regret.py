@@ -170,7 +170,8 @@ else:
 
 if benchmark != 'cc18':
     plt.xscale("log")
-if benchmark != 'svm' and benchmark != 'bnn':
+#if benchmark != 'svm' and benchmark != 'bnn':
+if benchmark != 'bnn':
      plt.yscale("log")
 plt.tick_params(which='both', direction="in")
 if benchmark == 'svm':
@@ -184,7 +185,7 @@ if benchmark == 'rl':
 elif benchmark == 'bnn':
     plt.xlabel("MCMC steps", fontsize=50)
 elif benchmark == 'countingones':
-    plt.xlabel("cummulative budget / $b_{max}$", fontsize=50)
+    plt.xlabel("cumulative budget / $b_{max}$", fontsize=50)
 elif benchmark == 'speed':
     plt.xlabel("Runtime sans function evalution")
 elif plot_type == "wallclock":
@@ -199,9 +200,9 @@ elif benchmark == 'rl':
 elif benchmark == 'bnn':
     plt.ylabel("negative log-likelihood", fontsize=50)
 elif benchmark == 'countingones':
-    plt.ylabel("normalized {} regret".format(regret_type))
+    plt.ylabel("normalized {} regret".format(regret_type), fontsize=50)
 elif benchmark == 'countingones':
-    plt.ylabel("number of function evaluations")
+    plt.ylabel("number of function evaluations", fontsize=50)
 else:
     plt.ylabel("{} regret".format(regret_type), fontsize=50)
 
