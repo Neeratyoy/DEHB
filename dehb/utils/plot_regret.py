@@ -168,8 +168,8 @@ else:
                     colors, linestyles, marker, n_runs, limit)
 
 
-if benchmark != 'cc18':
-    plt.xscale("log")
+# if benchmark != 'cc18':
+plt.xscale("log")
 if benchmark != 'svm' and benchmark != 'bnn':
      plt.yscale("log")
 plt.tick_params(which='both', direction="in")
@@ -208,17 +208,18 @@ else:
 if benchmark == 'rl':
     plt.xlim(1e2, 1e5)
 elif benchmark == 'bnn':
-    plt.xlim(1e4, 1e6)
+    plt.xlim(1e3, min(max_time*10, limit))
 elif benchmark == 'countingones':
     # plt.xlim(max(min_time/10, 1e-1), min(max_time*10, 1e7))
     plt.xlim(0.1, 1e4)
 elif benchmark == 'cc18':
-    plt.xlim(0.01, max_time)
+    # plt.xlim(0.01, max_time)
+    plt.xlim(0.01, 10)
 else:
     plt.xlim(max(min_time/10, 1e0), min(max_time*10, 1e7))
 
 if benchmark == 'bnn':
-    plt.ylim(3, 75)
+    plt.ylim(3, 200)
 elif benchmark == 'rl':
     plt.ylim(1e2, 1e4)
 elif benchmark == 'cc18':

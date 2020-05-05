@@ -40,10 +40,17 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                 runtime_key = "cummulative_budget"
             # calculating regret as (f(x) - found global incumbent)
             curr_regret = np.array(res[regret_key]) #- global_inc
+            if m not in ['bohb', 'hyperband']:
+                filter_ids = np.where(curr_regret < 10000)[0]
+                curr_regret = curr_regret[filter_ids]
+                curr_runtime = np.array(res[runtime_key])[filter_ids]
+            else:
+                curr_runtime = np.array(res[runtime_key])
             _, idx = np.unique(curr_regret, return_index=True)
             idx.sort()
             regret.append(curr_regret[idx])
-            runtimes.append(np.array(res[runtime_key])[idx])
+            runtimes.append(curr_runtime[idx])
+            # runtimes.append(np.array(res[runtime_key])[idx])
 
         if not no_runs_found:
             # finds the latest time where the first measurement was made across runs
@@ -54,6 +61,9 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
             idx = time.tolist().index(t)
             te = te[idx:, :]
             time = time[idx:]
+
+            print(te.shape)
+            print(time.shape)
 
             # Clips off all measurements after 10^7s
             # idx = np.where(time < limit)[0]
