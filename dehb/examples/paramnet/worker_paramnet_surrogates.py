@@ -25,20 +25,22 @@ class ParamNetSurrogateWorker(BaseWorker):
 		cs = surrogate.get_configuration_space()
 		super().__init__(benchmark=b, configspace=cs, max_budget=self.budgets[dataset][1], **kwargs)
 		self.sleep = sleep
+		self.start = time.time()
 
 
 	def compute(self, config, budget, **kwargs):
-
 		x = numpy.array([ config["x0"], config["x1"], config["x2"],
 						  config["x3"],	config["x4"], config["x5"]])
-		if self.sleep:	time.sleep(budget)
+		if self.sleep:
+			time.sleep(budget)
 		info = {}
 		info['test_loss'] = self.benchmark.objective_function_test(x)['function_value']
-
+		info['cost'] = time.time() - self.start
+		self.start = time.time()
 		return({
 					'loss': self.benchmark(x, budget=budget),
 					'info': info
-				})
+		})
 
 
 	def tpe_configspace(self):
