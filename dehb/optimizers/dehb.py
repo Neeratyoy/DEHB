@@ -437,6 +437,10 @@ class DEHBEncoding(DEHBBase):
         self.de_params['dimensions'] = self.dimensions
         self.de_params['encoding'] = True
         self.de_params['dim_map'] = self.dim_map
+        try:
+            import ConfigSpace
+        except Exception as e:
+            print("ConfigSpace needs to be installed.")
 
     def expanded_dimensions(self):
         dims = 0
