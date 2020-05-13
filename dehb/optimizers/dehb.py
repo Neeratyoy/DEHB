@@ -118,7 +118,7 @@ class DEHBBase():
         raise NotImplementedError("The function needs to be defined in the sub class.")
 
 
-class DEHBBackup(DEHBBase):
+class DEHB(DEHBBase):
     '''Differential Evolution Hyperband
 
     Parameters
@@ -407,7 +407,7 @@ class DEHBBackup(DEHBBase):
         return np.array(self.traj), np.array(self.runtime), np.array(self.history)
 
 
-class DEHB(DEHBBase):
+class DEHBEncoding(DEHBBase):
     '''Differential Evolution Hyperband
 
     Parameters
@@ -717,7 +717,6 @@ class DEHB(DEHBBase):
                                                 self.de[budget].age[rank_exclude]))
 
         return np.array(self.traj), np.array(self.runtime), np.array(self.history)
-
 
 
 class DEHB_0(DEHB):

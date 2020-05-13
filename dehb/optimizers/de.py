@@ -196,7 +196,6 @@ class DE(DEBase):
         if self.f is None:
             raise NotImplementedError("An objective function needs to be passed.")
         if self.encoding:
-            pre = x.shape
             x = self.map_to_original(x)
         if self.configspace:
             # converts [0, 1] vector to a ConfigSpace object

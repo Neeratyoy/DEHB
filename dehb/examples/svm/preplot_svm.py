@@ -82,6 +82,8 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
 
             print("{}. Plotting for {}".format(index, m))
             print(len(regret), len(runtimes))
+            print("\nMean: {}; Std: {}\n".format(np.mean(te, axis=1)[idx][-1],
+                                                 stats.sem(te[idx], axis=1)[-1]))
             # The mean plot
             plt.plot(time[idx], np.mean(te, axis=1)[idx], color=colors[index],
                      linewidth=4, label=label, linestyle=linestyles[index % len(linestyles)],
