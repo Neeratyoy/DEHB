@@ -21,6 +21,8 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
         y_star_valid, y_star_test = (0.26506666642252596, 0.2649666666666667)
     elif dataset == 'ImageNet16-120':
         y_star_valid, y_star_test = (0.5326666672770182, 0.531555555352105)
+    else:
+        raise "Cannot find dataset and global incumbent"
 
     # finding best found incumbent to be global incumbent
     min_max_time = []

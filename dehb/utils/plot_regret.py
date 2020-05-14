@@ -76,7 +76,7 @@ def fill_trajectory(performance_list, time_list, replace_nan=np.NaN):
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--benchmark', default='101', type=str, nargs='?',
-                    choices=['101', '1shot1', '201', 'paramnet', 'svm',
+                    choices=['101', '1shot1', '201', 'nas-hpo', 'paramnet', 'svm',
                              'countingones', 'rl', 'bnn', 'cc18', 'speed'],
                     help='select benchmark to plot')
 parser.add_argument('--bench_type', default='protein', type=str, nargs='?',
@@ -111,7 +111,10 @@ bench_type = args.bench_type
 
 # Checking benchmark specifications
 if benchmark == '101':
-    from dehb.examples.nas101 import create_plot
+    from dehb.examples.nas101 import create_plot_101 as create_plot
+
+elif benchmark == 'nas-hpo':
+    from dehb.examples.nas101 import create_plot_hpo as create_plot
 
 elif benchmark == '1shot1' and bench_type not in ["1", "2", "3"]:
     print("Specify \'--bench_type\' from {1, 2, 3} for choosing the search space for 1shot1.")

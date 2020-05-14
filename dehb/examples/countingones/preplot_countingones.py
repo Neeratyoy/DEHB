@@ -42,6 +42,8 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                 regret_key = "regret_validation" if regret_type == 'validation' else "regret_test"
                 runtime_key = "runtime"
                 curr_regret = np.array(res[regret_key])
+                if 'evolution' in m:
+                    curr_regret = (curr_regret + d) / d
             else:
                 regret_key =  "losses" if regret_type == 'validation' else "test_losses"
                 runtime_key = "cummulative_budget"
