@@ -68,7 +68,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
             if 'de' in m:
                 regret_key =  "validation_score" if regret_type == 'validation' else "test_score"
                 runtime_key = "runtime"
-            elif 'de' in m:
+            elif 'evolution' in m:
                 regret_key =  "regret_validation" if regret_type == 'validation' else "regret_test"
                 runtime_key = "runtime"
             else:

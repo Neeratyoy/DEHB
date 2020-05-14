@@ -14,6 +14,36 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
     min_regret = 1
     max_regret = 0
 
+    dataset = path.replace('/', ' ').strip().split(' ')[-1]
+    if dataset == 'cifar10-valid':
+        y_star_valid, y_star_test = (0.08393333349609367, 0.08476666666666677)
+    elif dataset == 'cifar100':
+        y_star_valid, y_star_test = (0.26506666642252596, 0.2649666666666667)
+    elif dataset == 'ImageNet16-120':
+        y_star_valid, y_star_test = (0.5326666672770182, 0.531555555352105)
+
+    # finding best found incumbent to be global incumbent
+    min_max_time = []
+    global_inc = np.inf
+    for index, (m, label) in enumerate(methods):
+        runtimes = []
+        for k, i in enumerate(np.arange(n_runs)):
+            try:
+                res = json.load(open(os.path.join(path, m, "run_{}.json".format(i))))
+            except Exception as e:
+                print(m, i, e)
+                runtimes.append(limit)
+                continue
+            regret_key =  "regret_validation" if regret_type == 'validation' else "regret_test"
+            runtime_key = "runtime"
+            curr_inc = np.min(np.array(res[regret_key]) + y_star_valid)
+            if curr_inc < global_inc:
+                global_inc = curr_inc
+            runtimes.append(np.min((np.cumsum(res[runtime_key])[-1], limit)))
+        min_max_time.append(np.mean(runtimes))
+    limit = np.min((np.min(min_max_time), limit))
+    print("Found global incumbent: ", global_inc, "\tMin-max time: ", limit)
+
     no_runs_found = False
     # looping and plotting for all methods
     for index, (m, label) in enumerate(methods):
@@ -30,10 +60,11 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                 continue
             regret_key = "regret_validation" if regret_type == 'validation' else "regret_test"
             runtime_key = "runtime"
-            curr_regret = np.array(res[regret_key])
-            _, idx = np.unique(res[regret_key], return_index=True)
+            curr_regret = np.array(res[regret_key]) + y_star_valid - global_inc
+            _, idx = np.unique(curr_regret, return_index=True)
             idx.sort()
-            regret.append(np.array(res[regret_key])[idx])
+            # regret.append(np.array(res[regret_key])[idx])
+            regret.append(curr_regret[idx])
             runtimes.append(np.array(res[runtime_key])[idx])
 
         if not no_runs_found:
