@@ -91,26 +91,26 @@ def create_plot_hpo(plt, methods, path, regret_type, fill_trajectory,
         raise "Cannot find dataset and global incumbent"
 
     # finding best found incumbent to be global incumbent
-    min_max_time = []
-    global_inc = np.inf
-    for index, (m, label) in enumerate(methods):
-        runtimes = []
-        for k, i in enumerate(np.arange(n_runs)):
-            try:
-                res = json.load(open(os.path.join(path, m, "run_{}.json".format(i))))
-            except Exception as e:
-                print(m, i, e)
-                runtimes.append(limit)
-                continue
-            regret_key =  "regret_validation" if regret_type == 'validation' else "regret_test"
-            runtime_key = "runtime"
-            curr_inc = np.min(np.array(res[regret_key]) + y_star_valid)
-            if curr_inc < global_inc:
-                global_inc = curr_inc
-            runtimes.append(np.min((np.cumsum(res[runtime_key])[-1], limit)))
-        min_max_time.append(np.mean(runtimes))
-    limit = np.min((np.min(min_max_time), limit))
-    print("Found global incumbent: ", global_inc, "\tMin-max time: ", limit)
+    # min_max_time = []
+    # global_inc = np.inf
+    # for index, (m, label) in enumerate(methods):
+    #     runtimes = []
+    #     for k, i in enumerate(np.arange(n_runs)):
+    #         try:
+    #             res = json.load(open(os.path.join(path, m, "run_{}.json".format(i))))
+    #         except Exception as e:
+    #             print(m, i, e)
+    #             runtimes.append(limit)
+    #             continue
+    #         regret_key =  "regret_validation" if regret_type == 'validation' else "regret_test"
+    #         runtime_key = "runtime"
+    #         curr_inc = np.min(np.array(res[regret_key]) + y_star_valid)
+    #         if curr_inc < global_inc:
+    #             global_inc = curr_inc
+    #         runtimes.append(np.min((np.cumsum(res[runtime_key])[-1], limit)))
+    #     min_max_time.append(np.mean(runtimes))
+    # limit = np.min((np.min(min_max_time), limit))
+    # print("Found global incumbent: ", global_inc, "\tMin-max time: ", limit)
 
     no_runs_found = False
     # looping and plotting for all methods
@@ -128,7 +128,7 @@ def create_plot_hpo(plt, methods, path, regret_type, fill_trajectory,
                 continue
             regret_key =  "regret_validation" if regret_type == 'validation' else "regret_test"
             runtime_key = "runtime"
-            curr_regret = np.array(res[regret_key]) + y_star_valid - global_inc
+            curr_regret = np.array(res[regret_key]) + y_star_valid # - global_inc
             _, idx = np.unique(curr_regret, return_index=True)
             idx.sort()
             # regret.append(np.array(res[regret_key])[idx])
