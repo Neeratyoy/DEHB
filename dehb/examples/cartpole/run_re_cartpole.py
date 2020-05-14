@@ -202,8 +202,6 @@ def convert_to_json(history):
 parser = argparse.ArgumentParser()
 parser.add_argument('--run_id', default=0, type=int, nargs='?',
                     help='unique number to identify this run')
-parser.add_argument('--dataset', help="name of the dataset used", default='bostonhousing',
-                    choices=['toyfunction', 'bostonhousing', 'proteinstructure', 'yearprediction'])
 parser.add_argument('--n_iters', default=10, type=int, nargs='?',
                     help='number of iterations for optimization method')
 parser.add_argument('--output_path', default="./results", type=str, nargs='?',

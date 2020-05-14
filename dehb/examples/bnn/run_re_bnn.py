@@ -211,7 +211,7 @@ parser.add_argument('--output_path', default="./results", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
 parser.add_argument('--pop_size', default=100, type=int, nargs='?', help='population size')
 parser.add_argument('--sample_size', default=10, type=int, nargs='?', help='sample_size')
-parser.add_argument('--max_budget', default=500, type=int, nargs='?', help='minimum budget')
+parser.add_argument('--max_budget', default=10000, type=int, nargs='?', help='minimum budget')
 parser.add_argument('--runs', default=None, type=int, nargs='?', help='number of runs to perform')
 parser.add_argument('--folder', default="regularized_evolution", type=str, nargs='?',
                     help='folder where output is dumped')

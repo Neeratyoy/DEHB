@@ -19,7 +19,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
     for index, (m, label) in enumerate(methods):
         for k, i in enumerate(np.arange(n_runs)):
             try:
-                if 'de' in m:
+                if 'de' in m or 'evolution' in m:
                     res = json.load(open(os.path.join(path, m, "run_{}.json".format(i))))
                 else:
                     res = pickle.load(open(os.path.join(path, m,
@@ -29,6 +29,8 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                 continue
             if 'de' in m:
                 regret_key =  "validation_score" if regret_type == 'validation' else "test_score"
+            elif 'evolution' in m:
+                regret_key =  "regret_validation" if regret_type == 'validation' else "regret_test"
             else:
                 regret_key =  "losses" if regret_type == 'validation' else "test_losses"
             curr_inc = np.min(res[regret_key])
@@ -44,7 +46,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
         runtimes = []
         for k, i in enumerate(np.arange(n_runs)):
             try:
-                if 'de' in m:
+                if 'de' in m or 'evolution' in m:
                     res = json.load(open(os.path.join(path, m, "run_{}.json".format(i))))
                 else:
                     res = pickle.load(open(os.path.join(path, m,
@@ -56,6 +58,9 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                 continue
             if 'de' in m:
                 regret_key =  "validation_score" if regret_type == 'validation' else "test_score"
+                runtime_key = "runtime"
+            elif 'evolution' in m:
+                regret_key =  "regret_validation" if regret_type == 'validation' else "regret_test"
                 runtime_key = "runtime"
             else:
                 regret_key =  "losses" if regret_type == 'validation' else "test_losses"
