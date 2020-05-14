@@ -80,13 +80,13 @@ def create_plot_hpo(plt, methods, path, regret_type, fill_trajectory,
 
     dataset = path.replace('/', ' ').strip().split(' ')[-1]
     if dataset == 'protein':
-        pass
+        y_star_valid, y_star_test = (0.22137885, 0.21536806)
     elif dataset == 'slice':
-        pass
+        y_star_valid, y_star_test = (0.00020406871, 0.00014428208)
     elif dataset == 'naval':
-        pass
+        y_star_valid, y_star_test = (3.1911346e-05, 2.9110292e-05)
     elif dataset == 'parkinsons':
-        pass
+        y_star_valid, y_star_test = (0.007629349, 0.004239297)
     else:
         raise "Cannot find dataset and global incumbent"
 
