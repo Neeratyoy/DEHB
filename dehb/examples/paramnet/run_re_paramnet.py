@@ -210,8 +210,6 @@ parser.add_argument('--n_iters', default=10, type=int, nargs='?',
                     help='number of iterations for optimization method')
 parser.add_argument('--output_path', default="./results", type=str, nargs='?',
                     help='specifies the path where the results will be saved')
-parser.add_argument('--data_dir', default="../tabular_benchmarks/fcnet_tabular_benchmarks/",
-                    type=str, nargs='?', help='specifies the path to the tabular data')
 parser.add_argument('--pop_size', default=100, type=int, nargs='?', help='population size')
 parser.add_argument('--sample_size', default=10, type=int, nargs='?', help='sample_size')
 parser.add_argument('--max_budget', default=None, type=int, nargs='?', help='minimum budget')
