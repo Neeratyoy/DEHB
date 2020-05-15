@@ -72,6 +72,7 @@ def create_plot_101(plt, methods, path, regret_type, fill_trajectory,
                              np.mean(te[idx], axis=1)[idx] - 2 * stats.sem(te[idx], axis=1),
                              color="C%d" % index, alpha=0.2)
 
+            available_models.append(label)
             # Stats to dynamically impose limits on the axes of the plots
             max_time = max(max_time, time[idx][-1])
             min_regret = min(min_regret, np.mean(te, axis=1)[idx][-1])
@@ -82,7 +83,7 @@ def create_plot_101(plt, methods, path, regret_type, fill_trajectory,
 
     # dividing log-scale range of [0, 1e6] into 1000 even buckets
     buckets = 50
-    max_limit = 6.0
+    max_limit = 7.0
     t = 10 ** np.arange(start=0, stop=max_limit, step=max_limit/buckets)
     # creating dummy filler data to create the data frame
     d = np.random.uniform(size=(len(t), rank_stats.shape[-1]))
