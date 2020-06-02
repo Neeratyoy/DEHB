@@ -167,7 +167,7 @@ class DEBase():
 class DE(DEBase):
     def __init__(self, cs=None, f=None, dimensions=None, pop_size=20, max_age=np.inf,
                  mutation_factor=None, crossover_prob=None, strategy='rand1_bin',
-                 budget=None, **kwargs):
+                 budget=None, encoding=False, dim_map=None, **kwargs):
         super().__init__(cs=cs, f=f, dimensions=dimensions, pop_size=pop_size, max_age=max_age,
                          mutation_factor=mutation_factor, crossover_prob=crossover_prob,
                          strategy=strategy, budget=budget, **kwargs)
@@ -176,6 +176,8 @@ class DE(DEBase):
             self.crossover_strategy = self.strategy.split('_')[1]
         else:
             self.mutation_strategy = self.crossover_strategy = None
+        self.encoding = encoding
+        self.dim_map = dim_map
 
     def reset(self):
         super().reset()
@@ -183,9 +185,18 @@ class DE(DEBase):
         self.runtime = []
         self.history = []
 
+    def map_to_original(self, vector):
+        dimensions = len(self.dim_map.keys())
+        new_vector = np.random.uniform(size=dimensions)
+        for i in range(dimensions):
+            new_vector[i] = np.max(np.array(vector)[self.dim_map[i]])
+        return new_vector
+
     def f_objective(self, x, budget=None):
         if self.f is None:
             raise NotImplementedError("An objective function needs to be passed.")
+        if self.encoding:
+            x = self.map_to_original(x)
         if self.configspace:
             # converts [0, 1] vector to a ConfigSpace object
             config = self.vector_to_configspace(x)

@@ -367,7 +367,7 @@ class DEHB(DEHBBase):
                             print("Mutation population size: {}".format(filler, budget))
 
                     # evolving subpopulation on 'budget' for one generation
-                    ## the targets in te evolution process are the individuals themselves
+                    ## the targets in the evolution process are the individuals themselves
                     ## the mutants are created from the alt_population that is passed
                     de_traj, de_runtime, de_history = \
                             self.de[budget].evolve_generation(budget=budget,
@@ -405,31 +405,3 @@ class DEHB(DEHBBase):
                                                 self.de[budget].age[rank_exclude]))
 
         return np.array(self.traj), np.array(self.runtime), np.array(self.history)
-
-
-class DEHB_0(DEHB):
-    def __init__(self, async_strategy='deferred', **kwargs):
-        super().__init__(**kwargs)
-        self.async_strategy = async_strategy
-        self.de_params['async_strategy'] = self.async_strategy
-
-
-class DEHB_1(DEHB):
-    def __init__(self, async_strategy='immediate', **kwargs):
-        super().__init__(**kwargs)
-        self.async_strategy = async_strategy
-        self.de_params['async_strategy'] = self.async_strategy
-
-
-class DEHB_2(DEHB):
-    def __init__(self, async_strategy='random', **kwargs):
-        super().__init__(**kwargs)
-        self.async_strategy = async_strategy
-        self.de_params['async_strategy'] = self.async_strategy
-
-
-class DEHB_3(DEHB):
-    def __init__(self, async_strategy='worst', **kwargs):
-        super().__init__(**kwargs)
-        self.async_strategy = async_strategy
-        self.de_params['async_strategy'] = self.async_strategy
