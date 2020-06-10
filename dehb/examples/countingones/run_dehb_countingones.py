@@ -90,6 +90,8 @@ parser.add_argument('--mutation_factor', default=0.5, type=float, nargs='?',
                     help='mutation factor value')
 parser.add_argument('--crossover_prob', default=0.5, type=float, nargs='?',
                     help='probability of crossover')
+parser.add_argument('--boundary_fix_type', default='random', type=str, nargs='?',
+                    help="strategy to handle solutions outside range {'random', 'clip'}")
 parser.add_argument('--gens', default=1, type=int, nargs='?',
                     help='DE generations in each DEHB iteration')
 parser.add_argument('--eta', default=3, type=int, nargs='?',
@@ -137,7 +139,7 @@ y_star_test = -dimensions  # incorporated in regret_calc as normalized regret: (
 dehb = DEHB(cs=cs, dimensions=dimensions, f=f, strategy=args.strategy,
             mutation_factor=args.mutation_factor, crossover_prob=args.crossover_prob,
             eta=args.eta, min_budget=min_budget, max_budget=max_budget,
-            generations=args.gens)
+            generations=args.gens, boundary_fix_type=args.boundary_fix_type)
 
 # Helper DE object for vector to config mapping
 de = DE(cs=cs, b=b, f=f)
