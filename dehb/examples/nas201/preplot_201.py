@@ -126,11 +126,10 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
             list(map(lambda x: np.where(~mean_df.isna()[x] == True)[0][-1], mean_df.columns))
         )
         mean_df = mean_df.iloc[:cutoff_idx + 1].ffill()
+        std_df = std_df.iloc[:cutoff_idx + 1].ffill()
         rank_df = mean_df.apply(stats.rankdata, axis=1, result_type='broadcast')
-        mean_df = mean_df.iloc[-1]
-        std_df = std_df.iloc[:cutoff_idx + 1].ffill().iloc[-1]
-        mean_df.to_pickle(os.path.join(path, 'mean_df.pkl'))
-        std_df.to_pickle(os.path.join(path, 'std_df.pkl'))
+        mean_df.iloc[-1].to_pickle(os.path.join(path, 'mean_df.pkl'))
+        std_df.iloc[-1].to_pickle(os.path.join(path, 'std_df.pkl'))
         rank_df.to_pickle(os.path.join(path, 'rank_df.pkl'))
 
     # rank_stats = pd.DataFrame(frame_dict)
