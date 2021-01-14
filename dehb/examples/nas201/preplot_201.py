@@ -132,36 +132,4 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
     std_df.iloc[-1].to_pickle(os.path.join(path, 'std_df.pkl'))
     rank_df.to_pickle(os.path.join(path, 'rank_df.pkl'))
 
-    # rank_stats = pd.DataFrame(frame_dict)
-    # rank_stats = rank_stats.ffill()
-
-    # # dividing log-scale range of [0, 1e6] into 1000 even buckets
-    # buckets = 50
-    # max_limit = 7.0
-    # t = 10 ** np.arange(start=0, stop=max_limit, step=max_limit/buckets)
-    # # creating dummy filler data to create the data frame
-    # d = np.random.uniform(size=(len(t), rank_stats.shape[-1]))
-    # d.fill(np.nan)
-    # # getting complete time range
-    # index = np.concatenate((t, rank_stats.index.to_numpy()))
-    # # concatenating actual and dummy data
-    # data = np.vstack((d, rank_stats))
-    # # ordering time
-    # idx = np.argsort(index)
-    # # creating new ordered data frame
-    # rank_stats = pd.DataFrame(data=data[idx], index=index[idx])
-    # rank_stats = rank_stats.ffill().loc[t]
-    # # replacing scores with the relative ranks
-    # rank_stats = rank_stats.apply(np.argsort, axis=1)
-    # # to start ranks from '1'
-    # rank_stats += 1
-    # # assigning an equal average rank to all agorithms at the beginning
-    # rank_stats = rank_stats.replace(0, np.mean(np.arange(rank_stats.shape[-1]) + 1))
-    # # adding model/column names
-    # rank_stats.columns = available_models
-    #
-    # dataset = path.replace('/', ' ').strip().split(' ')[-1]
-    # with open('{}.pkl'.format(dataset), 'wb') as f:
-    #     pickle.dump(rank_stats, f)
-
     return plt, min_time, max_time, min_regret, max_regret

@@ -88,7 +88,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                              color="C%d" % index, alpha=0.2)
 
             # Stats to dynamically impose limits on the axes of the plots
-            max_time = min(max_time, time[idx][-1])
+            max_time = max(max_time, time[idx][-1])
             min_regret = min(min_regret, np.mean(te, axis=1)[idx][-1])
             max_regret = max(max_regret, np.mean(te, axis=1)[idx][0])
 
