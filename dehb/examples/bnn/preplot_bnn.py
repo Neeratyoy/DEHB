@@ -121,7 +121,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
     mean_df.iloc[-1].to_pickle(os.path.join(path, 'mean_df.pkl'))
     std_df.iloc[-1].to_pickle(os.path.join(path, 'std_df.pkl'))
     rank_df.to_pickle(os.path.join(path, 'rank_df.pkl'))
-    
+
     return plt, min_time, max_time, min_regret, max_regret
 
 

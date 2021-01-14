@@ -3,6 +3,7 @@ import pickle
 import numpy as np
 import pandas as pd
 from matplotlib import rcParams
+from matplotlib import pyplot as plt
 rcParams['font.family'] = 'serif'
 
 
@@ -103,6 +104,12 @@ plt.fill_between(
     0, rank_lists['DEHB'].to_numpy()[landmarks],
     alpha=0.5, color='gray'
 )
+# plt.fill_between(
+#     rank_lists['DEHB'].index.to_numpy()[landmarks],
+#     0, starting_rank,
+#     alpha=0.3, color='gray'
+# )
+plt.hlines(starting_rank, 0, 1e7)
 plt.xlim(xlims[0], xlims[1])
 plt.ylim(1, rank_lists.shape[1])
 plt.xlabel('estimated wallclock time $[s]$', fontsize=15)
@@ -111,5 +118,6 @@ plt.savefig('rank_plot.pdf', bbox_inches='tight')
 
 rank_stats = {}
 rank_stats['minimum'] = np.min(rank_lists, axis=0)
+rank_stats['maximum'] = np.max(rank_lists, axis=0)
 rank_stats['variance'] = np.var(rank_lists, axis=0)
 rank_stats = pd.DataFrame(rank_stats)
