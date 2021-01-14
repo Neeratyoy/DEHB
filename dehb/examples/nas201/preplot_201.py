@@ -120,17 +120,17 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
             mean_df[label] = pd.Series(data=np.mean(te, axis=1)[idx], index=time[idx])
             std_df[label] = pd.Series(data=np.std(te, axis=1)[idx], index=time[idx])
 
-        mean_df = pd.DataFrame(mean_df)
-        std_df = pd.DataFrame(std_df)
-        cutoff_idx = min(
-            list(map(lambda x: np.where(~mean_df.isna()[x] == True)[0][-1], mean_df.columns))
-        )
-        mean_df = mean_df.iloc[:cutoff_idx + 1].ffill()
-        std_df = std_df.iloc[:cutoff_idx + 1].ffill()
-        rank_df = mean_df.apply(stats.rankdata, axis=1, result_type='broadcast')
-        mean_df.iloc[-1].to_pickle(os.path.join(path, 'mean_df.pkl'))
-        std_df.iloc[-1].to_pickle(os.path.join(path, 'std_df.pkl'))
-        rank_df.to_pickle(os.path.join(path, 'rank_df.pkl'))
+    mean_df = pd.DataFrame(mean_df)
+    std_df = pd.DataFrame(std_df)
+    cutoff_idx = min(
+        list(map(lambda x: np.where(~mean_df.isna()[x] == True)[0][-1], mean_df.columns))
+    )
+    mean_df = mean_df.iloc[:cutoff_idx + 1].ffill()
+    std_df = std_df.iloc[:cutoff_idx + 1].ffill()
+    rank_df = mean_df.apply(stats.rankdata, axis=1, result_type='broadcast')
+    mean_df.iloc[-1].to_pickle(os.path.join(path, 'mean_df.pkl'))
+    std_df.iloc[-1].to_pickle(os.path.join(path, 'std_df.pkl'))
+    rank_df.to_pickle(os.path.join(path, 'rank_df.pkl'))
 
     # rank_stats = pd.DataFrame(frame_dict)
     # rank_stats = rank_stats.ffill()
