@@ -1,1 +1,1 @@
-[('hyperband', 'HB'), ('bohb', 'BOHB'), ('de_pop20', 'DE $pop=20$'), ('dehb_v0', 'DEHB $v0$'), ('dehb_v1', 'DEHB $v1$'), ('dehb_v2', 'DEHB $v2$')]
+[('pdehb_1', 'DEHB n=1'), ('pdehb_2', 'DEHB n=2'), ('pdehb_4', 'DEHB n=4'), ('pdehb_8', 'DEHB n=8'), ('pdehb_16', 'DEHB n=16'), ('pdehb_32', 'DEHB n=32')]

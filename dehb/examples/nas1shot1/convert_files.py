@@ -72,13 +72,17 @@ y_star_valid, y_star_test, inc_config = (search_space.valid_min_error,
 
 for i in range(n_runs):
     print("\nRun {}".format(i))
-    if algo in ['HB', 'BOHB', 'TPE', 'SMAC']:
+    if algo in ['HB', 'BOHB', 'TPE']:
         with open(os.path.join(path, '{}/{}/'
                   'algo_{}_{}_ssp_{}_seed_0.obj'.format(algo, ssp, algo, i, ssp)), 'rb') as f:
             res = pickle.load(f)
     elif algo in ['RE', 'RS']:
         with open(os.path.join(path, '{}/{}/'
                   'algo_{}_None_ssp_{}_seed_{}.obj'.format(algo, ssp, algo, ssp, i)), 'rb') as f:
+            res = pickle.load(f)
+    elif 'SMAC' in algo:
+        with open(os.path.join(path, '{}/{}/'
+                  'SMAC_{}_ssp_{}_seed_{}.obj'.format(algo, ssp, i, ssp, i)), 'rb') as f:
             res = pickle.load(f)
     elif 'dehb' in algo:
         with open(os.path.join(path, '{}/{}/'

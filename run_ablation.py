@@ -42,8 +42,3 @@ for i in range(len(values)):
 
     subprocess.call(['bash', program, str(F), str(Cr)])
 
-
-
-
-
-

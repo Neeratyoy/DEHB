@@ -20,6 +20,8 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
     frame_dict = collections.OrderedDict()
     available_models = []
 
+    print(methods)
+
     no_runs_found = False
     # looping and plotting for all methods
     for index, (m, label) in enumerate(methods):
@@ -28,7 +30,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
         runtimes = []
         for k, i in enumerate(np.arange(n_runs)):
             try:
-                if 'de' in m or 'evolution' in m:
+                if 'de' in m or 'evolution' in m or 'smac' == m:
                     res = json.load(open(os.path.join(path, m, "run_{}.json".format(i))))
                 else:
                     res = pickle.load(open(os.path.join(path, m,
@@ -38,12 +40,13 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                 print(m, i, e)
                 no_runs_found = True
                 continue
-            if 'de' in m or 'evolution' in m:
+            if 'de' in m or 'evolution' in m or 'smac' == m:
                 regret_key =  "regret_validation" if regret_type == 'validation' else "regret_test"
                 runtime_key = "runtime"
             else:
                 regret_key =  "losses" if regret_type == 'validation' else "test_losses"
                 runtime_key = "cummulative_budget"
+
             # calculating regret as (f(x) - found global incumbent)
             curr_regret = np.array(res[regret_key]) #- global_inc
             if m not in ['bohb', 'hyperband']:
@@ -98,7 +101,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
             max_time = max(max_time, time[idx][-1])
             min_regret = min(min_regret, np.mean(te, axis=1)[idx][-1])
             max_regret = max(max_regret, np.mean(te, axis=1)[idx][0])
-
+    '''
     rank_stats = pd.DataFrame(frame_dict)
     rank_stats = rank_stats.ffill()
 
@@ -130,7 +133,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
     dataset = path.replace('/', ' ').strip().split(' ')[-1]
     with open('{}.pkl'.format(dataset), 'wb') as f:
         pickle.dump(rank_stats, f)
-
+    '''
     return plt, min_time, max_time, min_regret, max_regret
 
 
