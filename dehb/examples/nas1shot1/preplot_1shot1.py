@@ -94,9 +94,9 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
     mean_df = mean_df.iloc[:cutoff_idx + 1].ffill()
     std_df = std_df.iloc[:cutoff_idx + 1].ffill()
     rank_df = mean_df.apply(stats.rankdata, axis=1, result_type='broadcast')
-    mean_df.iloc[-1].to_pickle(os.path.join(path, 'mean_df.pkl'))
-    std_df.iloc[-1].to_pickle(os.path.join(path, 'std_df.pkl'))
-    rank_df.to_pickle(os.path.join(path, 'rank_df.pkl'))
+    mean_df.iloc[-1].to_pickle(os.path.join(path, ssp, 'mean_df.pkl'))
+    std_df.iloc[-1].to_pickle(os.path.join(path, ssp, 'std_df.pkl'))
+    rank_df.to_pickle(os.path.join(path, ssp, 'rank_df.pkl'))
 
     # rank_stats = pd.DataFrame(frame_dict)
     # rank_stats = rank_stats.ffill()
