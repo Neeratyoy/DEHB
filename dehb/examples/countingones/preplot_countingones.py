@@ -21,7 +21,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
     d = int(dim1) + int(dim2)
     max_budget = 93312 / d
 
-    # for table
+    # for table and ranking plot
     mean_df = {}
     std_df = {}
 
@@ -92,15 +92,21 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
             min_regret = min(min_regret, np.mean(te, axis=1)[idx][-1])
             max_regret = max(max_regret, np.mean(te, axis=1)[idx][0])
 
+            # For final score table
             mean_df[label] = pd.Series(data=np.mean(te, axis=1)[idx], index=time[idx])
             std_df[label] = pd.Series(data=np.std(te, axis=1)[idx], index=time[idx])
 
         mean_df = pd.DataFrame(mean_df)
         std_df = pd.DataFrame(std_df)
-        cutoff_idx = min(list(map(lambda x: np.where(~mean_df.isna()[x] == True)[0][-1], mean_df.columns)))
+        cutoff_idx = min(
+            list(map(lambda x: np.where(~mean_df.isna()[x] is True)[0][-1], mean_df.columns))
+        )
         mean_df = mean_df.iloc[:cutoff_idx + 1].ffill()
-        std_df = std_df.iloc[:cutoff_idx + 1].ffill()
+        rank_df = mean_df.apply(stats.rankdata, axis=1, result_type='broadcast')
+        mean_df = mean_df.iloc[-1]
+        std_df = std_df.iloc[:cutoff_idx + 1].ffill().iloc[-1]
         mean_df.to_pickle(os.path.join(path, 'mean_df.pkl'))
         std_df.to_pickle(os.path.join(path, 'std_df.pkl'))
+        rank_df.to_pickle(os.path.join(path, 'rank_df.pkl'))
 
     return plt, min_time, max_time, min_regret, max_regret
