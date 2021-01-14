@@ -123,7 +123,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
         mean_df = pd.DataFrame(mean_df)
         std_df = pd.DataFrame(std_df)
         cutoff_idx = min(
-            list(map(lambda x: np.where(~mean_df.isna()[x] is True)[0][-1], mean_df.columns))
+            list(map(lambda x: np.where(~mean_df.isna()[x] == True)[0][-1], mean_df.columns))
         )
         mean_df = mean_df.iloc[:cutoff_idx + 1].ffill()
         rank_df = mean_df.apply(stats.rankdata, axis=1, result_type='broadcast')
