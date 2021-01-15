@@ -2,6 +2,7 @@ import glob
 import pickle
 import numpy as np
 import pandas as pd
+from scipy import stats
 from matplotlib import rcParams
 from matplotlib import pyplot as plt
 rcParams['font.family'] = 'serif'
@@ -121,3 +122,29 @@ rank_stats['minimum'] = np.min(rank_lists, axis=0)
 rank_stats['maximum'] = np.max(rank_lists, axis=0)
 rank_stats['variance'] = np.var(rank_lists, axis=0)
 rank_stats = pd.DataFrame(rank_stats)
+
+
+def row_entries_for(x):
+    """ Function to get latex rows for table for the benchmark x passed as input
+    """
+    print(' $\pm$ & '.join(
+        mean_dfs.loc[x].apply(np.format_float_scientific, precision=1, exp_digits=1).to_numpy())
+    )
+    print(' & '.join(
+        std_dfs.loc[x].apply(np.format_float_scientific, precision=1, exp_digits=1).to_numpy())
+    )
+    model = mean_dfs.columns[np.argmin(mean_dfs.loc[x].to_list())]
+    print(
+        model,
+        np.format_float_scientific(mean_dfs.loc[x][model], precision=1, exp_digits=1),
+        np.format_float_scientific(std_dfs.loc[x][model], precision=1, exp_digits=1)
+    )
+    print(stats.rankdata(mean_dfs.loc[x]))
+    print("DEHB's rank {}".format(stats.rankdata(mean_dfs.loc[x])[-1]))
+
+# Ranks based on final numbers
+rank_df = {}
+for idx in mean_dfs.index:
+    rank_df[idx] = pd.Series(data=stats.rankdata(mean_dfs.loc[idx]), index=mean_dfs.loc[idx].index)
+rank_df = pd.DataFrame(rank_df)
+print(rank_df.mean(axis=1))
