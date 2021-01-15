@@ -27,7 +27,7 @@ for filename in list_of_std_files:
     benchname = filename.split('/')[-2]
     with open(filename, 'rb') as f:
         std_dfs[benchname] = pickle.load(f)
-std_dfs = pd.DataFrame(mean_dfs).transpose()
+std_dfs = pd.DataFrame(std_dfs).transpose()
 std_dfs.to_pickle("all_std_dfs.pkl")
 
 # Load run statistics to create a relative ranking plot over time
