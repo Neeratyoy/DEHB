@@ -110,7 +110,7 @@ plt.fill_between(
 #     0, starting_rank,
 #     alpha=0.3, color='gray'
 # )
-plt.hlines(starting_rank, 0, 1e7)
+# plt.hlines(starting_rank, 0, 1e7)
 plt.xlim(xlims[0], xlims[1])
 plt.ylim(1, rank_lists.shape[1])
 plt.xlabel('estimated wallclock time $[s]$', fontsize=15)
