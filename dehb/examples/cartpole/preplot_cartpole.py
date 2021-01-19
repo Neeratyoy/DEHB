@@ -11,7 +11,7 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
                 colors, linestyles, marker, n_runs=500, limit=1e7):
 
     # plot limits
-    min_time = np.inf
+    min_time = 0  #np.inf
     max_time = 0
     min_regret = 1
     max_regret = 0
@@ -56,9 +56,11 @@ def create_plot(plt, methods, path, regret_type, fill_trajectory,
 
         if not no_runs_found:
             # finds the latest time where the first measurement was made across runs
+            ## unlike other benchmarks, this benchmark has stochastic and noisy signals
+            ## taking the minimum of the first recorded measurements across runs as starting point
             t = np.max([runtimes[i][0] for i in range(len(runtimes))])
-            min_time = min(min_time, t)
-            te, time = fill_trajectory(regret, runtimes, replace_nan=1)
+            min_time = max(min_time, t)
+            te, time = fill_trajectory(regret, runtimes, replace_nan=3000)
 
             idx = time.tolist().index(t)
             te = te[idx:, :]
