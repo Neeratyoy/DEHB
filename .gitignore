@@ -1,17 +1,21 @@
-dehb/tabular_benchmarks
-dehb/examples/scripts/
-dehb/examples/*/scripts/
-dehb/examples/results/
-dehb/examples/*/results/
-dehb/examples/plots/
-dehb/examples/backup
+# files dumped at base directory
+*.json
+*.pdf
+*.pkl
+*.out
 
-dehb/optimizers/__pycache__/
-dehb/__pycache__/
-dehb/*/__pycache__/
-dehb/*/*/__pycache__/
 
-dehb/examples/slurm*.out
-slurm*.out
+# folders created from imports
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
 
+
+# folders as artefacts
 .idea/
+results/
+plots/
+workflow/
+dask-worker-space/
+dehb/examples/*/results
+dehb/examples/*/*/results
